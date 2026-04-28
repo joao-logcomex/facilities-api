@@ -592,6 +592,18 @@
     }
   };
 
+  window.cancelarMeuChamado = async (docId, ticketId) => {
+    if (!confirm(`Tem certeza que deseja cancelar o chamado #${ticketId}?`)) return;
+    try {
+      const user = auth.currentUser;
+      const tRef = doc(db, 'tickets', docId);
+      const snap = await getDoc(tRef);
+      const hist = [...(snap.data()?.historico || [])];
+      hist.push({ acao: 'Chamado cancelado pelo solicitante', data: new Date().toISOString(), usuario: user.email });
+      await setDoc(tRef, { status: 'Cancelado', historico: hist }, { merge: true });
+    } catch(e) { alert('Erro ao cancelar chamado.'); }
+  };
+
   function loadMeusChamados() {
     const user = auth.currentUser;
     if (!user) return;
@@ -616,6 +628,10 @@
             ${t.historico?.length > 1 ? `<span>·</span><span style="color:var(--purple);font-weight:600;">Atualizado</span>` : ''}
           </div>
           ${t.historico?.length > 0 ? `<div style="margin-top:8px;font-size:0.78rem;color:var(--ink3);background:var(--surface2);padding:6px 10px;border-radius:6px;">Última atualização: ${t.historico[t.historico.length-1].acao}</div>` : ''}
+          ${!['Cancelado','Concluído'].includes(t.status) ? `
+          <div style="margin-top:10px;">
+            <button onclick="cancelarMeuChamado('${d.id}','${t.id}')" style="background:none;border:1.5px solid #e8e4f5;border-radius:6px;padding:5px 12px;font-family:'Space Grotesk',sans-serif;font-size:0.78rem;font-weight:600;color:var(--ink3);cursor:pointer;">✕ Cancelar chamado</button>
+          </div>` : ''}
         </div>`;
       }).join('');
     });
