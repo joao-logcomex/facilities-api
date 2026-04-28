@@ -166,12 +166,14 @@
   /* BRINDES */
   .brinde-section { background: var(--surface2); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--border); }
   .brinde-section-title { font-size: 0.72rem; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
-  .itens-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+  .itens-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
   .item-brinde { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface); border: 1.5px solid #e8e4f5; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; }
   .item-brinde input[type="checkbox"] { accent-color: var(--purple); width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; }
-  .item-brinde label { font-size: 0.82rem; color: var(--ink2); cursor: pointer; font-weight: 500; }
-  .item-brinde:has(input:checked) { border-color: var(--purple); background: var(--purple-light); }
-  .item-brinde:has(input:checked) label { color: var(--purple-dark); font-weight: 600; }
+  .item-brinde label { font-size: 0.82rem; color: var(--ink2); cursor: pointer; font-weight: 500; flex: 1; }
+  .item-brinde .qty-input { width: 52px; padding: 4px 6px; border: 1.5px solid #e8e4f5; border-radius: 6px; font-family: 'Space Grotesk', sans-serif; font-size: 0.82rem; text-align: center; display: none; background: var(--surface2); color: var(--ink); outline: none; }
+  .item-brinde:has(input[type="checkbox"]:checked) { border-color: var(--purple); background: var(--purple-light); }
+  .item-brinde:has(input[type="checkbox"]:checked) label { color: var(--purple-dark); font-weight: 600; }
+  .item-brinde:has(input[type="checkbox"]:checked) .qty-input { display: block; border-color: var(--purple); background: #fff; }
   .entrega-opts { display: flex; gap: 10px; }
   .entrega-opt { display: none; }
   .entrega-label { flex: 1; padding: 10px; border: 1.5px solid #e8e4f5; border-radius: var(--radius-sm); text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--ink3); transition: all 0.15s; user-select: none; }
@@ -643,7 +645,11 @@
     localStorage.setItem('lc_tc', tc);
     const id = 'LOG-' + String(tc).padStart(4,'0');
     const plats = [...document.querySelectorAll('input[name="plataforma"]:checked')].map(i => i.value);
-    const itensBrinde = [...document.querySelectorAll('input[name="brinde_item"]:checked')].map(i => i.value);
+    const itensBrinde = [...document.querySelectorAll('input[name="brinde_item"]:checked')].map(i => {
+      const qty = i.closest('.item-brinde').querySelector('.qty-input');
+      const q = qty && qty.value ? qty.value : '1';
+      return `${i.value} (${q}x)`;
+    });
     const entrega = document.querySelector('input[name="entrega"]:checked');
     const enderecoEnvio = entrega?.value === 'Envio pelos Correios' ? {
       nome: document.getElementById('end-nome').value,
@@ -778,8 +784,9 @@ function updateItensBrinde(dept) {
   semItens.style.display = 'none';
   grid.innerHTML = itens.map((item, i) => `
     <div class="item-brinde">
-      <input type="checkbox" id="brinde-item-${i}" name="brinde_item" value="${item}">
+      <input type="checkbox" id="brinde-item-${i}" name="brinde_item" value="${item}" onchange="this.closest('.item-brinde').querySelector('.qty-input').value=this.checked?'1':''">
       <label for="brinde-item-${i}">${item}</label>
+      <input type="number" class="qty-input" min="1" max="99" value="" placeholder="Qtd" data-item="${item}">
     </div>`).join('');
 }
 
