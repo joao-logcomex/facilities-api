@@ -163,7 +163,21 @@
   .btn-new:hover { background: var(--purple-light); border-color: var(--purple); color: var(--purple); }
   #default-state { text-align: center; padding: 2.5rem 1rem; color: var(--ink3); }
 
-  /* MEUS CHAMADOS */
+  /* BRINDES */
+  .brinde-section { background: var(--surface2); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--border); }
+  .brinde-section-title { font-size: 0.72rem; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+  .itens-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+  .item-brinde { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface); border: 1.5px solid #e8e4f5; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; }
+  .item-brinde input[type="checkbox"] { accent-color: var(--purple); width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; }
+  .item-brinde label { font-size: 0.82rem; color: var(--ink2); cursor: pointer; font-weight: 500; }
+  .item-brinde:has(input:checked) { border-color: var(--purple); background: var(--purple-light); }
+  .item-brinde:has(input:checked) label { color: var(--purple-dark); font-weight: 600; }
+  .entrega-opts { display: flex; gap: 10px; }
+  .entrega-opt { display: none; }
+  .entrega-label { flex: 1; padding: 10px; border: 1.5px solid #e8e4f5; border-radius: var(--radius-sm); text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--ink3); transition: all 0.15s; user-select: none; }
+  #entrega-envio:checked + .entrega-label { background: var(--purple-light); border-color: var(--purple); color: var(--purple-dark); }
+  #entrega-retirada:checked + .entrega-label { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+  .endereco-section { display: none; margin-top: 1rem; }
   .meus-chamados-btn { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 9px 18px; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--ink2); cursor: pointer; transition: all 0.18s; margin-bottom: 1.5rem; }
   .meus-chamados-btn:hover { background: var(--purple-light); border-color: var(--purple); color: var(--purple); }
   .meus-chamados-screen { display: none; }
@@ -336,6 +350,47 @@
               </div>
             </div>
           </div>
+          <!-- BRINDES ESPECIAL -->
+          <div id="brinde-section" style="display:none;">
+            <div class="brinde-section">
+              <div class="brinde-section-title">🎁 Selecione os itens</div>
+              <div class="itens-grid" id="itens-brinde-grid"></div>
+              <div id="brinde-sem-itens" style="display:none;font-size:0.82rem;color:var(--ink3);padding:0.5rem 0;">Selecione seu centro de custo acima para ver os itens disponíveis.</div>
+            </div>
+            <div class="brinde-section">
+              <div class="brinde-section-title">📦 Tipo de entrega</div>
+              <div class="entrega-opts">
+                <input type="radio" name="entrega" id="entrega-envio" value="Envio pelos Correios" class="entrega-opt" onchange="onEntregaChange()">
+                <label class="entrega-label" for="entrega-envio">🚚 Envio pelos Correios</label>
+                <input type="radio" name="entrega" id="entrega-retirada" value="Retirada no escritório" class="entrega-opt" onchange="onEntregaChange()">
+                <label class="entrega-label" for="entrega-retirada">🏢 Retirada no escritório</label>
+              </div>
+              <div class="endereco-section" id="endereco-section">
+                <div class="form-row gap" style="margin-top:1rem;">
+                  <div class="field"><label>Nome do destinatário <span class="req">*</span></label><input type="text" id="end-nome" placeholder="Nome completo"></div>
+                  <div class="field"><label>CPF ou Telefone <span class="req">*</span></label><input type="text" id="end-cpf" placeholder="000.000.000-00 ou (41) 99999-9999"></div>
+                </div>
+                <div class="form-row gap">
+                  <div class="field"><label>CEP <span class="req">*</span></label><input type="text" id="end-cep" placeholder="00000-000" oninput="buscaCep(this.value)"></div>
+                  <div class="field"><label>Rua / Av. <span class="req">*</span></label><input type="text" id="end-rua" placeholder="Rua..."></div>
+                </div>
+                <div class="form-row gap">
+                  <div class="field"><label>Número <span class="req">*</span></label><input type="text" id="end-num" placeholder="Nº"></div>
+                  <div class="field"><label>Complemento</label><input type="text" id="end-comp" placeholder="Apto, Bloco..."></div>
+                </div>
+                <div class="form-row gap">
+                  <div class="field"><label>Cidade <span class="req">*</span></label><input type="text" id="end-cidade" placeholder="Cidade"></div>
+                  <div class="field"><label>Estado <span class="req">*</span></label>
+                    <select id="end-estado">
+                      <option value="">UF...</option>
+                      <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="form-row full gap"><div class="field"><label>Título do chamado <span class="req">*</span></label><input type="text" id="titulo" required placeholder="Descreva brevemente..."></div></div>
           <div class="form-row full gap"><div class="field"><label>Descrição detalhada <span class="req">*</span></label><textarea id="descricao" required placeholder="Detalhe: o que aconteceu, onde está, desde quando, qual o impacto..."></textarea></div></div>
           <div class="form-row gap">
@@ -588,6 +643,18 @@
     localStorage.setItem('lc_tc', tc);
     const id = 'LOG-' + String(tc).padStart(4,'0');
     const plats = [...document.querySelectorAll('input[name="plataforma"]:checked')].map(i => i.value);
+    const itensBrinde = [...document.querySelectorAll('input[name="brinde_item"]:checked')].map(i => i.value);
+    const entrega = document.querySelector('input[name="entrega"]:checked');
+    const enderecoEnvio = entrega?.value === 'Envio pelos Correios' ? {
+      nome: document.getElementById('end-nome').value,
+      cpf_tel: document.getElementById('end-cpf').value,
+      cep: document.getElementById('end-cep').value,
+      rua: document.getElementById('end-rua').value,
+      numero: document.getElementById('end-num').value,
+      complemento: document.getElementById('end-comp').value,
+      cidade: document.getElementById('end-cidade').value,
+      estado: document.getElementById('end-estado').value,
+    } : null;
     const user = auth.currentUser;
     try {
       await addDoc(collection(db, 'tickets'), {
@@ -598,6 +665,9 @@
         titulo: document.getElementById('titulo').value, descricao: document.getElementById('descricao').value,
         prioridade: prio.value, data_desejada: document.getElementById('data-desejada').value,
         plataformas: plats.join(', '), status: 'Aberto', data_abertura: serverTimestamp(),
+        itens_brinde: itensBrinde.join(', '),
+        tipo_entrega: entrega?.value || '',
+        endereco_envio: enderecoEnvio,
         historico: [{ acao: 'Chamado aberto', data: new Date().toISOString(), usuario: document.getElementById('nome').value }]
       });
       document.getElementById('ticket-num').textContent = '#' + id;
@@ -633,7 +703,7 @@ const CATS = {
   infraestrutura:{ icon:'🪑', title:'Infraestrutura', sub:'Móveis, equipamentos, espaço físico', attach:true, note:'Foto do problema obrigatória', lbl:'Foto do problema *' },
   limpeza:       { icon:'🧹', title:'Limpeza e Conservação', sub:'Copa, banheiros, áreas externas e dedetização', attach:false },
   seguranca:     { icon:'🔐', title:'Segurança e Acesso', sub:'Crachás, chaves, câmeras, visitantes e prestadores', attach:true, note:'Documento de aprovação (se aplicável)', lbl:'Documento de aprovação' },
-  brindes:       { icon:'🎁', title:'Gestão de Brindes', sub:'Solicitação, personalização, estoque e distribuição', attach:true, note:'Envie o briefing ou planilha com a solicitação', lbl:'Briefing / Planilha *' },
+  brindes:       { icon:'🎁', title:'Gestão de Brindes', sub:'Solicitação de brindes corporativos', attach:false },
   suprimentos:   { icon:'📦', title:'Suprimentos de Escritório', sub:'Papel, material, café, higiene', attach:false },
   plataformas:   { icon:'📱', title:'Acesso a Plataformas', sub:'Uber e Onfly corporativo', attach:true, note:'Aprovação do gestor direto obrigatória', lbl:'Aprovação do gestor *' },
 };
@@ -676,11 +746,61 @@ function onCatChange(forceCat) {
     SUBS[cat].forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sub.appendChild(o);});
   }
   document.getElementById('plat-section').style.display=cat==='plataformas'?'block':'none';
+  document.getElementById('brinde-section').style.display=cat==='brindes'?'block':'none';
+  if(cat==='brindes'){
+    document.getElementById('titulo').value='Solicitação de Brinde';
+    updateItensBrinde(document.getElementById('departamento').value);
+  } else if(document.getElementById('titulo').value==='Solicitação de Brinde'){
+    document.getElementById('titulo').value='';
+  }
   const aw=document.getElementById('attach-wrap');
   if(cfg&&cfg.attach){aw.style.display='block';document.getElementById('attach-lbl').textContent=cfg.lbl;document.getElementById('attach-note').textContent=cfg.note||'';}
   else{aw.style.display='none';}
 }
 function onFile(input){document.getElementById('file-name').textContent=input.files[0]?'✓ '+input.files[0].name:'';}
+
+const ITENS_COMERCIAL = ['Mini agenda','Garrafa','Sacola preta','Caneta'];
+const ITENS_CS = ['Container branco','Container preto','Container roxo','Container laranja','Garrafa preta','Garrafa branca','Moleskine','Copo egg branco','Copo egg preto','Caneta','Tapa câmera','Sacola preta'];
+
+function updateItensBrinde(dept) {
+  const grid = document.getElementById('itens-brinde-grid');
+  const semItens = document.getElementById('brinde-sem-itens');
+  let itens = [];
+  if (dept && dept.toUpperCase().includes('COMERCIAL')) itens = ITENS_COMERCIAL;
+  else if (dept && dept.toUpperCase().includes('CS ')) itens = ITENS_CS;
+  if (!itens.length) {
+    grid.innerHTML = '';
+    grid.style.display = 'none';
+    semItens.style.display = 'block';
+    return;
+  }
+  grid.style.display = 'grid';
+  semItens.style.display = 'none';
+  grid.innerHTML = itens.map((item, i) => `
+    <div class="item-brinde">
+      <input type="checkbox" id="brinde-item-${i}" name="brinde_item" value="${item}">
+      <label for="brinde-item-${i}">${item}</label>
+    </div>`).join('');
+}
+
+function onEntregaChange() {
+  const envio = document.getElementById('entrega-envio').checked;
+  document.getElementById('endereco-section').style.display = envio ? 'block' : 'none';
+}
+
+async function buscaCep(cep) {
+  cep = cep.replace(/\D/g,'');
+  if (cep.length !== 8) return;
+  try {
+    const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const d = await r.json();
+    if (!d.erro) {
+      document.getElementById('end-rua').value = d.logradouro || '';
+      document.getElementById('end-cidade').value = d.localidade || '';
+      document.getElementById('end-estado').value = d.uf || '';
+    }
+  } catch(e) {}
+}
 function resetForm(){
   document.getElementById('ticket-form').reset();
   document.getElementById('file-name').textContent='';
@@ -702,6 +822,11 @@ function resetForm(){
   document.getElementById('fb-success').style.display='none';
   window.scrollTo({top:0,behavior:'smooth'});
 }
+document.getElementById('departamento').addEventListener('change', function() {
+  if(document.getElementById('categoria').value === 'brindes') {
+    updateItensBrinde(this.value);
+  }
+});
 document.getElementById('data-desejada').min=new Date().toISOString().split('T')[0];
 </script>
 </body>
