@@ -771,6 +771,25 @@
     document.getElementById('d-desc').textContent = t.descricao;
     const pr = document.getElementById('d-plat-row');
     if (t.plataformas) { pr.style.display='block'; document.getElementById('d-plat').textContent=t.plataformas; } else { pr.style.display='none'; }
+
+    // Brinde details
+    let brindeSec = document.getElementById('d-brinde-row');
+    if (!brindeSec) {
+      brindeSec = document.createElement('div');
+      brindeSec.id = 'd-brinde-row';
+      brindeSec.style.gridColumn = '1/-1';
+      pr.parentNode.insertBefore(brindeSec, pr.nextSibling);
+    }
+    if (t.itens_brinde || t.tipo_entrega) {
+      brindeSec.innerHTML = `
+        ${t.itens_brinde ? `<div class="detail-item" style="grid-column:1/-1"><label>Itens solicitados</label><p>${t.itens_brinde}</p></div>` : ''}
+        ${t.tipo_entrega ? `<div class="detail-item"><label>Tipo de entrega</label><p>${t.tipo_entrega}</p></div>` : ''}
+        ${t.endereco_envio ? `<div class="detail-item" style="grid-column:1/-1"><label>Endereço de envio</label><p>${t.endereco_envio.nome} · CPF/Tel: ${t.endereco_envio.cpf_tel}<br>${t.endereco_envio.rua}, ${t.endereco_envio.numero} ${t.endereco_envio.complemento || ''}<br>${t.endereco_envio.cidade}/${t.endereco_envio.estado} · CEP: ${t.endereco_envio.cep}</p></div>` : ''}
+      `;
+      brindeSec.style.display = 'contents';
+    } else {
+      brindeSec.style.display = 'none';
+    }
     const statuses = ['Aberto','Em andamento','Aguardando aprovação','Concluído','Cancelado'];
     document.getElementById('status-btns').innerHTML = statuses.map(s => `<button class="status-btn ${t.status===s?'active-s':''}" onclick="updS('${s}')">${s}</button>`).join('');
     renderHist(t.historico||[]);
