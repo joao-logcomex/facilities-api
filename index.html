@@ -653,7 +653,7 @@
     const prio = document.querySelector('input[name="prioridade"]:checked');
     if (!prio) { alert('Selecione uma prioridade.'); return; }
     const cat = document.getElementById('categoria').value;
-    const needsAttach = ['infraestrutura','seguranca','brindes','plataformas'];
+    const needsAttach = ['infraestrutura','seguranca','plataformas'];
     if (needsAttach.includes(cat) && !document.getElementById('anexo').files[0]) {
       alert('Este tipo de chamado requer um anexo.'); return;
     }
