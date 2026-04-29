@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Histórico Pipefy · Facilities LogComex</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple: #6613D0; --purple-dark: #4e0fa0; --purple-light: #f3eaff; --purple-mid: #c9a0ff;
+    --orange: #FE8F1C; --black: #0B0D19;
+    --ink: #1a1d2e; --ink2: #4a4d60; --ink3: #8e91a8;
+    --surface: #ffffff; --surface2: #f8f7fc; --surface3: #eeeaf8;
+    --border: rgba(102,19,208,0.1);
+    --success: #12b76a; --success-bg: #e8f8ef;
+    --warning: #d97706; --warning-bg: #fffbeb;
+    --danger: #ef4444; --danger-bg: #fef2f2;
+    --info: #0ea5e9; --info-bg: #e0f2fe;
+    --radius: 12px; --radius-sm: 8px; --sidebar: 240px;
+  }
+  html, body { height: 100%; }
+  body { font-family: 'Space Grotesk', sans-serif; background: var(--surface2); color: var(--ink); display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar { width: var(--sidebar); background: var(--black); height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; padding: 1.5rem 1rem; z-index: 50; }
+  .sb-logo { display: flex; align-items: center; gap: 10px; padding: 0 0.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 1.2rem; }
+  .sb-logo-text { font-weight: 700; font-size: 0.9rem; color: #fff; letter-spacing: -0.02em; }
+  .sb-logo-sub { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 1px; }
+  .sb-nav { flex: 1; }
+  .sb-section { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.22); padding: 0 0.5rem; margin: 1.2rem 0 0.5rem; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: var(--radius-sm); color: rgba(255,255,255,0.45); font-size: 0.87rem; cursor: pointer; transition: all 0.15s; text-decoration: none; font-weight: 500; }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
+  .nav-item.active { background: rgba(102,19,208,0.25); color: var(--purple-mid); }
+  .sb-footer { border-top: 1px solid rgba(255,255,255,0.07); padding-top: 1rem; }
+  .user-info { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(102,19,208,0.3); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; color: var(--purple-mid); }
+  .user-name { font-size: 0.83rem; font-weight: 600; color: rgba(255,255,255,0.7); }
+  .logout-btn { width: 100%; margin-top: 8px; padding: 8px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); color: rgba(255,255,255,0.35); font-size: 0.82rem; cursor: pointer; font-family: 'Space Grotesk', sans-serif; transition: all 0.15s; }
+  .logout-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.65); }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar); flex: 1; padding: 2rem; min-height: 100vh; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.8rem; flex-wrap: wrap; gap: 1rem; }
+  .page-title { font-weight: 700; font-size: 1.5rem; letter-spacing: -0.04em; }
+  .page-sub { font-size: 0.82rem; color: var(--ink3); margin-top: 2px; }
+
+  /* STATUS BADGES */
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 0.73rem; font-weight: 600; white-space: nowrap; }
+  .b-concluido { background: var(--success-bg); color: var(--success); }
+  .b-cancelado { background: var(--surface3); color: var(--ink3); }
+  .b-andamento { background: var(--warning-bg); color: var(--warning); }
+  .b-recebimento { background: var(--info-bg); color: var(--info); }
+  .b-brinde { background: #f3e8ff; color: #9333ea; }
+  .b-sugestao { background: #fff4e5; color: #e45c10; }
+
+  /* METRICS */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; position: relative; overflow: hidden; }
+  .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 2px 2px 0 0; }
+  .metric-card.green::before { background: var(--success); }
+  .metric-card.gray::before { background: var(--ink3); }
+  .metric-card.blue::before { background: var(--info); }
+  .metric-card.purple::before { background: var(--purple); }
+  .metric-card.orange::before { background: var(--orange); }
+  .metric-card.red::before { background: var(--danger); }
+  .metric-label { font-size: 0.72rem; font-weight: 600; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.5rem; }
+  .metric-value { font-weight: 700; font-size: 1.9rem; letter-spacing: -0.05em; line-height: 1; margin-bottom: 0.3rem; }
+  .metric-sub { font-size: 0.74rem; color: var(--ink3); }
+
+  /* CHARTS */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+  .charts-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 1000px) { .charts-grid, .charts-grid.three { grid-template-columns: 1fr; } }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-title { font-weight: 700; font-size: 0.9rem; color: var(--ink); margin-bottom: 0.3rem; }
+  .chart-sub { font-size: 0.75rem; color: var(--ink3); margin-bottom: 1.2rem; }
+  .chart-wrap { position: relative; height: 220px; }
+  .chart-wrap.tall { height: 280px; }
+
+  /* LOADING */
+  .loading-overlay { position: fixed; inset: 0; background: rgba(11,13,25,0.7); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; }
+  .loading-spinner { width: 48px; height: 48px; border: 4px solid rgba(102,19,208,0.3); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .loading-text { color: #fff; font-size: 0.9rem; font-family: 'Space Grotesk', sans-serif; }
+  .loading-progress { color: rgba(255,255,255,0.5); font-size: 0.8rem; font-family: 'Space Grotesk', sans-serif; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* YEAR TABS */
+  .year-tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+  .year-tab { padding: 8px 20px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--surface); font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--ink3); cursor: pointer; transition: all 0.15s; }
+  .year-tab.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .year-tab:hover:not(.active) { background: var(--purple-light); border-color: var(--purple); color: var(--purple); }
+
+  /* TABLE */
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem; }
+  .table-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .table-title { font-weight: 700; font-size: 0.9rem; }
+  .table-filters { display: flex; gap: 8px; }
+  .fi { padding: 7px 12px; border: 1.5px solid var(--surface3); border-radius: var(--radius-sm); font-family: 'Space Grotesk', sans-serif; font-size: 0.82rem; color: var(--ink); background: var(--surface2); outline: none; }
+  .fi:focus { border-color: var(--purple); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead th { padding: 10px 14px; text-align: left; font-size: 0.71rem; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.07em; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--purple-light); }
+  td { padding: 11px 14px; color: var(--ink2); vertical-align: middle; }
+  .tid { font-weight: 700; font-size: 0.77rem; color: var(--purple); }
+  .empty { text-align: center; padding: 3rem; color: var(--ink3); }
+
+  /* SLA BAR */
+  .sla-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .sla-label { font-size: 0.78rem; color: var(--ink2); font-weight: 600; width: 180px; flex-shrink: 0; }
+  .sla-track { flex: 1; height: 8px; background: var(--surface3); border-radius: 4px; overflow: hidden; }
+  .sla-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+  .sla-pct { font-size: 0.78rem; font-weight: 700; color: var(--ink2); width: 40px; text-align: right; }
+
+  /* LAST UPDATE */
+  .last-update { font-size: 0.75rem; color: var(--ink3); display: flex; align-items: center; gap: 6px; }
+  .live-dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--black); color: #fff; padding: 12px 20px; border-radius: var(--radius-sm); font-size: 0.87rem; z-index: 999; opacity: 0; transform: translateY(10px); transition: all 0.25s; pointer-events: none; border: 1px solid rgba(102,19,208,0.3); }
+  .toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">Conectando ao Pipefy...</div>
+  <div class="loading-progress" id="loading-progress">Aguarde, buscando histórico completo</div>
+</div>
+
+<aside class="sidebar">
+  <div class="sb-logo">
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="26" height="26" x="0" y="14" rx="4" fill="#ffffff"/>
+      <rect width="26" height="26" x="14" y="0" rx="4" fill="#F28C28"/>
+      <rect width="14" height="14" x="14" y="14" rx="2" fill="#0B0D19"/>
+    </svg>
+    <div><div class="sb-logo-text">Facilities</div><div class="sb-logo-sub">LogComex · Admin</div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">Principal</div>
+    <a href="admin.html" class="nav-item"><span>📊</span> Dashboard</a>
+    <a href="admin.html#kanban" class="nav-item"><span>🗂️</span> Kanban</a>
+    <a href="admin.html#chamados" class="nav-item"><span>🎫</span> Chamados</a>
+    <a href="admin.html#feedbacks" class="nav-item"><span>💡</span> Feedbacks</a>
+    <a href="admin.html#relatorio" class="nav-item"><span>🤖</span> Relatório IA</a>
+    <div class="sb-section">Histórico</div>
+    <a href="pipefy.html" class="nav-item active"><span>📈</span> Histórico Pipefy</a>
+    <div class="sb-section">Links</div>
+    <a href="index.html" class="nav-item"><span>↗</span> Formulário público</a>
+  </nav>
+  <div class="sb-footer">
+    <div class="user-info">
+      <div class="user-avatar">AD</div>
+      <div><div class="user-name">Admin</div></div>
+    </div>
+    <button class="logout-btn" onclick="window.location.href='admin.html'">← Voltar ao Admin</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">📈 Histórico Pipefy</div>
+      <div class="page-sub" id="last-update-text">Carregando dados...</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button onclick="recarregar()" style="padding:9px 18px;border-radius:var(--radius-sm);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;background:var(--surface);border:1px solid var(--border);color:var(--ink2);transition:all 0.15s;" onmouseover="this.style.background='var(--purple-light)'" onmouseout="this.style.background='var(--surface)'">🔄 Atualizar</button>
+    </div>
+  </div>
+
+  <!-- YEAR TABS -->
+  <div class="year-tabs">
+    <button class="year-tab" onclick="setAno(2025, this)">📅 2025 — Histórico</button>
+    <button class="year-tab active" onclick="setAno(2026, this)">🔴 2026 — Ao vivo</button>
+    <button class="year-tab" onclick="setAno(0, this)">📊 Todos os anos</button>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics-grid" id="metrics-grid">
+    <div class="metric-card green"><div class="metric-label">Concluídas</div><div class="metric-value" id="m-concluido">—</div><div class="metric-sub">solicitações finalizadas</div></div>
+    <div class="metric-card gray"><div class="metric-label">Canceladas</div><div class="metric-value" id="m-cancelado">—</div><div class="metric-sub">solicitações canceladas</div></div>
+    <div class="metric-card blue"><div class="metric-label">Em andamento</div><div class="metric-value" id="m-andamento">—</div><div class="metric-sub">abertas no período</div></div>
+    <div class="metric-card purple"><div class="metric-label">Total</div><div class="metric-value" id="m-total">—</div><div class="metric-sub">todas as solicitações</div></div>
+    <div class="metric-card orange"><div class="metric-label">SLA Geral</div><div class="metric-value" id="m-sla">—</div><div class="metric-sub">taxa de conclusão</div></div>
+    <div class="metric-card red"><div class="metric-label">Tempo médio</div><div class="metric-value" id="m-tempo">—</div><div class="metric-sub">horas para concluir</div></div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Solicitações por Mês</div>
+      <div class="chart-sub" id="chart-mensal-sub">Evolução mensal no período selecionado</div>
+      <div class="chart-wrap tall"><canvas id="chart-mensal"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Distribuição por Tipo</div>
+      <div class="chart-sub">Categorias de solicitação</div>
+      <div class="chart-wrap"><canvas id="chart-tipo"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Status das Solicitações</div>
+      <div class="chart-sub">Concluídas vs Canceladas vs Em andamento</div>
+      <div class="chart-wrap"><canvas id="chart-status"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">SLA por Tipo de Solicitação</div>
+      <div class="chart-sub">Taxa de conclusão por categoria</div>
+      <div id="sla-bars-container" style="padding-top:0.5rem;"></div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">Todas as solicitações <span id="table-count" style="color:var(--ink3);font-weight:400;font-size:0.82rem;"></span></div>
+      <div class="table-filters">
+        <input type="text" class="fi" id="search-tb" placeholder="🔍 Buscar..." oninput="renderTabela()" style="width:200px;">
+        <select class="fi" id="f-tipo" onchange="renderTabela()">
+          <option value="">Todos os tipos</option>
+        </select>
+        <select class="fi" id="f-status-tb" onchange="renderTabela()">
+          <option value="">Todos os status</option>
+          <option value="Solicitações concluídas">Concluídas</option>
+          <option value="Solicitações Canceladas">Canceladas</option>
+          <option value="Em andamento">Em andamento</option>
+        </select>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Solicitante</th>
+            <th>Tipo</th>
+            <th>Status</th>
+            <th>Aberto em</th>
+            <th>Concluído em</th>
+            <th>Tempo</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-body"></tbody>
+      </table>
+    </div>
+    <div style="padding:0.75rem 1rem;font-size:0.78rem;color:var(--ink3);border-top:1px solid var(--border);" id="tabela-pagination"></div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Configuração via proxy Vercel (/api/pipefy)
+
+// Todas as fases do pipe com seus status
+const FASES = [
+  { id: '326115156', nome: 'Solicitações concluídas', status: 'concluido' },
+  { id: '326115157', nome: 'Solicitações Canceladas', status: 'cancelado' },
+  { id: '333580091', nome: 'Recebimento de Encomendas', status: 'andamento' },
+  { id: '326115150', nome: 'Manutenção', status: 'andamento' },
+  { id: '326115158', nome: 'Acessos', status: 'andamento' },
+  { id: '326115151', nome: 'Suprimentos de escritório', status: 'andamento' },
+  { id: '326431237', nome: 'Brinde', status: 'andamento' },
+  { id: '328355056', nome: 'Brinde Comercial', status: 'andamento' },
+  { id: '326453470', nome: 'Brinde Coleta', status: 'andamento' },
+  { id: '326518140', nome: 'Elogios ou Sugestões', status: 'andamento' },
+  { id: '326115149', nome: 'Solicitações', status: 'andamento' },
+  { id: '328355169', nome: 'Aprovação Gestor CS', status: 'andamento' },
+  { id: '327962192', nome: 'Emprestimo', status: 'andamento' },
+];
+
+let todosCards = [];
+let anoAtivo = 2026;
+let charts = {};
+let paginaAtual = 0;
+const POR_PAGINA = 50;
+
+async function pipefy(query) {
+  const r = await fetch('/api/pipefy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query })
+  });
+  return r.json();
+}
+
+async function buscarCardsFase(faseId, faseNome, faseStatus) {
+  let cards = [];
+  let cursor = null;
+  let pagina = 0;
+  const MAX_PAGINAS = 100;
+
+  while (pagina < MAX_PAGINAS) {
+    const afterClause = cursor ? `, after: "${cursor}"` : '';
+    const query = `{ phase(id: "${faseId}") { cards(first: 50${afterClause}) { edges { node { id title created_at finished_at fields { name value } } } pageInfo { hasNextPage endCursor } } } }`;
+
+    const data = await pipefy(query);
+    const phase = data?.data?.phase;
+    if (!phase) break;
+
+    const edges = phase.cards.edges;
+    for (const edge of edges) {
+      const node = edge.node;
+      const tipo = node.fields.find(f => f.name === 'Tipo de solicitação')?.value || faseNome;
+      cards.push({
+        id: node.id,
+        titulo: node.title,
+        tipo,
+        fase: faseNome,
+        status: faseStatus,
+        created_at: node.created_at,
+        finished_at: node.finished_at,
+      });
+    }
+
+    if (!phase.cards.pageInfo.hasNextPage) break;
+    cursor = phase.cards.pageInfo.endCursor;
+    pagina++;
+  }
+  return cards;
+}
+
+async function carregarTudo() {
+  document.getElementById('loading-overlay').style.display = 'flex';
+  todosCards = [];
+
+  for (let i = 0; i < FASES.length; i++) {
+    const fase = FASES[i];
+    document.getElementById('loading-text').textContent = `Buscando: ${fase.nome}...`;
+    document.getElementById('loading-progress').textContent = `${i + 1} de ${FASES.length} fases — ${todosCards.length} cards carregados`;
+
+    try {
+      const cards = await buscarCardsFase(fase.id, fase.nome, fase.status);
+      todosCards.push(...cards);
+    } catch (e) {
+      console.warn(`Erro na fase ${fase.nome}:`, e);
+    }
+  }
+
+  document.getElementById('loading-overlay').style.display = 'none';
+  document.getElementById('last-update-text').innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><span class="live-dot" style="display:inline-block;width:7px;height:7px;background:var(--success);border-radius:50%;animation:pulse 2s infinite;"></span> ${todosCards.length} solicitações carregadas · Atualizado às ${new Date().toLocaleTimeString('pt-BR')}</span>`;
+
+  // Popula filtro de tipos
+  const tipos = [...new Set(todosCards.map(c => c.tipo).filter(Boolean))].sort();
+  const sel = document.getElementById('f-tipo');
+  sel.innerHTML = '<option value="">Todos os tipos</option>';
+  tipos.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o); });
+
+  renderTudo();
+  showToast(`✅ ${todosCards.length} solicitações carregadas do Pipefy!`);
+}
+
+function filtrarPorAno(cards, ano) {
+  if (ano === 0) return cards;
+  return cards.filter(c => {
+    const d = new Date(c.created_at);
+    return d.getFullYear() === ano;
+  });
+}
+
+function setAno(ano, el) {
+  anoAtivo = ano;
+  document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  paginaAtual = 0;
+  renderTudo();
+}
+
+function renderTudo() {
+  const cards = filtrarPorAno(todosCards, anoAtivo);
+  renderMetrics(cards);
+  renderChartMensal(cards);
+  renderChartTipo(cards);
+  renderChartStatus(cards);
+  renderSLABars(cards);
+  renderTabela();
+}
+
+function renderMetrics(cards) {
+  const concluidos = cards.filter(c => c.status === 'concluido').length;
+  const cancelados = cards.filter(c => c.status === 'cancelado').length;
+  const andamento = cards.filter(c => c.status === 'andamento').length;
+  const total = cards.length;
+  const sla = total > 0 ? Math.round((concluidos / (concluidos + cancelados)) * 100) || 0 : 0;
+
+  // Tempo médio em horas
+  const comTempo = cards.filter(c => c.status === 'concluido' && c.created_at && c.finished_at);
+  let tempoMedio = '—';
+  if (comTempo.length > 0) {
+    const soma = comTempo.reduce((acc, c) => {
+      const diff = new Date(c.finished_at) - new Date(c.created_at);
+      return acc + diff;
+    }, 0);
+    const horas = Math.round(soma / comTempo.length / 1000 / 3600);
+    tempoMedio = horas < 24 ? `${horas}h` : `${Math.round(horas/24)}d`;
+  }
+
+  document.getElementById('m-concluido').textContent = concluidos.toLocaleString('pt-BR');
+  document.getElementById('m-cancelado').textContent = cancelados.toLocaleString('pt-BR');
+  document.getElementById('m-andamento').textContent = andamento.toLocaleString('pt-BR');
+  document.getElementById('m-total').textContent = total.toLocaleString('pt-BR');
+  document.getElementById('m-sla').textContent = sla + '%';
+  document.getElementById('m-tempo').textContent = tempoMedio;
+}
+
+function renderChartMensal(cards) {
+  const meses = {};
+  cards.forEach(c => {
+    const d = new Date(c.created_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!meses[key]) meses[key] = { concluido: 0, cancelado: 0, andamento: 0 };
+    meses[key][c.status]++;
+  });
+
+  const labels = Object.keys(meses).sort();
+  const labelsFmt = labels.map(k => {
+    const [y, m] = k.split('-');
+    return new Date(y, m-1).toLocaleString('pt-BR', { month: 'short', year: '2-digit' });
+  });
+
+  if (charts.mensal) charts.mensal.destroy();
+  charts.mensal = new Chart(document.getElementById('chart-mensal').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: labelsFmt,
+      datasets: [
+        { label: 'Concluídas', data: labels.map(k => meses[k].concluido), backgroundColor: '#12b76a', borderRadius: 4, borderSkipped: false },
+        { label: 'Canceladas', data: labels.map(k => meses[k].cancelado), backgroundColor: '#8e91a8', borderRadius: 4, borderSkipped: false },
+        { label: 'Em andamento', data: labels.map(k => meses[k].andamento), backgroundColor: '#6613D0', borderRadius: 4, borderSkipped: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { family: 'Space Grotesk', size: 11 }, padding: 12 } } },
+      scales: {
+        x: { stacked: true, ticks: { font: { family: 'Space Grotesk', size: 10 } }, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' } }
+      }
+    }
+  });
+}
+
+function renderChartTipo(cards) {
+  const tipos = {};
+  cards.forEach(c => { tipos[c.tipo] = (tipos[c.tipo]||0)+1; });
+  const sorted = Object.entries(tipos).sort((a,b)=>b[1]-a[1]).slice(0, 8);
+
+  if (charts.tipo) charts.tipo.destroy();
+  charts.tipo = new Chart(document.getElementById('chart-tipo').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: sorted.map(x => x[0]),
+      datasets: [{ data: sorted.map(x => x[1]), backgroundColor: ['#6613D0','#FE8F1C','#12b76a','#0ea5e9','#f59e0b','#ef4444','#8b5cf6','#8e91a8'], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { font: { family: 'Space Grotesk', size: 10 }, padding: 8 } } }
+    }
+  });
+}
+
+function renderChartStatus(cards) {
+  const concluidos = cards.filter(c => c.status === 'concluido').length;
+  const cancelados = cards.filter(c => c.status === 'cancelado').length;
+  const andamento = cards.filter(c => c.status === 'andamento').length;
+
+  if (charts.status) charts.status.destroy();
+  charts.status = new Chart(document.getElementById('chart-status').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: ['Concluídas', 'Canceladas', 'Em andamento'],
+      datasets: [{ data: [concluidos, cancelados, andamento], backgroundColor: ['#12b76a', '#8e91a8', '#6613D0'], borderRadius: 8, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { ticks: { font: { family: 'Space Grotesk', size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderSLABars(cards) {
+  const tipos = {};
+  cards.forEach(c => {
+    if (!tipos[c.tipo]) tipos[c.tipo] = { total: 0, concluido: 0 };
+    tipos[c.tipo].total++;
+    if (c.status === 'concluido') tipos[c.tipo].concluido++;
+  });
+
+  const sorted = Object.entries(tipos).sort((a,b) => b[1].total - a[1].total).slice(0, 7);
+  const colors = ['#12b76a','#6613D0','#0ea5e9','#f59e0b','#FE8F1C','#8b5cf6','#ef4444'];
+
+  document.getElementById('sla-bars-container').innerHTML = sorted.map(([tipo, d], i) => {
+    const pct = d.total > 0 ? Math.round((d.concluido / d.total) * 100) : 0;
+    return `<div class="sla-row">
+      <div class="sla-label" title="${tipo}">${tipo.length > 22 ? tipo.substring(0,20)+'…' : tipo}</div>
+      <div class="sla-track"><div class="sla-fill" style="width:${pct}%;background:${colors[i % colors.length]};"></div></div>
+      <div class="sla-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTabela() {
+  const search = document.getElementById('search-tb').value.toLowerCase();
+  const fTipo = document.getElementById('f-tipo').value;
+  const fStatus = document.getElementById('f-status-tb').value;
+
+  let cards = filtrarPorAno(todosCards, anoAtivo).filter(c => {
+    if (fTipo && c.tipo !== fTipo) return false;
+    if (fStatus) {
+      if (fStatus === 'Em andamento' && c.status !== 'andamento') return false;
+      if (fStatus === 'Solicitações concluídas' && c.status !== 'concluido') return false;
+      if (fStatus === 'Solicitações Canceladas' && c.status !== 'cancelado') return false;
+    }
+    if (search && !`${c.titulo} ${c.tipo} ${c.fase}`.toLowerCase().includes(search)) return false;
+    return true;
+  }).sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+  document.getElementById('table-count').textContent = `— ${cards.length} registros`;
+
+  const inicio = paginaAtual * POR_PAGINA;
+  const pagina = cards.slice(inicio, inicio + POR_PAGINA);
+
+  const statusLabel = { concluido: '<span class="badge b-concluido">Concluída</span>', cancelado: '<span class="badge b-cancelado">Cancelada</span>', andamento: '<span class="badge b-andamento">Em andamento</span>' };
+
+  const tbody = document.getElementById('tabela-body');
+  tbody.innerHTML = pagina.length ? pagina.map(c => {
+    const dt = c.created_at ? new Date(c.created_at).toLocaleDateString('pt-BR') : '—';
+    const dtFim = c.finished_at ? new Date(c.finished_at).toLocaleDateString('pt-BR') : '—';
+    let tempo = '—';
+    if (c.created_at && c.finished_at) {
+      const h = Math.round((new Date(c.finished_at) - new Date(c.created_at)) / 1000 / 3600);
+      tempo = h < 24 ? `${h}h` : `${Math.round(h/24)}d`;
+    }
+    return `<tr>
+      <td><span class="tid">#${c.id}</span></td>
+      <td style="font-weight:500;color:var(--ink);">${c.titulo || '—'}</td>
+      <td style="font-size:0.8rem;">${c.tipo || '—'}</td>
+      <td>${statusLabel[c.status] || c.status}</td>
+      <td style="font-size:0.78rem;color:var(--ink3);">${dt}</td>
+      <td style="font-size:0.78rem;color:var(--ink3);">${dtFim}</td>
+      <td style="font-size:0.78rem;font-weight:600;color:var(--ink2);">${tempo}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7"><div class="empty">🔍 Nenhuma solicitação encontrada</div></td></tr>';
+
+  // Paginação
+  const totalPaginas = Math.ceil(cards.length / POR_PAGINA);
+  const pag = document.getElementById('tabela-pagination');
+  if (totalPaginas > 1) {
+    pag.innerHTML = `Página ${paginaAtual+1} de ${totalPaginas} &nbsp;
+      <button onclick="irPagina(${paginaAtual-1})" ${paginaAtual===0?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'Space Grotesk',sans-serif;">← Anterior</button>
+      <button onclick="irPagina(${paginaAtual+1})" ${paginaAtual>=totalPaginas-1?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'Space Grotesk',sans-serif;">Próxima →</button>`;
+  } else {
+    pag.innerHTML = '';
+  }
+}
+
+function irPagina(p) {
+  paginaAtual = p;
+  renderTabela();
+  document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+function recarregar() {
+  todosCards = [];
+  carregarTudo();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Inicia
+carregarTudo();
+
+// Auto-refresh a cada 5 minutos
+setInterval(() => { carregarTudo(); }, 5 * 60 * 1000);
+</script>
+</body>
+</html>
