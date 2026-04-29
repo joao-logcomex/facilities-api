@@ -129,6 +129,8 @@
   .form-note { font-size: 0.78rem; color: var(--ink3); max-width: 340px; line-height: 1.5; }
   .btn-submit { background: var(--purple); color: #fff; border: none; padding: 13px 32px; border-radius: var(--radius-sm); font-family: 'Space Grotesk', sans-serif; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.18s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(102,19,208,0.3); }
   .btn-submit:hover { background: var(--purple-dark); transform: translateY(-1px); }
+
+  /* FEEDBACK SHELL */
   .feedback-shell { background: linear-gradient(135deg, #0B0D19 0%, #1a0a3a 100%); border-radius: var(--radius-lg); padding: 2rem; position: relative; overflow: hidden; }
   .feedback-shell::before { content: ''; position: absolute; top: -60px; right: -40px; width: 200px; height: 200px; background: radial-gradient(ellipse, rgba(102,19,208,0.4) 0%, transparent 70%); pointer-events: none; }
   .fb-header { display: flex; gap: 14px; margin-bottom: 1.5rem; position: relative; z-index: 1; }
@@ -154,6 +156,11 @@
   .fb-success .fs-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
   .fb-success h3 { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem; }
   .fb-success p { color: rgba(255,255,255,0.4); font-size: 0.85rem; }
+
+  /* FEEDBACK VIA SLACK - banner destacado */
+  .fb-chamado-banner { background: rgba(254,143,28,0.12); border: 1px solid rgba(254,143,28,0.3); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 1.2rem; font-size: 0.83rem; color: var(--orange); line-height: 1.5; position: relative; z-index: 1; }
+  .fb-chamado-banner strong { color: #fff; }
+
   .success-screen { display: none; text-align: center; padding: 4rem 2rem; max-width: 500px; margin: 3rem auto; }
   .success-icon { width: 80px; height: 80px; background: var(--purple-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2.2rem; border: 3px solid var(--purple-mid); }
   .success-screen h2 { font-weight: 700; font-size: 1.7rem; margin-bottom: 0.75rem; letter-spacing: -0.04em; }
@@ -224,7 +231,7 @@
   </div>
 </div>
 
-<!-- CHANGE PASSWORD (admins only) -->
+<!-- CHANGE PASSWORD -->
 <div class="auth-screen" id="change-pass-screen">
   <div class="auth-box">
     <div class="auth-logo"><div class="auth-logo-mark"></div><span class="auth-logo-text">LogComex</span></div>
@@ -260,12 +267,10 @@
   <div class="content" id="main-content">
     <div class="section-label" id="cat-label">Selecione a categoria</div>
 
-    <!-- MEUS CHAMADOS -->
     <button class="meus-chamados-btn" id="btn-meus-chamados" onclick="toggleMeusChamados()">
       📋 Ver meus chamados
     </button>
 
-    <!-- TELA MEUS CHAMADOS -->
     <div class="meus-chamados-screen" id="meus-chamados-screen">
       <div class="mc-header">
         <div class="mc-title">Meus chamados</div>
@@ -275,6 +280,7 @@
         <div class="mc-empty"><div>📭</div><p>Carregando...</p></div>
       </div>
     </div>
+
     <div class="cat-grid" id="category-grid">
       <div class="cat-card" data-cat="manutencao" onclick="selectCat(this)"><span class="cat-icon">🔧</span><span class="cat-name">Manutenção</span></div>
       <div class="cat-card" data-cat="infraestrutura" onclick="selectCat(this)"><span class="cat-icon">🪑</span><span class="cat-name">Infraestrutura</span><span class="cat-attach-dot">📎</span></div>
@@ -296,7 +302,17 @@
 
         <div id="gestao-form" class="conditional">
           <div class="feedback-shell">
-            <div class="fb-header" id="fb-header"><div class="fb-icon-wrap">💡</div><div><div class="fb-title">Gestão &amp; Melhoria</div><div class="fb-sub">Sua opinião molda o LogComex.</div></div></div>
+            <div class="fb-header" id="fb-header">
+              <div class="fb-icon-wrap">💡</div>
+              <div>
+                <div class="fb-title" id="fb-title">Gestão &amp; Melhoria</div>
+                <div class="fb-sub" id="fb-subtitle">Sua opinião molda o LogComex.</div>
+              </div>
+            </div>
+            <!-- Banner mostrado quando vem do Slack com ?feedback=LOG-XXXX -->
+            <div class="fb-chamado-banner" id="fb-chamado-banner" style="display:none;">
+              ⭐ Você está avaliando o atendimento do chamado <strong id="fb-chamado-id"></strong>. Sua resposta vai direto para nossa equipe!
+            </div>
             <div class="fb-form" id="fb-form">
               <div class="ftype-grid">
                 <div><input type="radio" name="fbt" id="ft-critica" value="Crítica" class="ftype-input"><label class="ftype-label" for="ft-critica"><span class="fi">⚡</span>Crítica</label></div>
@@ -352,7 +368,6 @@
               </div>
             </div>
           </div>
-          <!-- BRINDES ESPECIAL -->
           <div id="brinde-section" style="display:none;">
             <div class="brinde-section">
               <div class="brinde-section-title">🎁 Selecione os itens</div>
@@ -461,7 +476,6 @@
     if (user) {
       const isAdmin = ADMINS.includes(user.email);
       if (isAdmin) {
-        // Check Firestore if admin already changed password
         const flagRef = doc(db, 'admin_flags', user.uid);
         const flagSnap = await getDoc(flagRef);
         const passChanged = flagSnap.exists() && flagSnap.data().passwordChanged === true;
@@ -473,6 +487,41 @@
         }
       }
       showApp(user, isAdmin);
+
+      // ── DETECTA ?feedback=LOG-XXXX NA URL ──
+      const params = new URLSearchParams(window.location.search);
+      const feedbackTicket = params.get('feedback');
+      if (feedbackTicket) {
+        // Abre automaticamente o formulário de feedback com o chamado vinculado
+        setTimeout(() => {
+          const gestaoCard = document.querySelector('[data-cat="gestao"]');
+          if (gestaoCard) selectCat(gestaoCard);
+
+          // Mostra banner com o número do chamado
+          document.getElementById('fb-chamado-id').textContent = feedbackTicket;
+          document.getElementById('fb-chamado-banner').style.display = 'block';
+
+          // Preenche o assunto automaticamente
+          document.getElementById('fb-assunto').value = `Avaliação do chamado ${feedbackTicket}`;
+
+          // Muda título do formulário
+          document.getElementById('fb-title').textContent = '⭐ Avaliar atendimento';
+          document.getElementById('fb-subtitle').textContent = `Chamado ${feedbackTicket} — Como foi o atendimento?`;
+
+          // Seleciona "Elogio" por padrão (pode ser alterado)
+          document.getElementById('ft-elogio').checked = true;
+
+          // Scroll suave até o formulário
+          setTimeout(() => {
+            document.getElementById('form-wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 300);
+
+          // Limpa o parâmetro da URL sem recarregar
+          window.history.replaceState({}, '', window.location.pathname);
+        }, 300);
+      }
+      // ───────────────────────────────────────
+
     } else {
       document.getElementById('login-screen').style.display = 'flex';
       document.getElementById('change-pass-screen').style.display = 'none';
@@ -500,28 +549,21 @@
     const pass = document.getElementById('login-pass').value;
     const errEl = document.getElementById('login-error');
     errEl.style.display = 'none';
-
     if (!email.endsWith('@logcomex.com')) {
       errEl.textContent = 'Apenas e-mails @logcomex.com têm acesso.';
       errEl.style.display = 'block';
       return;
     }
-
     try {
-      // Try to login first
       await signInWithEmailAndPassword(auth, email, pass);
     } catch(e) {
       if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
-        // User doesn't exist — create automatically for @logcomex.com
         try {
           await createUserWithEmailAndPassword(auth, email, pass);
         } catch(e2) {
           errEl.textContent = 'Erro ao criar conta. Verifique o e-mail e tente novamente.';
           errEl.style.display = 'block';
         }
-      } else if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-        errEl.textContent = 'Senha incorreta.';
-        errEl.style.display = 'block';
       } else {
         errEl.textContent = 'E-mail ou senha incorretos.';
         errEl.style.display = 'block';
@@ -540,7 +582,6 @@
     try {
       const user = auth.currentUser;
       await updatePassword(user, newPass);
-      // Save flag to Firestore so it persists across devices
       await setDoc(doc(db, 'admin_flags', user.uid), { passwordChanged: true, email: user.email, changedAt: new Date().toISOString() });
       showApp(user, true);
     } catch(e) {
@@ -706,14 +747,24 @@
     const tipo = document.querySelector('input[name="fbt"]:checked');
     const anon = document.getElementById('fb-anon').checked;
     const user = auth.currentUser;
+
+    // Verifica se é feedback de avaliação de chamado
+    const chamadoRef = document.getElementById('fb-chamado-id').textContent;
+
     try {
       await addDoc(collection(db, 'feedbacks'), {
-        tipo: tipo ? tipo.value : 'Geral', assunto: document.getElementById('fb-assunto').value,
-        texto, anon, nome: anon ? 'Anônimo' : user.email, userId: anon ? null : user.uid,
+        tipo: tipo ? tipo.value : 'Geral',
+        assunto: document.getElementById('fb-assunto').value,
+        texto,
+        anon,
+        nome: anon ? 'Anônimo' : user.email,
+        userId: anon ? null : user.uid,
+        chamado_ref: chamadoRef || null,  // vínculo com o chamado avaliado
         data: serverTimestamp()
       });
       document.getElementById('fb-form').style.display = 'none';
       document.getElementById('fb-header').style.display = 'none';
+      document.getElementById('fb-chamado-banner').style.display = 'none';
       document.getElementById('fb-success').style.display = 'block';
     } catch(err) { alert('Erro ao enviar feedback. Tente novamente.'); }
   };
@@ -843,6 +894,10 @@ function resetForm(){
   document.getElementById('fb-form').style.display='block';
   document.getElementById('fb-header').style.display='flex';
   document.getElementById('fb-success').style.display='none';
+  document.getElementById('fb-chamado-banner').style.display='none';
+  document.getElementById('fb-chamado-id').textContent='';
+  document.getElementById('fb-title').textContent='Gestão & Melhoria';
+  document.getElementById('fb-subtitle').textContent='Sua opinião molda o LogComex.';
   window.scrollTo({top:0,behavior:'smooth'});
 }
 document.getElementById('departamento').addEventListener('change', function() {
