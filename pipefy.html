@@ -214,8 +214,8 @@
       <div class="chart-wrap tall"><canvas id="chart-mensal"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-title">SLA por Mês — Quantidade</div>
-      <div class="chart-sub">Solicitações dentro e fora do prazo por mês</div>
+      <div class="chart-title">SLA % por Mês</div>
+      <div class="chart-sub">Taxa de conclusão dentro do prazo vs meta 93%</div>
       <div class="chart-wrap tall"><canvas id="chart-sla-mensal"></canvas></div>
     </div>
   </div>
@@ -227,8 +227,8 @@
       <div class="chart-wrap"><canvas id="chart-tipo"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-title">SLA por Tipo de Solicitação</div>
-      <div class="chart-sub">Taxa de conclusão dentro do prazo por categoria</div>
+      <div class="chart-title">SLA por Tipo — Quantidade</div>
+      <div class="chart-sub"><span style="color:#12b76a;font-weight:700;">■</span> Dentro · <span style="color:#ef4444;font-weight:700;">■</span> Fora · % de conclusão</div>
       <div class="sla-bars-container" id="sla-bars-container"></div>
     </div>
   </div>
@@ -571,27 +571,25 @@ function renderChartSLAMensal(cards) {
   cards.filter(c => c.status === 'concluido' && c.dentroSLA !== null).forEach(c => {
     const d = new Date(c.created_at);
     const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    if (!meses[key]) meses[key] = { dentro: 0, fora: 0, total: 0 };
+    if (!meses[key]) meses[key] = { dentro: 0, total: 0 };
     meses[key].total++;
     if (c.dentroSLA) meses[key].dentro++;
-    else meses[key].fora++;
   });
   const labels = Object.keys(meses).sort();
   const labelsFmt = labels.map(k => { const [y,m]=k.split('-'); return new Date(y,m-1).toLocaleString('pt-BR',{month:'short',year:'2-digit'}); });
+  const slaData = labels.map(k => meses[k].total > 0 ? Math.round((meses[k].dentro / meses[k].total)*100) : 0);
 
   if (charts.slaMensal) charts.slaMensal.destroy();
   charts.slaMensal = new Chart(document.getElementById('chart-sla-mensal').getContext('2d'), {
-    type: 'bar',
+    type: 'line',
     data: { labels: labelsFmt, datasets: [
-      { label: 'Dentro do SLA', data: labels.map(k => meses[k].dentro), backgroundColor: '#12b76a', borderRadius: 4, borderSkipped: false },
-      { label: 'Fora do SLA',   data: labels.map(k => meses[k].fora),   backgroundColor: '#ef4444', borderRadius: 4, borderSkipped: false },
+      { label: 'SLA %', data: slaData, borderColor: '#6613D0', backgroundColor: 'rgba(102,19,208,0.08)', tension: 0.4, fill: true, pointBackgroundColor: slaData.map(v => v >= META_SLA ? '#12b76a' : '#ef4444'), pointRadius: 5 },
+      { label: `Meta ${META_SLA}%`, data: labels.map(() => META_SLA), borderColor: '#FE8F1C', borderDash: [6,3], pointRadius: 0, borderWidth: 2 },
     ]},
     options: { responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'top', labels: { font: { family: 'Space Grotesk', size: 11 }, padding: 12 } } },
-      scales: {
-        x: { stacked: true, ticks: { font: { family: 'Space Grotesk', size: 10 } }, grid: { display: false } },
-        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' } }
-      }
+      scales: { y: { beginAtZero: false, min: 0, max: 105, ticks: { callback: v => v+'%', font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                x: { ticks: { font: { family: 'Space Grotesk', size: 10 } }, grid: { display: false } } }
     }
   });
 }
@@ -611,20 +609,29 @@ function renderChartTipo(cards) {
 function renderSLABars(cards) {
   const tipos = {};
   cards.filter(c => c.status === 'concluido' && c.dentroSLA !== null).forEach(c => {
-    if (!tipos[c.tipo]) tipos[c.tipo] = { total: 0, dentro: 0, prazo: c.prazo };
-    tipos[c.tipo].total++;
+    if (!tipos[c.tipo]) tipos[c.tipo] = { dentro: 0, fora: 0, prazo: c.prazo };
     if (c.dentroSLA) tipos[c.tipo].dentro++;
+    else tipos[c.tipo].fora++;
   });
-  const sorted = Object.entries(tipos).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
-  const colors = ['#12b76a','#6613D0','#0ea5e9','#f59e0b','#FE8F1C','#8b5cf6','#ef4444','#8e91a8'];
+  const sorted = Object.entries(tipos).sort((a,b) => (b[1].dentro+b[1].fora) - (a[1].dentro+a[1].fora)).slice(0,8);
 
-  document.getElementById('sla-bars-container').innerHTML = sorted.map(([tipo, d], i) => {
-    const pct = d.total > 0 ? Math.round((d.dentro / d.total) * 100) : 0;
-    const cor = pct >= META_SLA ? colors[i % colors.length] : '#ef4444';
+  document.getElementById('sla-bars-container').innerHTML = sorted.map(([tipo, d]) => {
+    const total = d.dentro + d.fora;
+    const pct = total > 0 ? Math.round((d.dentro / total) * 100) : 0;
+    const cor = pct >= META_SLA ? '#12b76a' : '#ef4444';
     return `<div class="sla-row">
-      <div class="sla-label" title="${tipo} (prazo: ${d.prazo}d)">${tipo.length > 22 ? tipo.substring(0,20)+'…' : tipo}</div>
-      <div class="sla-track"><div class="sla-fill" style="width:${pct}%;background:${cor};"></div></div>
-      <div class="sla-pct" style="color:${pct>=META_SLA?'var(--success)':'var(--danger)'}">${pct}%</div>
+      <div class="sla-label" title="${tipo} (prazo: ${d.prazo}d)">${tipo.length > 20 ? tipo.substring(0,18)+'…' : tipo}</div>
+      <div style="display:flex;gap:4px;align-items:center;flex:1;">
+        <span style="font-size:0.75rem;font-weight:700;color:#12b76a;width:24px;text-align:right;">${d.dentro}</span>
+        <div class="sla-track" style="flex:1;">
+          <div style="display:flex;height:100%;border-radius:4px;overflow:hidden;">
+            <div style="background:#12b76a;width:${total>0?(d.dentro/total*100):0}%;"></div>
+            <div style="background:#ef4444;width:${total>0?(d.fora/total*100):0}%;"></div>
+          </div>
+        </div>
+        <span style="font-size:0.75rem;font-weight:700;color:#ef4444;width:24px;">${d.fora}</span>
+      </div>
+      <div class="sla-pct" style="color:${cor}">${pct}%</div>
     </div>`;
   }).join('');
 }
