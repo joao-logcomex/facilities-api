@@ -29,8 +29,6 @@
   .unauth-screen h2 { color: #fff; font-size: 1.5rem; font-weight: 700; }
   .unauth-screen p { color: rgba(255,255,255,0.4); font-size: 0.9rem; }
   .btn-back { background: var(--purple); color: #fff; border: none; padding: 12px 28px; border-radius: var(--radius-sm); font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 0.5rem; }
-
-  /* SIDEBAR */
   .sidebar { width: var(--sidebar); background: var(--black); height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; padding: 1.5rem 1rem; z-index: 50; }
   .sb-logo { display: flex; align-items: center; gap: 10px; padding: 0 0.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 1.2rem; }
   .sb-logo-mark { width: 30px; height: 30px; background: var(--purple); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
@@ -51,8 +49,6 @@
   .user-role { font-size: 0.7rem; color: rgba(255,255,255,0.28); }
   .logout-btn { width: 100%; margin-top: 8px; padding: 8px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); color: rgba(255,255,255,0.35); font-size: 0.82rem; cursor: pointer; font-family: 'Space Grotesk', sans-serif; transition: all 0.15s; }
   .logout-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.65); }
-
-  /* MAIN */
   .main { margin-left: var(--sidebar); flex: 1; padding: 2rem; min-height: 100vh; }
   .page { display: none; }
   .page.active { display: block; }
@@ -64,8 +60,6 @@
   .btn-primary:hover { background: var(--purple-dark); }
   .btn-secondary { background: var(--surface); color: var(--ink2); border: 1px solid var(--border); }
   .btn-secondary:hover { background: var(--purple-light); }
-
-  /* DASHBOARD METRICS */
   .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
   .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; position: relative; overflow: hidden; }
   .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 2px 2px 0 0; }
@@ -78,31 +72,18 @@
   .metric-label { font-size: 0.72rem; font-weight: 600; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.5rem; }
   .metric-value { font-weight: 700; font-size: 2rem; letter-spacing: -0.05em; line-height: 1; margin-bottom: 0.3rem; }
   .metric-sub { font-size: 0.75rem; color: var(--ink3); }
-  .metric-trend { font-size: 0.75rem; font-weight: 600; margin-top: 4px; }
-  .trend-up { color: var(--danger); }
-  .trend-down { color: var(--success); }
-
-  /* CHARTS GRID */
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
-  .charts-grid.three { grid-template-columns: 1fr 1fr 1fr; }
-  @media (max-width: 900px) { .charts-grid, .charts-grid.three { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
   .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
   .chart-title { font-weight: 700; font-size: 0.9rem; color: var(--ink); margin-bottom: 0.3rem; letter-spacing: -0.01em; }
   .chart-sub { font-size: 0.75rem; color: var(--ink3); margin-bottom: 1.2rem; }
   .chart-wrap { position: relative; height: 200px; }
-
-  /* SLA METER */
-  .sla-ring { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; }
-  .sla-value { font-weight: 700; font-size: 2.5rem; letter-spacing: -0.05em; color: var(--purple); }
-  .sla-label { font-size: 0.82rem; color: var(--ink3); margin-top: 4px; }
   .sla-bars { width: 100%; margin-top: 1rem; display: flex; flex-direction: column; gap: 8px; }
   .sla-bar-row { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; }
   .sla-bar-label { width: 80px; color: var(--ink3); font-weight: 500; flex-shrink: 0; }
   .sla-bar-track { flex: 1; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
   .sla-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
   .sla-bar-count { width: 24px; text-align: right; color: var(--ink2); font-weight: 600; }
-
-  /* KANBAN */
   .kanban-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 1rem; }
   @media (max-width: 1000px) { .kanban-board { grid-template-columns: repeat(3, 280px); } }
   .kanban-col { background: var(--surface2); border-radius: var(--radius); padding: 1rem; min-height: 400px; }
@@ -122,8 +103,6 @@
   .kp-Alta { background: #fff4e5; color: #e45c10; }
   .kp-Urgente { background: var(--danger-bg); color: var(--danger); }
   .kanban-empty { text-align: center; padding: 2rem 1rem; color: var(--ink3); font-size: 0.8rem; opacity: 0.6; }
-
-  /* TABLE */
   .filters-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
   .fi-input { padding: 8px 12px; border: 1.5px solid var(--surface3); border-radius: var(--radius-sm); font-family: 'Space Grotesk', sans-serif; font-size: 0.84rem; color: var(--ink); background: var(--surface2); outline: none; transition: border-color 0.15s; }
   .fi-input:focus { border-color: var(--purple); }
@@ -150,8 +129,6 @@
   .pb-Urgente { background: var(--danger-bg); color: var(--danger); }
   .empty-state { text-align: center; padding: 3rem; color: var(--ink3); }
   .empty-state div { font-size: 2.5rem; margin-bottom: 1rem; }
-
-  /* FEEDBACK */
   .feedback-list { display: flex; flex-direction: column; gap: 12px; }
   .fb-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
   .fb-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; }
@@ -164,8 +141,6 @@
   .fb-Geral { background: var(--surface3); color: var(--ink3); }
   .fb-text { font-size: 0.85rem; color: var(--ink2); line-height: 1.6; margin-bottom: 0.75rem; }
   .fb-meta { font-size: 0.75rem; color: var(--ink3); }
-
-  /* MODAL */
   .modal-overlay { position: fixed; inset: 0; background: rgba(11,13,25,0.5); z-index: 200; display: none; align-items: flex-start; justify-content: flex-end; padding: 1rem; }
   .modal-overlay.open { display: flex; }
   .modal { background: var(--surface); border-radius: 18px; width: 500px; max-height: calc(100vh - 2rem); overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: slideIn 0.2s ease; }
@@ -193,11 +168,8 @@
   .history-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--purple); margin-top: 6px; flex-shrink: 0; }
   .history-action { font-size: 0.84rem; color: var(--ink2); }
   .history-meta { font-size: 0.73rem; color: var(--ink3); margin-top: 2px; }
-
   .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--black); color: #fff; padding: 12px 20px; border-radius: var(--radius-sm); font-size: 0.87rem; z-index: 999; opacity: 0; transform: translateY(10px); transition: all 0.25s; pointer-events: none; border: 1px solid rgba(102,19,208,0.3); }
   .toast.show { opacity: 1; transform: translateY(0); }
-
-  /* RELATORIO IA */
   .relatorio-shell { background: linear-gradient(135deg, #0B0D19 0%, #1a0a3a 100%); border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
   .relatorio-shell::before { content: ''; position: absolute; top: -80px; right: -60px; width: 300px; height: 300px; background: radial-gradient(ellipse, rgba(102,19,208,0.3) 0%, transparent 70%); pointer-events: none; }
   .relatorio-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 1.5rem; position: relative; z-index: 1; }
@@ -230,7 +202,6 @@
   .rstat { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 1rem; text-align: center; }
   .rstat-value { font-weight: 700; font-size: 1.8rem; color: #fff; letter-spacing: -0.05em; }
   .rstat-label { font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-top: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
-
   @media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; padding: 1rem; } .modal { width: 100%; } }
 </style>
 </head>
@@ -247,8 +218,12 @@
 
 <aside class="sidebar" id="sidebar" style="display:none;">
   <div class="sb-logo">
-    <div class="sb-logo-mark"></div>
-    <div><div class="sb-logo-text">Facilities</div><div class="sb-logo-sub">LogComex · Admin</div></div>
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="26" height="26" x="0" y="14" rx="4" fill="#ffffff"/>
+      <rect width="26" height="26" x="14" y="0" rx="4" fill="#F28C28"/>
+      <rect width="14" height="14" x="14" y="14" rx="2" fill="#0B0D19"/>
+    </svg>
+    <div><div class="sb-logo-text">logcomex.ai</div><div class="sb-logo-sub">Facilities · Admin</div></div>
   </div>
   <nav class="sb-nav">
     <div class="sb-section">Principal</div>
@@ -275,7 +250,6 @@
 
 <main class="main" id="main-content" style="display:none;">
 
-  <!-- DASHBOARD -->
   <div class="page active" id="page-dashboard">
     <div class="topbar">
       <div><div class="page-title">Dashboard</div><div style="font-size:0.82rem;color:var(--ink3);margin-top:2px;" id="dash-date"></div></div>
@@ -284,8 +258,6 @@
         <a href="index.html" class="btn btn-primary">+ Novo chamado</a>
       </div>
     </div>
-
-    <!-- METRICS -->
     <div class="metrics-grid">
       <div class="metric-card purple"><div class="metric-label">Abertos</div><div class="metric-value" id="m-ab">0</div><div class="metric-sub">aguardando ação</div></div>
       <div class="metric-card orange"><div class="metric-label">Em andamento</div><div class="metric-value" id="m-an">0</div><div class="metric-sub">em execução</div></div>
@@ -294,83 +266,34 @@
       <div class="metric-card blue"><div class="metric-label">SLA</div><div class="metric-value" id="m-sla">–</div><div class="metric-sub">taxa de conclusão</div></div>
       <div class="metric-card gray"><div class="metric-label">Total</div><div class="metric-value" id="m-to">0</div><div class="metric-sub">todos os chamados</div></div>
     </div>
-
-    <!-- CHARTS ROW 1 -->
     <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-title">Chamados por Categoria</div>
-        <div class="chart-sub">Distribuição total de chamados</div>
-        <div class="chart-wrap"><canvas id="chart-cat"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Chamados por Status</div>
-        <div class="chart-sub">Visão geral do pipeline</div>
-        <div class="chart-wrap"><canvas id="chart-status"></canvas></div>
-      </div>
+      <div class="chart-card"><div class="chart-title">Chamados por Categoria</div><div class="chart-sub">Distribuição total de chamados</div><div class="chart-wrap"><canvas id="chart-cat"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Chamados por Status</div><div class="chart-sub">Visão geral do pipeline</div><div class="chart-wrap"><canvas id="chart-status"></canvas></div></div>
     </div>
-
-    <!-- CHARTS ROW 2 -->
     <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-title">Evolução Mensal</div>
-        <div class="chart-sub">Chamados abertos nos últimos 6 meses</div>
-        <div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">SLA por Prioridade</div>
-        <div class="chart-sub">Taxa de chamados concluídos dentro do prazo</div>
-        <div>
-          <div class="sla-bars" id="sla-bars"></div>
-        </div>
-      </div>
+      <div class="chart-card"><div class="chart-title">Evolução Mensal</div><div class="chart-sub">Chamados abertos nos últimos 6 meses</div><div class="chart-wrap"><canvas id="chart-monthly"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">SLA por Prioridade</div><div class="chart-sub">Taxa de chamados concluídos dentro do prazo</div><div><div class="sla-bars" id="sla-bars"></div></div></div>
     </div>
-
-    <!-- CHARTS ROW 3 -->
     <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-title">Top Centros de Custo</div>
-        <div class="chart-sub">Quem mais abre chamados</div>
-        <div class="chart-wrap"><canvas id="chart-dept"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Chamados por Prioridade</div>
-        <div class="chart-sub">Distribuição de urgência</div>
-        <div class="chart-wrap"><canvas id="chart-prio"></canvas></div>
-      </div>
+      <div class="chart-card"><div class="chart-title">Top Centros de Custo</div><div class="chart-sub">Quem mais abre chamados</div><div class="chart-wrap"><canvas id="chart-dept"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Chamados por Prioridade</div><div class="chart-sub">Distribuição de urgência</div><div class="chart-wrap"><canvas id="chart-prio"></canvas></div></div>
     </div>
   </div>
 
-  <!-- KANBAN -->
   <div class="page" id="page-kanban">
     <div class="topbar">
       <div><div class="page-title">Kanban</div><div style="font-size:0.82rem;color:var(--ink3);margin-top:2px;">Visualização de chamados por status</div></div>
       <div class="topbar-actions"><a href="index.html" class="btn btn-primary">+ Novo chamado</a></div>
     </div>
     <div class="kanban-board" id="kanban-board">
-      <div class="kanban-col" id="col-aberto">
-        <div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--info)"></span>Aberto</div><span class="kanban-col-count" id="cnt-aberto">0</span></div>
-        <div class="kanban-cards" id="cards-aberto"></div>
-      </div>
-      <div class="kanban-col" id="col-andamento">
-        <div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--warning)"></span>Em andamento</div><span class="kanban-col-count" id="cnt-andamento">0</span></div>
-        <div class="kanban-cards" id="cards-andamento"></div>
-      </div>
-      <div class="kanban-col" id="col-aprovacao">
-        <div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:#9333ea"></span>Aguardando</div><span class="kanban-col-count" id="cnt-aprovacao">0</span></div>
-        <div class="kanban-cards" id="cards-aprovacao"></div>
-      </div>
-      <div class="kanban-col" id="col-concluido">
-        <div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--success)"></span>Concluído</div><span class="kanban-col-count" id="cnt-concluido">0</span></div>
-        <div class="kanban-cards" id="cards-concluido"></div>
-      </div>
-      <div class="kanban-col" id="col-cancelado">
-        <div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--ink3)"></span>Cancelado</div><span class="kanban-col-count" id="cnt-cancelado">0</span></div>
-        <div class="kanban-cards" id="cards-cancelado"></div>
-      </div>
+      <div class="kanban-col" id="col-aberto"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--info)"></span>Aberto</div><span class="kanban-col-count" id="cnt-aberto">0</span></div><div class="kanban-cards" id="cards-aberto"></div></div>
+      <div class="kanban-col" id="col-andamento"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--warning)"></span>Em andamento</div><span class="kanban-col-count" id="cnt-andamento">0</span></div><div class="kanban-cards" id="cards-andamento"></div></div>
+      <div class="kanban-col" id="col-aprovacao"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:#9333ea"></span>Aguardando</div><span class="kanban-col-count" id="cnt-aprovacao">0</span></div><div class="kanban-cards" id="cards-aprovacao"></div></div>
+      <div class="kanban-col" id="col-concluido"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--success)"></span>Concluído</div><span class="kanban-col-count" id="cnt-concluido">0</span></div><div class="kanban-cards" id="cards-concluido"></div></div>
+      <div class="kanban-col" id="col-cancelado"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--ink3)"></span>Cancelado</div><span class="kanban-col-count" id="cnt-cancelado">0</span></div><div class="kanban-cards" id="cards-cancelado"></div></div>
     </div>
   </div>
 
-  <!-- CHAMADOS -->
   <div class="page" id="page-chamados">
     <div class="topbar">
       <div class="page-title">Chamados</div>
@@ -381,68 +304,29 @@
     </div>
     <div class="filters-bar">
       <input type="text" class="fi-input wide" id="search" placeholder="🔍 Buscar por título, nome, protocolo..." oninput="renderTable()">
-      <select class="fi-input" id="f-status" onchange="renderTable()">
-        <option value="">Todos os status</option>
-        <option>Aberto</option><option>Em andamento</option><option>Aguardando aprovação</option><option>Concluído</option><option>Cancelado</option>
-      </select>
-      <select class="fi-input" id="f-cat" onchange="renderTable()">
-        <option value="">Todas categorias</option>
-        <option value="manutencao">Manutenção</option><option value="infraestrutura">Infraestrutura</option>
-        <option value="limpeza">Limpeza</option><option value="seguranca">Segurança</option>
-        <option value="brindes">Brindes</option><option value="suprimentos">Suprimentos</option><option value="plataformas">Plataformas</option>
-      </select>
-      <select class="fi-input" id="f-prio" onchange="renderTable()">
-        <option value="">Todas prioridades</option>
-        <option>Baixa</option><option>Média</option><option>Alta</option><option>Urgente</option>
-      </select>
+      <select class="fi-input" id="f-status" onchange="renderTable()"><option value="">Todos os status</option><option>Aberto</option><option>Em andamento</option><option>Aguardando aprovação</option><option>Concluído</option><option>Cancelado</option></select>
+      <select class="fi-input" id="f-cat" onchange="renderTable()"><option value="">Todas categorias</option><option value="manutencao">Manutenção</option><option value="infraestrutura">Infraestrutura</option><option value="limpeza">Limpeza</option><option value="seguranca">Segurança</option><option value="brindes">Brindes</option><option value="suprimentos">Suprimentos</option><option value="plataformas">Plataformas</option></select>
+      <select class="fi-input" id="f-prio" onchange="renderTable()"><option value="">Todas prioridades</option><option>Baixa</option><option>Média</option><option>Alta</option><option>Urgente</option></select>
     </div>
     <div class="table-wrapper"><table><thead><tr><th>Protocolo</th><th>Título</th><th>Solicitante</th><th>Centro de Custo</th><th>Prioridade</th><th>Status</th><th>Data</th></tr></thead><tbody id="tickets-tb"></tbody></table></div>
     <div style="padding:0.75rem 1rem;font-size:0.8rem;color:var(--ink3);" id="tcount"></div>
   </div>
 
-  <!-- FEEDBACKS -->
   <div class="page" id="page-feedbacks">
     <div class="topbar"><div class="page-title">Feedbacks</div></div>
     <div class="feedback-list" id="feedback-list"></div>
   </div>
 
-  <!-- RELATÓRIO IA -->
   <div class="page" id="page-relatorio">
-    <div class="topbar">
-      <div><div class="page-title">Relatório IA</div><div style="font-size:0.82rem;color:var(--ink3);margin-top:2px;">Gerado automaticamente com inteligência artificial</div></div>
-    </div>
-
+    <div class="topbar"><div><div class="page-title">Relatório IA</div><div style="font-size:0.82rem;color:var(--ink3);margin-top:2px;">Gerado automaticamente com inteligência artificial</div></div></div>
     <div class="relatorio-shell">
-      <div class="relatorio-header">
-        <div class="relatorio-icon">🤖</div>
-        <div>
-          <div class="relatorio-title">Relatório Mensal de SLA</div>
-          <div class="relatorio-sub">Selecione o mês e clique em Gerar. A IA analisa todos os chamados e cria um relatório executivo completo com análise de SLA, tendências e recomendações.</div>
-        </div>
-      </div>
-
+      <div class="relatorio-header"><div class="relatorio-icon">🤖</div><div><div class="relatorio-title">Relatório Mensal de SLA</div><div class="relatorio-sub">Selecione o mês e clique em Gerar. A IA analisa todos os chamados e cria um relatório executivo completo com análise de SLA, tendências e recomendações.</div></div></div>
       <div class="relatorio-controls">
-        <select class="relatorio-select" id="rel-mes">
-          <option value="1">Janeiro</option><option value="2">Fevereiro</option>
-          <option value="3">Março</option><option value="4">Abril</option>
-          <option value="5">Maio</option><option value="6">Junho</option>
-          <option value="7">Julho</option><option value="8">Agosto</option>
-          <option value="9">Setembro</option><option value="10">Outubro</option>
-          <option value="11">Novembro</option><option value="12">Dezembro</option>
-        </select>
-        <select class="relatorio-select" id="rel-ano">
-          <option value="2024">2024</option>
-          <option value="2025">2025</option>
-          <option value="2026" selected>2026</option>
-        </select>
-        <button class="btn-gerar" id="btn-gerar" onclick="gerarRelatorio()">
-          ✨ Gerar relatório
-        </button>
-        <button class="btn-exportar" id="btn-exportar" onclick="exportarRelatorio()">
-          ⬇ Exportar PDF
-        </button>
+        <select class="relatorio-select" id="rel-mes"><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select>
+        <select class="relatorio-select" id="rel-ano"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select>
+        <button class="btn-gerar" id="btn-gerar" onclick="gerarRelatorio()">✨ Gerar relatório</button>
+        <button class="btn-exportar" id="btn-exportar" onclick="exportarRelatorio()">⬇ Exportar PDF</button>
       </div>
-
       <div class="relatorio-stats" id="relatorio-stats" style="display:none;">
         <div class="rstat"><div class="rstat-value" id="rs-total">0</div><div class="rstat-label">Total</div></div>
         <div class="rstat"><div class="rstat-value" id="rs-concluidos">0</div><div class="rstat-label">Concluídos</div></div>
@@ -450,27 +334,17 @@
         <div class="rstat"><div class="rstat-value" id="rs-urgentes">0</div><div class="rstat-label">Urgentes</div></div>
         <div class="rstat"><div class="rstat-value" id="rs-sla" style="color:var(--purple-mid);">0%</div><div class="rstat-label">SLA</div></div>
       </div>
-
-      <div class="relatorio-loading" id="relatorio-loading">
-        <div class="spinner"></div>
-        <p>Analisando dados<span class="dots"></span></p>
-        <p style="font-size:0.78rem;margin-top:4px;opacity:0.6;">A IA está processando os chamados do mês selecionado</p>
-      </div>
-
+      <div class="relatorio-loading" id="relatorio-loading"><div class="spinner"></div><p>Analisando dados<span class="dots"></span></p><p style="font-size:0.78rem;margin-top:4px;opacity:0.6;">A IA está processando os chamados do mês selecionado</p></div>
       <div class="relatorio-output" id="relatorio-output"></div>
     </div>
   </div>
 
 </main>
 
-<!-- MODAL -->
 <div class="modal-overlay" id="modal-ov" onclick="closeM(event)">
   <div class="modal">
     <div class="modal-header">
-      <div>
-        <div style="font-size:0.76rem;color:var(--purple);font-weight:700;margin-bottom:3px;" id="m-id"></div>
-        <div class="modal-title" id="m-title"></div>
-      </div>
+      <div><div style="font-size:0.76rem;color:var(--purple);font-weight:700;margin-bottom:3px;" id="m-id"></div><div class="modal-title" id="m-title"></div></div>
       <button class="modal-close" onclick="closeMd()">✕</button>
     </div>
     <div style="padding: 0 1.5rem 1rem; border-bottom: 1px solid var(--border);">
@@ -539,7 +413,9 @@
 
   function fds(ts) { if(!ts)return'-'; const d=ts.toDate?ts.toDate():new Date(ts); return d.toLocaleDateString('pt-BR'); }
   function fd(ts) { if(!ts)return'-'; const d=ts.toDate?ts.toDate():new Date(ts); return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
-async function notificarSlackConcluido(ticket) {
+
+  // ── SLACK: notifica o solicitante por DM quando o chamado for Concluído ──
+  async function notificarSlackConcluido(ticket) {
     try {
       const dataAbertura = ticket.data_abertura
         ? (ticket.data_abertura.toDate ? ticket.data_abertura.toDate().toISOString() : ticket.data_abertura)
@@ -563,6 +439,8 @@ async function notificarSlackConcluido(ticket) {
       console.warn('⚠️ Erro ao notificar Slack:', err.message);
     }
   }
+  // ─────────────────────────────────────────────────────────────────────────
+
   onAuthStateChanged(auth, async (user) => {
     document.getElementById('loading-screen').style.display = 'none';
     if (!user || !ADMINS.includes(user.email)) {
@@ -591,7 +469,8 @@ async function notificarSlackConcluido(ticket) {
 
     window.doLogout = () => signOut(auth).then(() => window.location.href = 'index.html');
 
-window.updS = async (s) => {
+    // ── Atualiza status + dispara Slack se Concluído ──
+    window.updS = async (s) => {
       if (!currentDocId) return;
       const t = allTickets.find(x => x._docId === currentDocId);
       if (!t || t.status === s) return;
@@ -602,6 +481,7 @@ window.updS = async (s) => {
       showToast('Status atualizado: ' + s);
       if (s === 'Concluído') notificarSlackConcluido(t);
     };
+    // ─────────────────────────────────────────────────
 
     window.saveCmt = async () => {
       const txt = document.getElementById('cmt-text').value.trim();
@@ -619,19 +499,14 @@ window.updS = async (s) => {
       if (!currentDocId) return;
       const t = allTickets.find(x => x._docId === currentDocId);
       if (!confirm(`Tem certeza que deseja EXCLUIR permanentemente o chamado #${t?.id}?\n\nEsta ação não pode ser desfeita.`)) return;
-      try {
-        await deleteDoc(doc(db, 'tickets', currentDocId));
-        closeMd();
-        showToast('Chamado excluído!');
-      } catch(e) { showToast('Erro ao excluir chamado.'); }
+      try { await deleteDoc(doc(db, 'tickets', currentDocId)); closeMd(); showToast('Chamado excluído!'); }
+      catch(e) { showToast('Erro ao excluir chamado.'); }
     };
 
     window.excluirFeedback = async (docId) => {
       if (!confirm('Tem certeza que deseja excluir este feedback?\n\nEsta ação não pode ser desfeita.')) return;
-      try {
-        await deleteDoc(doc(db, 'feedbacks', docId));
-        showToast('Feedback excluído!');
-      } catch(e) { showToast('Erro ao excluir feedback.'); }
+      try { await deleteDoc(doc(db, 'feedbacks', docId)); showToast('Feedback excluído!'); }
+      catch(e) { showToast('Erro ao excluir feedback.'); }
     };
   });
 
@@ -657,85 +532,61 @@ window.updS = async (s) => {
   }
 
   function updateCharts() {
-    // Category chart
     const catCounts = {};
     allTickets.forEach(t => { catCounts[t.categoria] = (catCounts[t.categoria]||0)+1; });
     const catLabels = Object.keys(catCounts).map(k => (CATLABELS[k]||k).replace(/[^\w\s]/g,'').trim());
     const catData = Object.values(catCounts);
-
     if (charts.cat) charts.cat.destroy();
-    const ctxCat = document.getElementById('chart-cat').getContext('2d');
-    charts.cat = new Chart(ctxCat, {
+    charts.cat = new Chart(document.getElementById('chart-cat').getContext('2d'), {
       type: 'doughnut',
       data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: ['#6613D0','#FE8F1C','#12b76a','#0ea5e9','#f59e0b','#ef4444','#8b5cf6'], borderWidth: 0 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'Space Grotesk', size: 11 }, padding: 12 } } } }
     });
 
-    // Status chart
     const statuses = ['Aberto','Em andamento','Aguardando aprovação','Concluído','Cancelado'];
     const statusColors = ['#0ea5e9','#d97706','#9333ea','#12b76a','#8e91a8'];
-    const statusCounts = statuses.map(s => allTickets.filter(t=>t.status===s).length);
     if (charts.status) charts.status.destroy();
-    const ctxStatus = document.getElementById('chart-status').getContext('2d');
-    charts.status = new Chart(ctxStatus, {
+    charts.status = new Chart(document.getElementById('chart-status').getContext('2d'), {
       type: 'bar',
-      data: { labels: statuses, datasets: [{ data: statusCounts, backgroundColor: statusColors, borderRadius: 6, borderSkipped: false }] },
+      data: { labels: statuses, datasets: [{ data: statuses.map(s => allTickets.filter(t=>t.status===s).length), backgroundColor: statusColors, borderRadius: 6, borderSkipped: false }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { ticks: { font: { family: 'Space Grotesk', size: 10 } }, grid: { display: false } } } }
     });
 
-    // Monthly chart
-    const months = [];
-    const monthCounts = [];
+    const months = [], monthCounts = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(); d.setMonth(d.getMonth() - i);
       months.push(d.toLocaleString('pt-BR', { month: 'short' }));
-      monthCounts.push(allTickets.filter(t => {
-        const td = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura||0);
-        return td.getMonth()===d.getMonth() && td.getFullYear()===d.getFullYear();
-      }).length);
+      monthCounts.push(allTickets.filter(t => { const td = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura||0); return td.getMonth()===d.getMonth() && td.getFullYear()===d.getFullYear(); }).length);
     }
     if (charts.monthly) charts.monthly.destroy();
-    const ctxM = document.getElementById('chart-monthly').getContext('2d');
-    charts.monthly = new Chart(ctxM, {
+    charts.monthly = new Chart(document.getElementById('chart-monthly').getContext('2d'), {
       type: 'line',
       data: { labels: months, datasets: [{ data: monthCounts, borderColor: '#6613D0', backgroundColor: 'rgba(102,19,208,0.08)', tension: 0.4, fill: true, pointBackgroundColor: '#6613D0', pointRadius: 4 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { ticks: { font: { family: 'Space Grotesk' } }, grid: { display: false } } } }
     });
 
-    // SLA bars
-    const prios = ['Urgente','Alta','Média','Baixa'];
-    const colors = ['#ef4444','#e45c10','#d97706','#12b76a'];
-    const slaBars = document.getElementById('sla-bars');
-    slaBars.innerHTML = prios.map((p, i) => {
+    const prios = ['Urgente','Alta','Média','Baixa'], colors = ['#ef4444','#e45c10','#d97706','#12b76a'];
+    document.getElementById('sla-bars').innerHTML = prios.map((p, i) => {
       const total = allTickets.filter(t=>t.prioridade===p).length;
       const done = allTickets.filter(t=>t.prioridade===p&&t.status==='Concluído').length;
       const pct = total > 0 ? Math.round((done/total)*100) : 0;
-      return `<div class="sla-bar-row">
-        <span class="sla-bar-label">${p}</span>
-        <div class="sla-bar-track"><div class="sla-bar-fill" style="width:${pct}%;background:${colors[i]};"></div></div>
-        <span class="sla-bar-count">${pct}%</span>
-      </div>`;
+      return `<div class="sla-bar-row"><span class="sla-bar-label">${p}</span><div class="sla-bar-track"><div class="sla-bar-fill" style="width:${pct}%;background:${colors[i]};"></div></div><span class="sla-bar-count">${pct}%</span></div>`;
     }).join('');
 
-    // Top departments
     const deptCounts = {};
     allTickets.forEach(t => { if(t.departamento) deptCounts[t.departamento]=(deptCounts[t.departamento]||0)+1; });
     const sorted = Object.entries(deptCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
     if (charts.dept) charts.dept.destroy();
-    const ctxD = document.getElementById('chart-dept').getContext('2d');
-    charts.dept = new Chart(ctxD, {
+    charts.dept = new Chart(document.getElementById('chart-dept').getContext('2d'), {
       type: 'bar',
       data: { labels: sorted.map(x=>x[0].length>20?x[0].substring(0,18)+'…':x[0]), datasets: [{ data: sorted.map(x=>x[1]), backgroundColor: 'rgba(102,19,208,0.7)', borderRadius: 6, borderSkipped: false }] },
       options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Space Grotesk', size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } }, y: { ticks: { font: { family: 'Space Grotesk', size: 10 } }, grid: { display: false } } } }
     });
 
-    // Priority chart
-    const prioCounts = ['Baixa','Média','Alta','Urgente'].map(p => allTickets.filter(t=>t.prioridade===p).length);
     if (charts.prio) charts.prio.destroy();
-    const ctxP = document.getElementById('chart-prio').getContext('2d');
-    charts.prio = new Chart(ctxP, {
+    charts.prio = new Chart(document.getElementById('chart-prio').getContext('2d'), {
       type: 'doughnut',
-      data: { labels: ['Baixa','Média','Alta','Urgente'], datasets: [{ data: prioCounts, backgroundColor: ['#12b76a','#d97706','#e45c10','#ef4444'], borderWidth: 0 }] },
+      data: { labels: ['Baixa','Média','Alta','Urgente'], datasets: [{ data: ['Baixa','Média','Alta','Urgente'].map(p => allTickets.filter(t=>t.prioridade===p).length), backgroundColor: ['#12b76a','#d97706','#e45c10','#ef4444'], borderWidth: 0 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'Space Grotesk', size: 11 }, padding: 12 } } } }
     });
   }
@@ -756,8 +607,7 @@ window.updS = async (s) => {
             <span>${(CATLABELS[t.categoria]||t.categoria||'').replace(/[^\w\s]/g,'').trim()}</span>
             ${t.nome ? `<span>· ${t.nome.split(' ')[0]}</span>` : ''}
           </div>
-        </div>
-      `).join('');
+        </div>`).join('');
     });
   }
 
@@ -820,25 +670,15 @@ window.updS = async (s) => {
     document.getElementById('d-desc').textContent = t.descricao;
     const pr = document.getElementById('d-plat-row');
     if (t.plataformas) { pr.style.display='block'; document.getElementById('d-plat').textContent=t.plataformas; } else { pr.style.display='none'; }
-
-    // Brinde details
     let brindeSec = document.getElementById('d-brinde-row');
-    if (!brindeSec) {
-      brindeSec = document.createElement('div');
-      brindeSec.id = 'd-brinde-row';
-      brindeSec.style.gridColumn = '1/-1';
-      pr.parentNode.insertBefore(brindeSec, pr.nextSibling);
-    }
+    if (!brindeSec) { brindeSec = document.createElement('div'); brindeSec.id = 'd-brinde-row'; brindeSec.style.gridColumn = '1/-1'; pr.parentNode.insertBefore(brindeSec, pr.nextSibling); }
     if (t.itens_brinde || t.tipo_entrega) {
       brindeSec.innerHTML = `
         ${t.itens_brinde ? `<div class="detail-item" style="grid-column:1/-1"><label>Itens solicitados</label><p>${t.itens_brinde}</p></div>` : ''}
         ${t.tipo_entrega ? `<div class="detail-item"><label>Tipo de entrega</label><p>${t.tipo_entrega}</p></div>` : ''}
-        ${t.endereco_envio ? `<div class="detail-item" style="grid-column:1/-1"><label>Endereço de envio</label><p>${t.endereco_envio.nome} · CPF/Tel: ${t.endereco_envio.cpf_tel}<br>${t.endereco_envio.rua}, ${t.endereco_envio.numero} ${t.endereco_envio.complemento || ''}<br>${t.endereco_envio.cidade}/${t.endereco_envio.estado} · CEP: ${t.endereco_envio.cep}</p></div>` : ''}
-      `;
+        ${t.endereco_envio ? `<div class="detail-item" style="grid-column:1/-1"><label>Endereço de envio</label><p>${t.endereco_envio.nome} · CPF/Tel: ${t.endereco_envio.cpf_tel}<br>${t.endereco_envio.rua}, ${t.endereco_envio.numero} ${t.endereco_envio.complemento || ''}<br>${t.endereco_envio.cidade}/${t.endereco_envio.estado} · CEP: ${t.endereco_envio.cep}</p></div>` : ''}`;
       brindeSec.style.display = 'contents';
-    } else {
-      brindeSec.style.display = 'none';
-    }
+    } else { brindeSec.style.display = 'none'; }
     const statuses = ['Aberto','Em andamento','Aguardando aprovação','Concluído','Cancelado'];
     document.getElementById('status-btns').innerHTML = statuses.map(s => `<button class="status-btn ${t.status===s?'active-s':''}" onclick="updS('${s}')">${s}</button>`).join('');
     renderHist(t.historico||[]);
@@ -877,87 +717,50 @@ function nav(page, el) {
 async function gerarRelatorio() {
   const mes = parseInt(document.getElementById('rel-mes').value);
   const ano = parseInt(document.getElementById('rel-ano').value);
-
-  // Filter tickets by month/year — if no tickets for month, use all tickets
   let filtered = allTickets.filter(t => {
     const d = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura || 0);
     return d.getMonth() + 1 === mes && d.getFullYear() === ano;
   });
-
-  // If no tickets for selected month, use all available tickets
-  const usandoTodos = filtered.length === 0 && allTickets.length > 0;
-  if (usandoTodos) filtered = allTickets;
-
-  if (filtered.length === 0) {
-    showToast('Nenhum chamado encontrado para gerar relatório.');
-    return;
-  }
-
+  if (filtered.length === 0 && allTickets.length > 0) filtered = allTickets;
+  if (filtered.length === 0) { showToast('Nenhum chamado encontrado para gerar relatório.'); return; }
   const btn = document.getElementById('btn-gerar');
   const loading = document.getElementById('relatorio-loading');
   const output = document.getElementById('relatorio-output');
   const stats = document.getElementById('relatorio-stats');
   const exportBtn = document.getElementById('btn-exportar');
-
-  btn.disabled = true;
-  btn.textContent = 'Gerando...';
-  loading.style.display = 'block';
-  output.style.display = 'none';
-  stats.style.display = 'none';
-  exportBtn.style.display = 'none';
-
+  btn.disabled = true; btn.textContent = 'Gerando...';
+  loading.style.display = 'block'; output.style.display = 'none'; stats.style.display = 'none'; exportBtn.style.display = 'none';
   try {
     const res = await fetch('https://facilities-api.vercel.app/api/relatorio', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tickets: filtered, mes, ano })
     });
-
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Erro ao gerar relatório');
-
-    // Show stats
     document.getElementById('rs-total').textContent = data.stats.total;
     document.getElementById('rs-concluidos').textContent = data.stats.concluidos;
     document.getElementById('rs-abertos').textContent = data.stats.abertos;
     document.getElementById('rs-urgentes').textContent = data.stats.urgentes;
     document.getElementById('rs-sla').textContent = data.stats.slaGeral + '%';
     stats.style.display = 'grid';
-
-    // Render markdown to HTML
     output.innerHTML = markdownToHtml(data.relatorio);
-    output.style.display = 'block';
-    exportBtn.style.display = 'inline-flex';
-
+    output.style.display = 'block'; exportBtn.style.display = 'inline-flex';
     showToast('Relatório gerado com sucesso!');
   } catch(err) {
     output.innerHTML = `<div style="color:var(--danger);padding:1rem;background:var(--danger-bg);border-radius:8px;">❌ ${err.message}</div>`;
-    output.style.display = 'block';
-    showToast('Erro ao gerar relatório');
+    output.style.display = 'block'; showToast('Erro ao gerar relatório');
   } finally {
-    loading.style.display = 'none';
-    btn.disabled = false;
-    btn.innerHTML = '✨ Gerar relatório';
+    loading.style.display = 'none'; btn.disabled = false; btn.innerHTML = '✨ Gerar relatório';
   }
 }
 
 function markdownToHtml(md) {
   return md
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/^---$/gm, '<hr>')
-    .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
-    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/^(?!<[huli])/gm, '<p>')
-    .replace(/(?<![>])$/gm, '</p>')
-    .replace(/<p><\/p>/g, '')
-    .replace(/<p>(<[hul])/g, '$1')
-    .replace(/(<\/[hul][^>]*>)<\/p>/g, '$1');
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>').replace(/^## (.+)$/gm, '<h2>$1</h2>').replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^---$/gm, '<hr>').replace(/^- (.+)$/gm, '<li>$1</li>').replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>').replace(/\n\n/g, '</p><p>').replace(/^(?!<[huli])/gm, '<p>')
+    .replace(/(?<![>])$/gm, '</p>').replace(/<p><\/p>/g, '').replace(/<p>(<[hul])/g, '$1').replace(/(<\/[hul][^>]*>)<\/p>/g, '$1');
 }
 
 function exportarRelatorio() {
@@ -965,11 +768,8 @@ function exportarRelatorio() {
   const ano = document.getElementById('rel-ano').value;
   const content = document.getElementById('relatorio-output').innerText;
   const blob = new Blob([`RELATÓRIO MENSAL DE SLA - FACILITIES LOGCOMEX\n${mes.toUpperCase()} ${ano}\n\n${content}`], { type: 'text/plain;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `relatorio_facilities_${mes}_${ano}.txt`;
-  a.click();
-  showToast('Relatório exportado!');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `relatorio_facilities_${mes}_${ano}.txt`; a.click(); showToast('Relatório exportado!');
 }
 function qs(s) {
   if(s==='urgente'){document.getElementById('f-prio').value='Urgente';document.getElementById('f-status').value='';}
@@ -980,8 +780,6 @@ function closeM(e){if(e.target===document.getElementById('modal-ov'))closeMd();}
 function closeMd(){document.getElementById('modal-ov').classList.remove('open');}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 window.showToast=showToast;
-
-// Set current month as default
 document.getElementById('rel-mes').value = new Date().getMonth() + 1;
 </script>
 </body>
