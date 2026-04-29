@@ -585,15 +585,24 @@ function renderChartSLAMensal(cards) {
     type: 'line',
     data: { labels: labelsFmt, datasets: [
       { label: 'Dentro do SLA %', data: slaData, borderColor: '#12b76a', backgroundColor: 'rgba(18,183,106,0.06)', tension: 0.4, fill: true, pointBackgroundColor: slaData.map(v => v >= META_SLA ? '#12b76a' : '#ef4444'), pointRadius: 5, yAxisID: 'y' },
-      { label: 'Fora do SLA %', data: foraData, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.0)', tension: 0.4, fill: false, pointBackgroundColor: '#ef4444', pointRadius: foraData.map(v => v > 0 ? 6 : 4), borderWidth: 2, yAxisID: 'y2' },
+      { label: 'Fora do SLA %', data: foraData, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.0)', tension: 0.4, fill: false, pointBackgroundColor: '#ef4444', pointRadius: foraData.map(v => v > 0 ? 6 : 4), borderWidth: 2, yAxisID: 'y' },
       { label: `Meta ${META_SLA}%`, data: labels.map(() => META_SLA), borderColor: '#FE8F1C', borderDash: [6,3], pointRadius: 0, borderWidth: 2, yAxisID: 'y' },
     ]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'top', labels: { font: { family: 'Space Grotesk', size: 11 }, padding: 12 } } },
+      plugins: { 
+        legend: { position: 'top', labels: { font: { family: 'Space Grotesk', size: 11 }, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => {
+          const k = labels[ctx.dataIndex];
+          const m = meses[k];
+          if (ctx.dataset.label.includes('Dentro')) return ` Dentro: ${m.dentro} solicitações (${ctx.parsed.y}%)`;
+          if (ctx.dataset.label.includes('Fora')) return ` Fora: ${m.total - m.dentro} solicitações (${ctx.parsed.y}%)`;
+          return ` Meta: ${ctx.parsed.y}%`;
+        }}}
+      },
       scales: { 
-        y: { beginAtZero: true, min: 0, max: 105, ticks: { callback: v => v+'%', stepSize: 10, font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' }, position: 'left' },
-        y2: { beginAtZero: true, min: 0, max: 20, ticks: { callback: v => v+'%', stepSize: 5, font: { family: 'Space Grotesk', size: 10 }, color: '#ef4444' }, grid: { display: false }, position: 'right' },
-                x: { ticks: { font: { family: 'Space Grotesk', size: 10 } }, grid: { display: false } } }
+        y: { beginAtZero: true, min: 0, max: 105, ticks: { callback: v => v+'%', stepSize: 10, font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { ticks: { font: { family: 'Space Grotesk', size: 10 } }, grid: { display: false } }
+      }
     }
   });
 }
