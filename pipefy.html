@@ -23,7 +23,6 @@
   html, body { height: 100%; }
   body { font-family: 'Space Grotesk', sans-serif; background: var(--surface2); color: var(--ink); display: flex; min-height: 100vh; }
 
-  /* SIDEBAR */
   .sidebar { width: var(--sidebar); background: var(--black); height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; padding: 1.5rem 1rem; z-index: 50; }
   .sb-logo { display: flex; align-items: center; gap: 10px; padding: 0 0.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 1.2rem; }
   .sb-logo-text { font-weight: 700; font-size: 0.9rem; color: #fff; letter-spacing: -0.02em; }
@@ -40,22 +39,17 @@
   .logout-btn { width: 100%; margin-top: 8px; padding: 8px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); color: rgba(255,255,255,0.35); font-size: 0.82rem; cursor: pointer; font-family: 'Space Grotesk', sans-serif; transition: all 0.15s; }
   .logout-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.65); }
 
-  /* MAIN */
   .main { margin-left: var(--sidebar); flex: 1; padding: 2rem; min-height: 100vh; }
   .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.8rem; flex-wrap: wrap; gap: 1rem; }
   .page-title { font-weight: 700; font-size: 1.5rem; letter-spacing: -0.04em; }
-  .page-sub { font-size: 0.82rem; color: var(--ink3); margin-top: 2px; }
 
-  /* STATUS BADGES */
   .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 0.73rem; font-weight: 600; white-space: nowrap; }
   .b-concluido { background: var(--success-bg); color: var(--success); }
   .b-cancelado { background: var(--surface3); color: var(--ink3); }
   .b-andamento { background: var(--warning-bg); color: var(--warning); }
-  .b-recebimento { background: var(--info-bg); color: var(--info); }
-  .b-brinde { background: #f3e8ff; color: #9333ea; }
-  .b-sugestao { background: #fff4e5; color: #e45c10; }
+  .b-dentro { background: var(--success-bg); color: var(--success); }
+  .b-fora { background: var(--danger-bg); color: var(--danger); }
 
-  /* METRICS */
   .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
   .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; position: relative; overflow: hidden; }
   .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 2px 2px 0 0; }
@@ -69,10 +63,28 @@
   .metric-value { font-weight: 700; font-size: 1.9rem; letter-spacing: -0.05em; line-height: 1; margin-bottom: 0.3rem; }
   .metric-sub { font-size: 0.74rem; color: var(--ink3); }
 
-  /* CHARTS */
+  /* SLA DASHBOARD — igual ao email */
+  .sla-dashboard { background: linear-gradient(135deg, #0B0D19 0%, #1a0a3a 100%); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
+  .sla-dashboard::before { content: ''; position: absolute; top: -60px; right: -40px; width: 200px; height: 200px; background: radial-gradient(ellipse, rgba(102,19,208,0.3) 0%, transparent 70%); pointer-events: none; }
+  .sla-dash-title { font-weight: 700; font-size: 1.1rem; color: #fff; margin-bottom: 0.3rem; position: relative; z-index: 1; }
+  .sla-dash-sub { font-size: 0.78rem; color: rgba(255,255,255,0.4); margin-bottom: 1.5rem; position: relative; z-index: 1; }
+  .sla-dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; position: relative; z-index: 1; }
+  .sla-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 1.25rem; text-align: center; }
+  .sla-card-title { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem; }
+  .sla-ring-wrap { position: relative; width: 100px; height: 100px; margin: 0 auto 1rem; }
+  .sla-ring-wrap canvas { position: absolute; top: 0; left: 0; }
+  .sla-ring-value { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.4rem; color: #fff; }
+  .sla-card-meta { font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-bottom: 0.75rem; }
+  .sla-monthly { display: flex; justify-content: center; gap: 12px; }
+  .sla-month { text-align: center; }
+  .sla-month-val { font-weight: 700; font-size: 1rem; color: #fff; }
+  .sla-month-label { font-size: 0.68rem; color: rgba(255,255,255,0.35); margin-top: 2px; }
+  .sla-status-badge { display: inline-block; padding: 4px 12px; border-radius: 100px; font-size: 0.72rem; font-weight: 700; margin-top: 0.75rem; }
+  .sla-ok { background: rgba(18,183,106,0.2); color: #12b76a; border: 1px solid rgba(18,183,106,0.3); }
+  .sla-warn { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
-  .charts-grid.three { grid-template-columns: 1fr 1fr 1fr; }
-  @media (max-width: 1000px) { .charts-grid, .charts-grid.three { grid-template-columns: 1fr; } }
+  @media (max-width: 1000px) { .charts-grid { grid-template-columns: 1fr; } }
   .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
   .chart-card.full { grid-column: 1 / -1; }
   .chart-title { font-weight: 700; font-size: 0.9rem; color: var(--ink); margin-bottom: 0.3rem; }
@@ -80,24 +92,29 @@
   .chart-wrap { position: relative; height: 220px; }
   .chart-wrap.tall { height: 280px; }
 
-  /* LOADING */
-  .loading-overlay { position: fixed; inset: 0; background: rgba(11,13,25,0.7); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; }
+  .loading-overlay { position: fixed; inset: 0; background: rgba(11,13,25,0.85); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; }
   .loading-spinner { width: 48px; height: 48px; border: 4px solid rgba(102,19,208,0.3); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  .loading-text { color: #fff; font-size: 0.9rem; font-family: 'Space Grotesk', sans-serif; }
-  .loading-progress { color: rgba(255,255,255,0.5); font-size: 0.8rem; font-family: 'Space Grotesk', sans-serif; }
+  .loading-text { color: #fff; font-size: 0.95rem; font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+  .loading-progress { color: rgba(255,255,255,0.45); font-size: 0.82rem; font-family: 'Space Grotesk', sans-serif; }
+  .loading-bar-wrap { width: 280px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+  .loading-bar { height: 100%; background: var(--purple); border-radius: 2px; transition: width 0.3s ease; width: 0%; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* YEAR TABS */
-  .year-tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+  .year-tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
   .year-tab { padding: 8px 20px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--surface); font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--ink3); cursor: pointer; transition: all 0.15s; }
   .year-tab.active { background: var(--purple); color: #fff; border-color: var(--purple); }
   .year-tab:hover:not(.active) { background: var(--purple-light); border-color: var(--purple); color: var(--purple); }
 
-  /* TABLE */
+  .sla-bars-container { padding-top: 0.5rem; }
+  .sla-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .sla-label { font-size: 0.78rem; color: var(--ink2); font-weight: 600; width: 180px; flex-shrink: 0; }
+  .sla-track { flex: 1; height: 8px; background: var(--surface3); border-radius: 4px; overflow: hidden; }
+  .sla-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+  .sla-pct { font-size: 0.78rem; font-weight: 700; color: var(--ink2); width: 40px; text-align: right; }
+
   .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem; }
   .table-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
   .table-title { font-weight: 700; font-size: 0.9rem; }
-  .table-filters { display: flex; gap: 8px; }
   .fi { padding: 7px 12px; border: 1.5px solid var(--surface3); border-radius: var(--radius-sm); font-family: 'Space Grotesk', sans-serif; font-size: 0.82rem; color: var(--ink); background: var(--surface2); outline: none; }
   .fi:focus { border-color: var(--purple); }
   table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -109,20 +126,10 @@
   .tid { font-weight: 700; font-size: 0.77rem; color: var(--purple); }
   .empty { text-align: center; padding: 3rem; color: var(--ink3); }
 
-  /* SLA BAR */
-  .sla-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .sla-label { font-size: 0.78rem; color: var(--ink2); font-weight: 600; width: 180px; flex-shrink: 0; }
-  .sla-track { flex: 1; height: 8px; background: var(--surface3); border-radius: 4px; overflow: hidden; }
-  .sla-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
-  .sla-pct { font-size: 0.78rem; font-weight: 700; color: var(--ink2); width: 40px; text-align: right; }
-
-  /* LAST UPDATE */
-  .last-update { font-size: 0.75rem; color: var(--ink3); display: flex; align-items: center; gap: 6px; }
-  .live-dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-  .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--black); color: #fff; padding: 12px 20px; border-radius: var(--radius-sm); font-size: 0.87rem; z-index: 999; opacity: 0; transform: translateY(10px); transition: all 0.25s; pointer-events: none; border: 1px solid rgba(102,19,208,0.3); }
+  .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--black); color: #fff; padding: 12px 20px; border-radius: var(--radius-sm); font-size: 0.87rem; z-index: 9999; opacity: 0; transform: translateY(10px); transition: all 0.25s; pointer-events: none; border: 1px solid rgba(102,19,208,0.3); }
   .toast.show { opacity: 1; transform: translateY(0); }
+  .live-dot { display: inline-block; width: 7px; height: 7px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; margin-right: 5px; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 </style>
 </head>
 <body>
@@ -130,7 +137,8 @@
 <div class="loading-overlay" id="loading-overlay">
   <div class="loading-spinner"></div>
   <div class="loading-text" id="loading-text">Conectando ao Pipefy...</div>
-  <div class="loading-progress" id="loading-progress">Aguarde, buscando histórico completo</div>
+  <div class="loading-progress" id="loading-progress">Buscando histórico completo com dados de SLA</div>
+  <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
 </div>
 
 <aside class="sidebar">
@@ -145,10 +153,10 @@
   <nav class="sb-nav">
     <div class="sb-section">Principal</div>
     <a href="admin.html" class="nav-item"><span>📊</span> Dashboard</a>
-    <a href="admin.html#kanban" class="nav-item"><span>🗂️</span> Kanban</a>
-    <a href="admin.html#chamados" class="nav-item"><span>🎫</span> Chamados</a>
-    <a href="admin.html#feedbacks" class="nav-item"><span>💡</span> Feedbacks</a>
-    <a href="admin.html#relatorio" class="nav-item"><span>🤖</span> Relatório IA</a>
+    <a href="admin.html" class="nav-item"><span>🗂️</span> Kanban</a>
+    <a href="admin.html" class="nav-item"><span>🎫</span> Chamados</a>
+    <a href="admin.html" class="nav-item"><span>💡</span> Feedbacks</a>
+    <a href="admin.html" class="nav-item"><span>🤖</span> Relatório IA</a>
     <div class="sb-section">Histórico</div>
     <a href="pipefy.html" class="nav-item active"><span>📈</span> Histórico Pipefy</a>
     <div class="sb-section">Links</div>
@@ -167,11 +175,9 @@
   <div class="topbar">
     <div>
       <div class="page-title">📈 Histórico Pipefy</div>
-      <div class="page-sub" id="last-update-text">Carregando dados...</div>
+      <div style="font-size:0.82rem;color:var(--ink3);margin-top:3px;" id="last-update-text">Carregando...</div>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <button onclick="recarregar()" style="padding:9px 18px;border-radius:var(--radius-sm);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;background:var(--surface);border:1px solid var(--border);color:var(--ink2);transition:all 0.15s;" onmouseover="this.style.background='var(--purple-light)'" onmouseout="this.style.background='var(--surface)'">🔄 Atualizar</button>
-    </div>
+    <button onclick="recarregar()" style="padding:9px 18px;border-radius:var(--radius-sm);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;background:var(--surface);border:1px solid var(--border);color:var(--ink2);">🔄 Atualizar</button>
   </div>
 
   <!-- YEAR TABS -->
@@ -181,41 +187,49 @@
     <button class="year-tab" onclick="setAno(0, this)">📊 Todos os anos</button>
   </div>
 
+  <!-- SLA DASHBOARD (igual ao email) -->
+  <div class="sla-dashboard">
+    <div class="sla-dash-title">Dashboard SLA — Facilities</div>
+    <div class="sla-dash-sub" id="sla-dash-sub">Carregando dados de SLA...</div>
+    <div class="sla-dash-grid" id="sla-dash-grid">
+      <!-- preenchido via JS -->
+    </div>
+  </div>
+
   <!-- METRICS -->
-  <div class="metrics-grid" id="metrics-grid">
+  <div class="metrics-grid">
     <div class="metric-card green"><div class="metric-label">Concluídas</div><div class="metric-value" id="m-concluido">—</div><div class="metric-sub">solicitações finalizadas</div></div>
+    <div class="metric-card red"><div class="metric-label">Fora do SLA</div><div class="metric-value" id="m-fora-sla">—</div><div class="metric-sub">excederam o prazo</div></div>
     <div class="metric-card gray"><div class="metric-label">Canceladas</div><div class="metric-value" id="m-cancelado">—</div><div class="metric-sub">solicitações canceladas</div></div>
     <div class="metric-card blue"><div class="metric-label">Em andamento</div><div class="metric-value" id="m-andamento">—</div><div class="metric-sub">abertas no período</div></div>
     <div class="metric-card purple"><div class="metric-label">Total</div><div class="metric-value" id="m-total">—</div><div class="metric-sub">todas as solicitações</div></div>
-    <div class="metric-card orange"><div class="metric-label">SLA Geral</div><div class="metric-value" id="m-sla">—</div><div class="metric-sub">taxa de conclusão</div></div>
-    <div class="metric-card red"><div class="metric-label">Tempo médio</div><div class="metric-value" id="m-tempo">—</div><div class="metric-sub">horas para concluir</div></div>
+    <div class="metric-card orange"><div class="metric-label">SLA Acumulado</div><div class="metric-value" id="m-sla">—</div><div class="metric-sub">meta: 93%</div></div>
   </div>
 
-  <!-- CHARTS ROW 1 -->
+  <!-- CHARTS -->
   <div class="charts-grid">
     <div class="chart-card">
       <div class="chart-title">Solicitações por Mês</div>
-      <div class="chart-sub" id="chart-mensal-sub">Evolução mensal no período selecionado</div>
+      <div class="chart-sub">Concluídas × Canceladas × Em andamento</div>
       <div class="chart-wrap tall"><canvas id="chart-mensal"></canvas></div>
     </div>
+    <div class="chart-card">
+      <div class="chart-title">SLA % por Mês</div>
+      <div class="chart-sub">Taxa de conclusão dentro do prazo vs meta 93%</div>
+      <div class="chart-wrap tall"><canvas id="chart-sla-mensal"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
     <div class="chart-card">
       <div class="chart-title">Distribuição por Tipo</div>
       <div class="chart-sub">Categorias de solicitação</div>
       <div class="chart-wrap"><canvas id="chart-tipo"></canvas></div>
     </div>
-  </div>
-
-  <!-- CHARTS ROW 2 -->
-  <div class="charts-grid">
-    <div class="chart-card">
-      <div class="chart-title">Status das Solicitações</div>
-      <div class="chart-sub">Concluídas vs Canceladas vs Em andamento</div>
-      <div class="chart-wrap"><canvas id="chart-status"></canvas></div>
-    </div>
     <div class="chart-card">
       <div class="chart-title">SLA por Tipo de Solicitação</div>
-      <div class="chart-sub">Taxa de conclusão por categoria</div>
-      <div id="sla-bars-container" style="padding-top:0.5rem;"></div>
+      <div class="chart-sub">Taxa de conclusão dentro do prazo por categoria</div>
+      <div class="sla-bars-container" id="sla-bars-container"></div>
     </div>
   </div>
 
@@ -223,16 +237,19 @@
   <div class="table-card">
     <div class="table-header">
       <div class="table-title">Todas as solicitações <span id="table-count" style="color:var(--ink3);font-weight:400;font-size:0.82rem;"></span></div>
-      <div class="table-filters">
-        <input type="text" class="fi" id="search-tb" placeholder="🔍 Buscar..." oninput="renderTabela()" style="width:200px;">
-        <select class="fi" id="f-tipo" onchange="renderTabela()">
-          <option value="">Todos os tipos</option>
-        </select>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="text" class="fi" id="search-tb" placeholder="🔍 Buscar..." oninput="renderTabela()" style="width:180px;">
+        <select class="fi" id="f-tipo" onchange="renderTabela()"><option value="">Todos os tipos</option></select>
         <select class="fi" id="f-status-tb" onchange="renderTabela()">
           <option value="">Todos os status</option>
-          <option value="Solicitações concluídas">Concluídas</option>
-          <option value="Solicitações Canceladas">Canceladas</option>
-          <option value="Em andamento">Em andamento</option>
+          <option value="concluido">Concluídas</option>
+          <option value="cancelado">Canceladas</option>
+          <option value="andamento">Em andamento</option>
+        </select>
+        <select class="fi" id="f-sla" onchange="renderTabela()">
+          <option value="">Todos SLA</option>
+          <option value="dentro">Dentro do SLA</option>
+          <option value="fora">Fora do SLA</option>
         </select>
       </div>
     </div>
@@ -240,13 +257,9 @@
       <table>
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Solicitante</th>
-            <th>Tipo</th>
-            <th>Status</th>
-            <th>Aberto em</th>
-            <th>Concluído em</th>
-            <th>Tempo</th>
+            <th>ID</th><th>Solicitante</th><th>Tipo</th><th>Status</th>
+            <th>SLA</th><th>Tempo exec.</th><th>Prazo</th>
+            <th>Aberto em</th><th>Concluído em</th>
           </tr>
         </thead>
         <tbody id="tabela-body"></tbody>
@@ -259,9 +272,18 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// Configuração via proxy Vercel (/api/pipefy)
+// ── CONFIGURAÇÃO SLA ──────────────────────────────────────────
+// Mapeamento fase de execução → prazo em dias
+const SLA_PRAZOS = {
+  'Brinde': 5, 'Brinde Comercial': 5, 'Brinde Coleta': 5,
+  'Acessos': 2, 'Manutenção': 60,
+  'Suprimentos de escritório': 7, 'Emprestimo': 7,
+  'Recebimento de Encomendas': 30,
+  'Elogios ou Sugestões': 30,
+};
+const META_SLA = 93; // %
 
-// Todas as fases do pipe com seus status
+// Fases do Pipefy
 const FASES = [
   { id: '326115156', nome: 'Solicitações concluídas', status: 'concluido' },
   { id: '326115157', nome: 'Solicitações Canceladas', status: 'cancelado' },
@@ -284,7 +306,7 @@ let charts = {};
 let paginaAtual = 0;
 const POR_PAGINA = 50;
 
-async function pipefy(query) {
+async function pipefyAPI(query) {
   const r = await fetch('/api/pipefy', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -293,24 +315,52 @@ async function pipefy(query) {
   return r.json();
 }
 
+function calcSLA(card) {
+  // Encontra a fase de execução do card e calcula tempo
+  if (!card.phases_history) return { dentroSLA: null, tempoExec: null, prazo: null, faseExec: null };
+
+  for (const ph of card.phases_history) {
+    const nome = ph.phase?.name;
+    if (SLA_PRAZOS[nome] !== undefined) {
+      const prazo = SLA_PRAZOS[nome];
+      const duracaoSeg = ph.duration || 0;
+      const duracaoDias = duracaoSeg / 86400;
+      return {
+        dentroSLA: duracaoDias <= prazo,
+        tempoExec: duracaoDias,
+        prazo,
+        faseExec: nome,
+      };
+    }
+  }
+  return { dentroSLA: null, tempoExec: null, prazo: null, faseExec: null };
+}
+
 async function buscarCardsFase(faseId, faseNome, faseStatus) {
   let cards = [];
   let cursor = null;
   let pagina = 0;
-  const MAX_PAGINAS = 100;
+  const MAX = 100;
 
-  while (pagina < MAX_PAGINAS) {
-    const afterClause = cursor ? `, after: "${cursor}"` : '';
-    const query = `{ phase(id: "${faseId}") { cards(first: 50${afterClause}) { edges { node { id title created_at finished_at fields { name value } } } pageInfo { hasNextPage endCursor } } } }`;
+  while (pagina < MAX) {
+    const after = cursor ? `, after: "${cursor}"` : '';
+    const q = `{ phase(id: "${faseId}") { cards(first: 50${after}) {
+      edges { node {
+        id title created_at finished_at
+        fields { name value }
+        phases_history { phase { name } firstTimeIn lastTimeOut duration }
+      } }
+      pageInfo { hasNextPage endCursor }
+    } } }`;
 
-    const data = await pipefy(query);
+    const data = await pipefyAPI(q);
     const phase = data?.data?.phase;
     if (!phase) break;
 
-    const edges = phase.cards.edges;
-    for (const edge of edges) {
+    for (const edge of phase.cards.edges) {
       const node = edge.node;
-      const tipo = node.fields.find(f => f.name === 'Tipo de solicitação')?.value || faseNome;
+      const tipo = node.fields?.find(f => f.name === 'Tipo de solicitação')?.value || faseNome;
+      const sla = calcSLA(node);
       cards.push({
         id: node.id,
         titulo: node.title,
@@ -319,6 +369,10 @@ async function buscarCardsFase(faseId, faseNome, faseStatus) {
         status: faseStatus,
         created_at: node.created_at,
         finished_at: node.finished_at,
+        dentroSLA: sla.dentroSLA,
+        tempoExec: sla.tempoExec,
+        prazo: sla.prazo,
+        faseExec: sla.faseExec,
       });
     }
 
@@ -335,8 +389,10 @@ async function carregarTudo() {
 
   for (let i = 0; i < FASES.length; i++) {
     const fase = FASES[i];
+    const pct = Math.round(((i) / FASES.length) * 100);
     document.getElementById('loading-text').textContent = `Buscando: ${fase.nome}...`;
     document.getElementById('loading-progress').textContent = `${i + 1} de ${FASES.length} fases — ${todosCards.length} cards carregados`;
+    document.getElementById('loading-bar').style.width = pct + '%';
 
     try {
       const cards = await buscarCardsFase(fase.id, fase.nome, fase.status);
@@ -345,26 +401,25 @@ async function carregarTudo() {
       console.warn(`Erro na fase ${fase.nome}:`, e);
     }
   }
-
+  document.getElementById('loading-bar').style.width = '100%';
   document.getElementById('loading-overlay').style.display = 'none';
-  document.getElementById('last-update-text').innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><span class="live-dot" style="display:inline-block;width:7px;height:7px;background:var(--success);border-radius:50%;animation:pulse 2s infinite;"></span> ${todosCards.length} solicitações carregadas · Atualizado às ${new Date().toLocaleTimeString('pt-BR')}</span>`;
 
-  // Popula filtro de tipos
+  const agora = new Date().toLocaleTimeString('pt-BR');
+  document.getElementById('last-update-text').innerHTML = `<span class="live-dot"></span>${todosCards.length} solicitações carregadas · Atualizado às ${agora}`;
+
+  // Popula filtro tipos
   const tipos = [...new Set(todosCards.map(c => c.tipo).filter(Boolean))].sort();
   const sel = document.getElementById('f-tipo');
   sel.innerHTML = '<option value="">Todos os tipos</option>';
   tipos.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o); });
 
   renderTudo();
-  showToast(`✅ ${todosCards.length} solicitações carregadas do Pipefy!`);
+  showToast(`✅ ${todosCards.length} solicitações carregadas!`);
 }
 
 function filtrarPorAno(cards, ano) {
   if (ano === 0) return cards;
-  return cards.filter(c => {
-    const d = new Date(c.created_at);
-    return d.getFullYear() === ano;
-  });
+  return cards.filter(c => new Date(c.created_at).getFullYear() === ano);
 }
 
 function setAno(ano, el) {
@@ -377,12 +432,92 @@ function setAno(ano, el) {
 
 function renderTudo() {
   const cards = filtrarPorAno(todosCards, anoAtivo);
+  renderSLADashboard(cards);
   renderMetrics(cards);
   renderChartMensal(cards);
+  renderChartSLAMensal(cards);
   renderChartTipo(cards);
-  renderChartStatus(cards);
   renderSLABars(cards);
   renderTabela();
+}
+
+function renderSLADashboard(cards) {
+  const anoLabel = anoAtivo === 0 ? 'Todos os anos' : `${anoAtivo} · SLA Acumulado`;
+  document.getElementById('sla-dash-sub').textContent = `${anoLabel} · Meta: ${META_SLA}% · Gerado automaticamente`;
+
+  // Agrupa por mês
+  const meses = {};
+  cards.forEach(c => {
+    const d = new Date(c.created_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!meses[key]) meses[key] = { concluido: 0, cancelado: 0, dentroSLA: 0, totalSLA: 0 };
+    if (c.status === 'concluido') { meses[key].concluido++; }
+    if (c.status === 'cancelado') { meses[key].cancelado++; }
+    if (c.status === 'concluido' && c.dentroSLA !== null) {
+      meses[key].totalSLA++;
+      if (c.dentroSLA) meses[key].dentroSLA++;
+    }
+  });
+
+  const mesesOrdenados = Object.keys(meses).sort().slice(-6); // últimos 6 meses
+  const totalConcluido = cards.filter(c => c.status === 'concluido').length;
+  const totalDentroSLA = cards.filter(c => c.status === 'concluido' && c.dentroSLA === true).length;
+  const totalSLABase = cards.filter(c => c.status === 'concluido' && c.dentroSLA !== null).length;
+  const slaAcum = totalSLABase > 0 ? Math.round((totalDentroSLA / totalSLABase) * 100) : 0;
+  const acimaMeta = slaAcum >= META_SLA;
+
+  // Cria o card SLA acumulado
+  const grid = document.getElementById('sla-dash-grid');
+  grid.innerHTML = `
+    <div class="sla-card">
+      <div class="sla-card-title">SLA Acumulado</div>
+      <div class="sla-ring-wrap">
+        <canvas id="sla-ring-canvas" width="100" height="100"></canvas>
+        <div class="sla-ring-value" style="color:${acimaMeta ? '#12b76a' : '#ef4444'}">${slaAcum}%</div>
+      </div>
+      <div class="sla-card-meta">Meta: ${META_SLA}% · ${totalDentroSLA}/${totalSLABase} dentro do prazo</div>
+      <div class="sla-monthly">
+        ${mesesOrdenados.slice(-3).map(k => {
+          const m = meses[k];
+          const pct = m.totalSLA > 0 ? Math.round((m.dentroSLA / m.totalSLA) * 100) : 0;
+          const [y, mo] = k.split('-');
+          const label = new Date(y, mo-1).toLocaleString('pt-BR', { month: 'short', year: '2-digit' });
+          return `<div class="sla-month"><div class="sla-month-val" style="color:${pct>=META_SLA?'#12b76a':'#ef4444'}">${pct}%</div><div class="sla-month-label">${label}</div></div>`;
+        }).join('')}
+      </div>
+      <div class="sla-status-badge ${acimaMeta ? 'sla-ok' : 'sla-warn'}">${acimaMeta ? '✅ SLA dentro da meta' : '⚠️ SLA abaixo da meta'} · ${slaAcum}%</div>
+    </div>
+    <div class="sla-card">
+      <div class="sla-card-title">Volume de Solicitações</div>
+      <div style="margin-top:0.5rem;">
+        ${mesesOrdenados.map(k => {
+          const m = meses[k];
+          const total = m.concluido + m.cancelado;
+          const [y, mo] = k.split('-');
+          const label = new Date(y, mo-1).toLocaleString('pt-BR', { month: 'short', year: '2-digit' });
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span style="font-size:0.72rem;color:rgba(255,255,255,0.4);width:50px;">${label}</span>
+            <div style="flex:1;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;background:#12b76a;border-radius:3px;width:${total>0?Math.min(100,(m.concluido/Math.max(...mesesOrdenados.map(k2=>meses[k2].concluido+meses[k2].cancelado)))*100):0}%"></div>
+            </div>
+            <span style="font-size:0.78rem;font-weight:700;color:#fff;width:30px;text-align:right;">${total}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  // Desenha ring chart
+  setTimeout(() => {
+    const canvas = document.getElementById('sla-ring-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const pct = slaAcum / 100;
+    const color = acimaMeta ? '#12b76a' : '#ef4444';
+    ctx.clearRect(0, 0, 100, 100);
+    ctx.beginPath(); ctx.arc(50, 50, 38, -Math.PI/2, Math.PI*2-Math.PI/2); ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 10; ctx.stroke();
+    ctx.beginPath(); ctx.arc(50, 50, 38, -Math.PI/2, -Math.PI/2 + pct * Math.PI * 2); ctx.strokeStyle = color; ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.stroke();
+  }, 100);
 }
 
 function renderMetrics(cards) {
@@ -390,26 +525,18 @@ function renderMetrics(cards) {
   const cancelados = cards.filter(c => c.status === 'cancelado').length;
   const andamento = cards.filter(c => c.status === 'andamento').length;
   const total = cards.length;
-  const sla = total > 0 ? Math.round((concluidos / (concluidos + cancelados)) * 100) || 0 : 0;
-
-  // Tempo médio em horas
-  const comTempo = cards.filter(c => c.status === 'concluido' && c.created_at && c.finished_at);
-  let tempoMedio = '—';
-  if (comTempo.length > 0) {
-    const soma = comTempo.reduce((acc, c) => {
-      const diff = new Date(c.finished_at) - new Date(c.created_at);
-      return acc + diff;
-    }, 0);
-    const horas = Math.round(soma / comTempo.length / 1000 / 3600);
-    tempoMedio = horas < 24 ? `${horas}h` : `${Math.round(horas/24)}d`;
-  }
+  const dentroSLA = cards.filter(c => c.status === 'concluido' && c.dentroSLA === true).length;
+  const foraSLA = cards.filter(c => c.status === 'concluido' && c.dentroSLA === false).length;
+  const baseSLA = dentroSLA + foraSLA;
+  const sla = baseSLA > 0 ? Math.round((dentroSLA / baseSLA) * 100) : 0;
 
   document.getElementById('m-concluido').textContent = concluidos.toLocaleString('pt-BR');
+  document.getElementById('m-fora-sla').textContent = foraSLA.toLocaleString('pt-BR');
   document.getElementById('m-cancelado').textContent = cancelados.toLocaleString('pt-BR');
   document.getElementById('m-andamento').textContent = andamento.toLocaleString('pt-BR');
   document.getElementById('m-total').textContent = total.toLocaleString('pt-BR');
   document.getElementById('m-sla').textContent = sla + '%';
-  document.getElementById('m-tempo').textContent = tempoMedio;
+  document.getElementById('m-sla').style.color = sla >= META_SLA ? 'var(--success)' : 'var(--danger)';
 }
 
 function renderChartMensal(cards) {
@@ -420,31 +547,49 @@ function renderChartMensal(cards) {
     if (!meses[key]) meses[key] = { concluido: 0, cancelado: 0, andamento: 0 };
     meses[key][c.status]++;
   });
-
   const labels = Object.keys(meses).sort();
-  const labelsFmt = labels.map(k => {
-    const [y, m] = k.split('-');
-    return new Date(y, m-1).toLocaleString('pt-BR', { month: 'short', year: '2-digit' });
-  });
+  const labelsFmt = labels.map(k => { const [y,m]=k.split('-'); return new Date(y,m-1).toLocaleString('pt-BR',{month:'short',year:'2-digit'}); });
 
   if (charts.mensal) charts.mensal.destroy();
   charts.mensal = new Chart(document.getElementById('chart-mensal').getContext('2d'), {
     type: 'bar',
-    data: {
-      labels: labelsFmt,
-      datasets: [
-        { label: 'Concluídas', data: labels.map(k => meses[k].concluido), backgroundColor: '#12b76a', borderRadius: 4, borderSkipped: false },
-        { label: 'Canceladas', data: labels.map(k => meses[k].cancelado), backgroundColor: '#8e91a8', borderRadius: 4, borderSkipped: false },
-        { label: 'Em andamento', data: labels.map(k => meses[k].andamento), backgroundColor: '#6613D0', borderRadius: 4, borderSkipped: false },
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
+    data: { labels: labelsFmt, datasets: [
+      { label: 'Concluídas', data: labels.map(k=>meses[k].concluido), backgroundColor: '#12b76a', borderRadius: 4, borderSkipped: false },
+      { label: 'Canceladas', data: labels.map(k=>meses[k].cancelado), backgroundColor: '#8e91a8', borderRadius: 4, borderSkipped: false },
+      { label: 'Em andamento', data: labels.map(k=>meses[k].andamento), backgroundColor: '#6613D0', borderRadius: 4, borderSkipped: false },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'top', labels: { font: { family: 'Space Grotesk', size: 11 }, padding: 12 } } },
-      scales: {
-        x: { stacked: true, ticks: { font: { family: 'Space Grotesk', size: 10 } }, grid: { display: false } },
-        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' } }
-      }
+      scales: { x: { stacked: true, ticks: { font: { family: 'Space Grotesk', size: 10 } }, grid: { display: false } },
+                y: { stacked: true, beginAtZero: true, ticks: { font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' } } }
+    }
+  });
+}
+
+function renderChartSLAMensal(cards) {
+  const meses = {};
+  cards.filter(c => c.status === 'concluido' && c.dentroSLA !== null).forEach(c => {
+    const d = new Date(c.created_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!meses[key]) meses[key] = { dentro: 0, total: 0 };
+    meses[key].total++;
+    if (c.dentroSLA) meses[key].dentro++;
+  });
+  const labels = Object.keys(meses).sort();
+  const labelsFmt = labels.map(k => { const [y,m]=k.split('-'); return new Date(y,m-1).toLocaleString('pt-BR',{month:'short',year:'2-digit'}); });
+  const slaData = labels.map(k => meses[k].total > 0 ? Math.round((meses[k].dentro / meses[k].total)*100) : 0);
+
+  if (charts.slaMensal) charts.slaMensal.destroy();
+  charts.slaMensal = new Chart(document.getElementById('chart-sla-mensal').getContext('2d'), {
+    type: 'line',
+    data: { labels: labelsFmt, datasets: [
+      { label: 'SLA %', data: slaData, borderColor: '#6613D0', backgroundColor: 'rgba(102,19,208,0.08)', tension: 0.4, fill: true, pointBackgroundColor: slaData.map(v => v >= META_SLA ? '#12b76a' : '#ef4444'), pointRadius: 5 },
+      { label: `Meta ${META_SLA}%`, data: labels.map(() => META_SLA), borderColor: '#FE8F1C', borderDash: [6,3], pointRadius: 0, borderWidth: 2 },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { family: 'Space Grotesk', size: 11 }, padding: 12 } } },
+      scales: { y: { beginAtZero: false, min: 0, max: 105, ticks: { callback: v => v+'%', font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                x: { ticks: { font: { family: 'Space Grotesk', size: 10 } }, grid: { display: false } } }
     }
   });
 }
@@ -452,62 +597,32 @@ function renderChartMensal(cards) {
 function renderChartTipo(cards) {
   const tipos = {};
   cards.forEach(c => { tipos[c.tipo] = (tipos[c.tipo]||0)+1; });
-  const sorted = Object.entries(tipos).sort((a,b)=>b[1]-a[1]).slice(0, 8);
-
+  const sorted = Object.entries(tipos).sort((a,b)=>b[1]-a[1]).slice(0,8);
   if (charts.tipo) charts.tipo.destroy();
   charts.tipo = new Chart(document.getElementById('chart-tipo').getContext('2d'), {
     type: 'doughnut',
-    data: {
-      labels: sorted.map(x => x[0]),
-      datasets: [{ data: sorted.map(x => x[1]), backgroundColor: ['#6613D0','#FE8F1C','#12b76a','#0ea5e9','#f59e0b','#ef4444','#8b5cf6','#8e91a8'], borderWidth: 0 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'right', labels: { font: { family: 'Space Grotesk', size: 10 }, padding: 8 } } }
-    }
-  });
-}
-
-function renderChartStatus(cards) {
-  const concluidos = cards.filter(c => c.status === 'concluido').length;
-  const cancelados = cards.filter(c => c.status === 'cancelado').length;
-  const andamento = cards.filter(c => c.status === 'andamento').length;
-
-  if (charts.status) charts.status.destroy();
-  charts.status = new Chart(document.getElementById('chart-status').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: ['Concluídas', 'Canceladas', 'Em andamento'],
-      datasets: [{ data: [concluidos, cancelados, andamento], backgroundColor: ['#12b76a', '#8e91a8', '#6613D0'], borderRadius: 8, borderSkipped: false }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: true, ticks: { font: { family: 'Space Grotesk' } }, grid: { color: 'rgba(0,0,0,0.05)' } },
-        x: { ticks: { font: { family: 'Space Grotesk', size: 11 } }, grid: { display: false } }
-      }
-    }
+    data: { labels: sorted.map(x=>x[0]), datasets: [{ data: sorted.map(x=>x[1]), backgroundColor: ['#6613D0','#FE8F1C','#12b76a','#0ea5e9','#f59e0b','#ef4444','#8b5cf6','#8e91a8'], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'Space Grotesk', size: 10 }, padding: 8 } } } }
   });
 }
 
 function renderSLABars(cards) {
   const tipos = {};
-  cards.forEach(c => {
-    if (!tipos[c.tipo]) tipos[c.tipo] = { total: 0, concluido: 0 };
+  cards.filter(c => c.status === 'concluido' && c.dentroSLA !== null).forEach(c => {
+    if (!tipos[c.tipo]) tipos[c.tipo] = { total: 0, dentro: 0, prazo: c.prazo };
     tipos[c.tipo].total++;
-    if (c.status === 'concluido') tipos[c.tipo].concluido++;
+    if (c.dentroSLA) tipos[c.tipo].dentro++;
   });
-
-  const sorted = Object.entries(tipos).sort((a,b) => b[1].total - a[1].total).slice(0, 7);
-  const colors = ['#12b76a','#6613D0','#0ea5e9','#f59e0b','#FE8F1C','#8b5cf6','#ef4444'];
+  const sorted = Object.entries(tipos).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
+  const colors = ['#12b76a','#6613D0','#0ea5e9','#f59e0b','#FE8F1C','#8b5cf6','#ef4444','#8e91a8'];
 
   document.getElementById('sla-bars-container').innerHTML = sorted.map(([tipo, d], i) => {
-    const pct = d.total > 0 ? Math.round((d.concluido / d.total) * 100) : 0;
+    const pct = d.total > 0 ? Math.round((d.dentro / d.total) * 100) : 0;
+    const cor = pct >= META_SLA ? colors[i % colors.length] : '#ef4444';
     return `<div class="sla-row">
-      <div class="sla-label" title="${tipo}">${tipo.length > 22 ? tipo.substring(0,20)+'…' : tipo}</div>
-      <div class="sla-track"><div class="sla-fill" style="width:${pct}%;background:${colors[i % colors.length]};"></div></div>
-      <div class="sla-pct">${pct}%</div>
+      <div class="sla-label" title="${tipo} (prazo: ${d.prazo}d)">${tipo.length > 22 ? tipo.substring(0,20)+'…' : tipo}</div>
+      <div class="sla-track"><div class="sla-fill" style="width:${pct}%;background:${cor};"></div></div>
+      <div class="sla-pct" style="color:${pct>=META_SLA?'var(--success)':'var(--danger)'}">${pct}%</div>
     </div>`;
   }).join('');
 }
@@ -516,14 +631,13 @@ function renderTabela() {
   const search = document.getElementById('search-tb').value.toLowerCase();
   const fTipo = document.getElementById('f-tipo').value;
   const fStatus = document.getElementById('f-status-tb').value;
+  const fSLA = document.getElementById('f-sla').value;
 
   let cards = filtrarPorAno(todosCards, anoAtivo).filter(c => {
     if (fTipo && c.tipo !== fTipo) return false;
-    if (fStatus) {
-      if (fStatus === 'Em andamento' && c.status !== 'andamento') return false;
-      if (fStatus === 'Solicitações concluídas' && c.status !== 'concluido') return false;
-      if (fStatus === 'Solicitações Canceladas' && c.status !== 'cancelado') return false;
-    }
+    if (fStatus && c.status !== fStatus) return false;
+    if (fSLA === 'dentro' && c.dentroSLA !== true) return false;
+    if (fSLA === 'fora' && c.dentroSLA !== false) return false;
     if (search && !`${c.titulo} ${c.tipo} ${c.fase}`.toLowerCase().includes(search)) return false;
     return true;
   }).sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
@@ -533,63 +647,51 @@ function renderTabela() {
   const inicio = paginaAtual * POR_PAGINA;
   const pagina = cards.slice(inicio, inicio + POR_PAGINA);
 
-  const statusLabel = { concluido: '<span class="badge b-concluido">Concluída</span>', cancelado: '<span class="badge b-cancelado">Cancelada</span>', andamento: '<span class="badge b-andamento">Em andamento</span>' };
+  const statusLabel = {
+    concluido: '<span class="badge b-concluido">Concluída</span>',
+    cancelado: '<span class="badge b-cancelado">Cancelada</span>',
+    andamento: '<span class="badge b-andamento">Em andamento</span>'
+  };
 
-  const tbody = document.getElementById('tabela-body');
-  tbody.innerHTML = pagina.length ? pagina.map(c => {
+  document.getElementById('tabela-body').innerHTML = pagina.length ? pagina.map(c => {
     const dt = c.created_at ? new Date(c.created_at).toLocaleDateString('pt-BR') : '—';
     const dtFim = c.finished_at ? new Date(c.finished_at).toLocaleDateString('pt-BR') : '—';
-    let tempo = '—';
-    if (c.created_at && c.finished_at) {
-      const h = Math.round((new Date(c.finished_at) - new Date(c.created_at)) / 1000 / 3600);
-      tempo = h < 24 ? `${h}h` : `${Math.round(h/24)}d`;
+    let tempoFmt = '—';
+    if (c.tempoExec !== null && c.tempoExec !== undefined) {
+      tempoFmt = c.tempoExec < 1 ? `${Math.round(c.tempoExec*24)}h` : `${c.tempoExec.toFixed(1)}d`;
     }
+    let slaLabel = '—';
+    if (c.status === 'cancelado') slaLabel = '<span style="color:var(--ink3);font-size:0.75rem;">N/A</span>';
+    else if (c.dentroSLA === true) slaLabel = '<span class="badge b-dentro">✅ Dentro</span>';
+    else if (c.dentroSLA === false) slaLabel = '<span class="badge b-fora">❌ Fora</span>';
+    else if (c.status === 'andamento') slaLabel = '<span style="color:var(--warning);font-size:0.75rem;">Em curso</span>';
+
     return `<tr>
       <td><span class="tid">#${c.id}</span></td>
-      <td style="font-weight:500;color:var(--ink);">${c.titulo || '—'}</td>
-      <td style="font-size:0.8rem;">${c.tipo || '—'}</td>
-      <td>${statusLabel[c.status] || c.status}</td>
+      <td style="font-weight:500;color:var(--ink);">${c.titulo||'—'}</td>
+      <td style="font-size:0.8rem;">${c.tipo||'—'}</td>
+      <td>${statusLabel[c.status]||c.status}</td>
+      <td>${slaLabel}</td>
+      <td style="font-size:0.78rem;font-weight:600;">${tempoFmt}</td>
+      <td style="font-size:0.78rem;color:var(--ink3);">${c.prazo ? c.prazo+'d' : '—'}</td>
       <td style="font-size:0.78rem;color:var(--ink3);">${dt}</td>
       <td style="font-size:0.78rem;color:var(--ink3);">${dtFim}</td>
-      <td style="font-size:0.78rem;font-weight:600;color:var(--ink2);">${tempo}</td>
     </tr>`;
-  }).join('') : '<tr><td colspan="7"><div class="empty">🔍 Nenhuma solicitação encontrada</div></td></tr>';
+  }).join('') : '<tr><td colspan="9"><div class="empty">🔍 Nenhuma solicitação encontrada</div></td></tr>';
 
-  // Paginação
   const totalPaginas = Math.ceil(cards.length / POR_PAGINA);
   const pag = document.getElementById('tabela-pagination');
-  if (totalPaginas > 1) {
-    pag.innerHTML = `Página ${paginaAtual+1} de ${totalPaginas} &nbsp;
-      <button onclick="irPagina(${paginaAtual-1})" ${paginaAtual===0?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'Space Grotesk',sans-serif;">← Anterior</button>
-      <button onclick="irPagina(${paginaAtual+1})" ${paginaAtual>=totalPaginas-1?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'Space Grotesk',sans-serif;">Próxima →</button>`;
-  } else {
-    pag.innerHTML = '';
-  }
+  pag.innerHTML = totalPaginas > 1 ? `Página ${paginaAtual+1} de ${totalPaginas} &nbsp;
+    <button onclick="irPagina(${paginaAtual-1})" ${paginaAtual===0?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'Space Grotesk',sans-serif;">← Anterior</button>
+    <button onclick="irPagina(${paginaAtual+1})" ${paginaAtual>=totalPaginas-1?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'Space Grotesk',sans-serif;">Próxima →</button>` : '';
 }
 
-function irPagina(p) {
-  paginaAtual = p;
-  renderTabela();
-  document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth' });
-}
+function irPagina(p) { paginaAtual = p; renderTabela(); document.querySelector('.table-card').scrollIntoView({behavior:'smooth'}); }
+function recarregar() { todosCards = []; carregarTudo(); }
+function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
 
-function recarregar() {
-  todosCards = [];
-  carregarTudo();
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// Inicia
 carregarTudo();
-
-// Auto-refresh a cada 5 minutos
-setInterval(() => { carregarTudo(); }, 5 * 60 * 1000);
+setInterval(carregarTudo, 5 * 60 * 1000);
 </script>
 </body>
 </html>
