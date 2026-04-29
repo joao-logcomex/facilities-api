@@ -625,11 +625,11 @@ function renderSLABars(cards) {
         <span style="font-size:0.75rem;font-weight:700;color:#12b76a;width:24px;text-align:right;">${d.dentro}</span>
         <div class="sla-track" style="flex:1;">
           <div style="display:flex;height:100%;border-radius:4px;overflow:hidden;">
-            <div style="background:#12b76a;width:${total>0?Math.max(d.dentro/total*100, d.dentro>0?98:100):100}%;"></div>
-            <div style="background:#ef4444;width:${total>0?Math.max(d.fora/total*100, d.fora===0?2:0):0}%;opacity:${d.fora===0?0.35:1};"></div>
+            <div style="background:#12b76a;flex:${d.dentro};min-width:${d.dentro>0?'4px':'0'};"></div>
+            <div style="background:#ef4444;flex:${d.fora > 0 ? d.fora : 0.15};min-width:4px;opacity:${d.fora===0?0.3:1};"></div>
           </div>
         </div>
-        <span style="font-size:0.75rem;font-weight:700;color:#ef4444;width:24px;opacity:${d.fora===0?0.4:1};">${d.fora}</span>
+        <span style="font-size:0.75rem;font-weight:700;color:${d.fora===0?'rgba(239,68,68,0.4)':'#ef4444'};width:24px;">${d.fora}</span>
       </div>
       <div class="sla-pct" style="color:${cor}">${pct}%</div>
     </div>`;
