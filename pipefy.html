@@ -584,9 +584,9 @@ function renderChartSLAMensal(cards) {
   charts.slaMensal = new Chart(document.getElementById('chart-sla-mensal').getContext('2d'), {
     type: 'line',
     data: { labels: labelsFmt, datasets: [
-      { label: 'Dentro do SLA %', data: slaData, borderColor: '#12b76a', backgroundColor: 'rgba(18,183,106,0.06)', tension: 0.4, fill: true, pointBackgroundColor: slaData.map(v => v >= META_SLA ? '#12b76a' : '#ef4444'), pointRadius: 5, yAxisID: 'y' },
-      { label: 'Fora do SLA %', data: foraData, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.0)', tension: 0.4, fill: false, pointBackgroundColor: '#ef4444', pointRadius: foraData.map(v => v > 0 ? 6 : 4), borderWidth: 2, yAxisID: 'y' },
-      { label: `Meta ${META_SLA}%`, data: labels.map(() => META_SLA), borderColor: '#FE8F1C', borderDash: [6,3], pointRadius: 0, borderWidth: 2, yAxisID: 'y' },
+      { label: 'Dentro do SLA %', data: slaData, borderColor: '#12b76a', backgroundColor: 'rgba(18,183,106,0.06)', tension: 0.4, fill: true, pointBackgroundColor: slaData.map(v => v >= META_SLA ? '#12b76a' : '#ef4444'), pointRadius: 5 },
+      { label: 'Fora do SLA %', data: foraData, borderColor: '#ef4444', backgroundColor: 'rgba(0,0,0,0)', tension: 0.4, fill: false, pointBackgroundColor: foraData.map(v => v > 0 ? '#ef4444' : 'rgba(239,68,68,0.3)'), pointRadius: foraData.map(v => v > 0 ? 8 : 5), borderWidth: 2.5 },
+      { label: `Meta ${META_SLA}%`, data: labels.map(() => META_SLA), borderColor: '#FE8F1C', borderDash: [6,3], pointRadius: 0, borderWidth: 2 },
     ]},
     options: { responsive: true, maintainAspectRatio: false,
       plugins: { 
