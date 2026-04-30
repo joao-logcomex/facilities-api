@@ -724,7 +724,10 @@ async function gerarRelatorio() {
     return d.getMonth() + 1 === mes && d.getFullYear() === ano;
   });
   if (filtered.length === 0 && allTickets.length > 0) filtered = allTickets;
-  if (filtered.length === 0) { showToast('Nenhum chamado encontrado para gerar relatório.'); return; }
+  // Se Firebase vazio, gera relatório do período mesmo sem dados
+  if (filtered.length === 0) {
+    filtered = [{ id: 'N/A', titulo: 'Sem chamados registrados no período', categoria: 'N/A', status: 'N/A', prioridade: 'Baixa', data_abertura: new Date(`${ano}-${String(mes).padStart(2,'0')}-01`).toISOString() }];
+  }
   const btn = document.getElementById('btn-gerar');
   const loading = document.getElementById('relatorio-loading');
   const output = document.getElementById('relatorio-output');
