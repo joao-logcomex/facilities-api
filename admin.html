@@ -827,100 +827,119 @@ const CAT_MAP_SYNC = {
   'Recebimento de Encomendas': 'outros', 'Elogios ou Sugestões': 'outros',
 };
 
+// ─── Sync Pipefy → Firebase (busca paralela + writeBatch) ───────────────────
+
+async function pipefySyncAPI(query) {
+  const r = await fetch('/api/pipefy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query })
+  });
+  return r.json();
+}
+
+async function buscarCardsFaseSync(fase, onProgress) {
+  let cards = [];
+  let cursor = null;
+  let pagina = 0;
+  while (pagina < 100) {
+    const after = cursor ? `, after: "${cursor}"` : '';
+    const q = `{ phase(id: "${fase.id}") { cards(first: 50${after}) {
+      edges { node {
+        id title created_at finished_at
+        fields { name value }
+        phases_history { phase { name } duration }
+      } }
+      pageInfo { hasNextPage endCursor }
+    } } }`;
+    const data = await pipefySyncAPI(q);
+    const phase = data?.data?.phase;
+    if (!phase) break;
+    for (const edge of phase.cards.edges) {
+      const node = edge.node;
+      const tipo = node.fields?.find(f => f.name === 'Tipo de solicitação')?.value || fase.nome;
+      const descricao = node.fields?.find(f => f.name === 'Descrição do problema ou necessidade')?.value || '';
+      let dentroSLA = null;
+      for (const ph of (node.phases_history || [])) {
+        const nome = ph.phase?.name;
+        if (SLA_PRAZOS_SYNC[nome] !== undefined && ph.duration != null) {
+          dentroSLA = (ph.duration / 86400) <= SLA_PRAZOS_SYNC[nome];
+          break;
+        }
+      }
+      cards.push({ node, tipo, descricao, dentroSLA, fase });
+    }
+    if (onProgress) onProgress(cards.length);
+    if (!phase.cards.pageInfo.hasNextPage) break;
+    cursor = phase.cards.pageInfo.endCursor;
+    pagina++;
+  }
+  return cards;
+}
+
 async function syncPipefy() {
   const btn = document.getElementById('btn-sync-pipefy');
-  btn.innerHTML = '<span>⏳</span> Sincronizando...';
+  btn.innerHTML = '<span>⏳</span> Buscando fases...';
   btn.style.pointerEvents = 'none';
 
-  let totalImportados = 0;
-  let totalAtualizados = 0;
-
   try {
-    for (let i = 0; i < FASES_SYNC.length; i++) {
-      const fase = FASES_SYNC[i];
-      btn.innerHTML = `<span>⏳</span> ${i+1}/${FASES_SYNC.length} fases...`;
+    const { writeBatch, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
 
-      let cursor = null;
-      let pagina = 0;
+    // 1. Busca todas as fases EM PARALELO (igual ao pipefy.html)
+    let totalCards = 0;
+    const resultados = await Promise.all(
+      FASES_SYNC.map(fase =>
+        buscarCardsFaseSync(fase, (n) => {
+          totalCards = n;
+          btn.innerHTML = `<span>⏳</span> ${totalCards} cards...`;
+        })
+      )
+    );
 
-      while (pagina < 100) {
-        const after = cursor ? `, after: "${cursor}"` : '';
-        const query = `{ phase(id: "${fase.id}") { cards(first: 50${after}) {
-          edges { node {
-            id title created_at finished_at
-            fields { name value }
-            phases_history { phase { name } duration }
-          } }
-          pageInfo { hasNextPage endCursor }
-        } } }`;
+    const todosCards = resultados.flat();
+    btn.innerHTML = `<span>⏳</span> Salvando ${todosCards.length} cards...`;
 
-        const resp = await fetch('/api/pipefy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query })
-        });
-        const data = await resp.json();
-        const phase = data?.data?.phase;
-        if (!phase) break;
+    // 2. Salva no Firebase em batches de 500 (limite do Firestore)
+    const now = new Date();
+    let importados = 0;
+    let i = 0;
 
-        // Importa cards em batch para Firebase
-        const { setDoc, doc, getDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    while (i < todosCards.length) {
+      const lote = todosCards.slice(i, i + 500);
+      const batch = writeBatch(window.db);
 
-        for (const edge of phase.cards.edges) {
-          const node = edge.node;
-          const tipo = node.fields?.find(f => f.name === 'Tipo de solicitação')?.value || fase.nome;
-          const descricao = node.fields?.find(f => f.name === 'Descrição do problema ou necessidade')?.value || '';
-
-          // SLA
-          let dentroSLA = null;
-          for (const ph of (node.phases_history || [])) {
-            const nome = ph.phase?.name;
-            if (SLA_PRAZOS_SYNC[nome] !== undefined && ph.duration != null) {
-              dentroSLA = (ph.duration / 86400) <= SLA_PRAZOS_SYNC[nome];
-              break;
-            }
-          }
-
-          const docId = `pipefy-${node.id}`;
-          const docRef = doc(window.db, 'tickets', docId);
-          const existing = await getDoc(docRef);
-
-          const cardData = {
-            id: docId,
-            titulo: node.title || 'Sem título',
-            descricao,
-            categoria: CAT_MAP_SYNC[tipo] || 'outros',
-            tipo_pipefy: tipo,
-            status: fase.status,
-            fase_pipefy: fase.nome,
-            prioridade: 'Média',
-            userId: 'pipefy-import',
-            userEmail: 'pipefy@logcomex.com',
-            origem: 'pipefy',
-            pipefy_id: node.id,
-            dentroSLA,
-            data_abertura: node.created_at ? new Date(node.created_at) : new Date(),
-            data_conclusao: node.finished_at ? new Date(node.finished_at) : null,
-            updatedAt: new Date(),
-          };
-
-          if (existing.exists()) {
-            await setDoc(docRef, { status: fase.status, fase_pipefy: fase.nome, updatedAt: new Date() }, { merge: true });
-            totalAtualizados++;
-          } else {
-            await setDoc(docRef, { ...cardData, createdAt: new Date() });
-            totalImportados++;
-          }
-        }
-
-        if (!phase.cards.pageInfo.hasNextPage) break;
-        cursor = phase.cards.pageInfo.endCursor;
-        pagina++;
+      for (const { node, tipo, descricao, dentroSLA, fase } of lote) {
+        const docId = `pipefy-${node.id}`;
+        const docRef = doc(window.db, 'tickets', docId);
+        batch.set(docRef, {
+          id: docId,
+          titulo: node.title || 'Sem título',
+          descricao,
+          categoria: CAT_MAP_SYNC[tipo] || 'outros',
+          tipo_pipefy: tipo,
+          status: fase.status,
+          fase_pipefy: fase.nome,
+          prioridade: 'Média',
+          userId: 'pipefy-import',
+          userEmail: 'pipefy@logcomex.com',
+          origem: 'pipefy',
+          pipefy_id: node.id,
+          dentroSLA,
+          data_abertura: node.created_at ? new Date(node.created_at) : now,
+          data_conclusao: node.finished_at ? new Date(node.finished_at) : null,
+          updatedAt: now,
+          createdAt: now,
+        }, { merge: true });
+        importados++;
       }
+
+      await batch.commit();
+      i += 500;
+      btn.innerHTML = `<span>⏳</span> ${importados}/${todosCards.length} salvos...`;
     }
 
     btn.innerHTML = '<span>✅</span> Sincronizado!';
-    showToast(`✅ Pipefy sincronizado! ${totalImportados} importados, ${totalAtualizados} atualizados.`);
+    showToast(`✅ ${todosCards.length} cards do Pipefy sincronizados!`);
     setTimeout(() => {
       btn.innerHTML = '<span>🔄</span> Sincronizar Pipefy';
       btn.style.pointerEvents = 'auto';
