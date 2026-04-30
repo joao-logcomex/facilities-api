@@ -29,10 +29,12 @@
   .unauth-screen h2 { color: #fff; font-size: 1.5rem; font-weight: 700; }
   .unauth-screen p { color: rgba(255,255,255,0.4); font-size: 0.9rem; }
   .btn-back { background: var(--purple); color: #fff; border: none; padding: 12px 28px; border-radius: var(--radius-sm); font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 0.5rem; }
-  .sidebar { width: var(--sidebar); background: var(--black); height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; padding: 1.5rem 1rem; z-index: 50; overflow-y: auto; overflow-x: hidden; }
-  .sidebar::-webkit-scrollbar { width: 3px; }
-  .sidebar::-webkit-scrollbar-track { background: transparent; }
-  .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  .sidebar { width: var(--sidebar); background: var(--black); height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; padding: 0; z-index: 50; overflow: hidden; }
+  .sidebar-inner { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 1.5rem 1rem; display: flex; flex-direction: column; }
+  .sidebar-inner::-webkit-scrollbar { width: 3px; }
+  .sidebar-inner::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
   .sb-logo { display: flex; align-items: center; gap: 10px; padding: 0 0.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 1.2rem; }
   .sb-logo-mark { width: 30px; height: 30px; background: var(--purple); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
   .sb-logo-mark::before { content: ''; position: absolute; width: 10px; height: 10px; background: var(--orange); border-radius: 50%; top: 2px; right: 2px; }
@@ -45,7 +47,7 @@
   .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
   .nav-item.active { background: rgba(102,19,208,0.25); color: var(--purple-mid); }
   .nav-badge { margin-left: auto; background: var(--orange); color: #fff; font-size: 0.68rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; min-width: 20px; text-align: center; }
-  .sb-footer { border-top: 1px solid rgba(255,255,255,0.07); padding-top: 1rem; }
+  .sb-footer { border-top: 1px solid rgba(255,255,255,0.07); padding: 1rem; background: var(--black); flex-shrink: 0; }
   .user-info { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
   .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(102,19,208,0.3); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; color: var(--purple-mid); border: 1px solid rgba(102,19,208,0.4); }
   .user-name { font-size: 0.83rem; font-weight: 600; color: rgba(255,255,255,0.7); }
@@ -220,6 +222,7 @@
 </div>
 
 <aside class="sidebar" id="sidebar" style="display:none;">
+<div class="sidebar-inner">
   <div class="sb-logo">
     <svg width="30" height="30" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect width="26" height="26" x="0" y="14" rx="4" fill="#ffffff"/>
@@ -245,13 +248,14 @@
     <div class="sb-section">Links</div>
     <a href="index.html" class="nav-item"><span>↗</span> Formulário público</a>
   </nav>
-  <div class="sb-footer">
-    <div class="user-info">
-      <div class="user-avatar" id="uav">AD</div>
-      <div><div class="user-name" id="uname">Admin</div><div class="user-role">Facilities · Admin</div></div>
-    </div>
-    <button class="logout-btn" onclick="doLogout()">Sair</button>
+</div><!-- end sidebar-inner -->
+<div class="sb-footer">
+  <div class="user-info">
+    <div class="user-avatar" id="uav">AD</div>
+    <div><div class="user-name" id="uname">Admin</div><div class="user-role">Facilities · Admin</div></div>
   </div>
+  <button class="logout-btn" onclick="doLogout()">Sair</button>
+</div>
 </aside>
 
 <main class="main" id="main-content" style="display:none;">
