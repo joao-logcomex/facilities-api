@@ -401,6 +401,7 @@
   const ADMINS = ['christian.bertolino@logcomex.com','joao.faria@logcomex.com','henrique.silva@logcomex.com'];
 
   let allTickets = [];
+  window.allTickets = allTickets;
   let allFeedbacks = [];
   let currentDocId = null;
   let charts = {};
@@ -459,6 +460,7 @@
     const tq = query(collection(db, 'tickets'), orderBy('data_abertura', 'desc'));
     onSnapshot(tq, (snap) => {
       allTickets = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+      window.allTickets = allTickets;
       updateMetrics(); renderTable(); renderKanban(); updateBadge(); updateCharts();
     });
 
