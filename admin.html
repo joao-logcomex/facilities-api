@@ -224,6 +224,22 @@
   .periodo-label { font-size: 0.8rem; color: var(--ink3); font-weight: 500; }
   .periodo-badge { background: var(--purple-light); color: var(--purple); font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 100px; border: 1px solid rgba(102,19,208,0.2); }
 
+
+  .log-charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+  .log-chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+  .log-chart-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.25rem; }
+  .log-chart-sub { font-size: 0.78rem; color: var(--ink3); margin-bottom: 1.2rem; }
+  .log-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .log-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; text-align: center; }
+  .log-stat-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
+  .log-stat-value { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.04em; color: var(--ink); }
+  .log-stat-label { font-size: 0.75rem; color: var(--ink3); margin-top: 0.2rem; }
+  .log-stat-sub { font-size: 0.7rem; color: var(--ink3); }
+  .log-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  .log-table th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 0.72rem; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.05em; }
+  .log-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .log-table tr:hover td { background: var(--surface2); }
+
 </style>
 </head>
 <body>
@@ -261,6 +277,8 @@
     <div class="sb-section">Histórico</div>
     <a href="pipefy.html" class="nav-item"><span>📈</span> Histórico Pipefy</a>
     <div class="nav-item" onclick="syncPipefy()" id="btn-sync-pipefy" style="cursor:pointer;margin-top:4px;border:1px solid rgba(254,143,28,0.3);border-radius:8px;color:rgba(254,143,28,0.8);"><span>🔄</span> Sincronizar Pipefy</div>
+    <div class="sb-section">Logística</div>
+    <div class="nav-item" onclick="nav('logistica',this)"><span>🚚</span> Envios</div>
     <div class="sb-section">Links</div>
     <a href="index.html" class="nav-item"><span>↗</span> Formulário público</a>
   </nav>
@@ -388,6 +406,34 @@
       </div>
       <div class="relatorio-loading" id="relatorio-loading"><div class="spinner"></div><p>Analisando dados<span class="dots"></span></p><p style="font-size:0.78rem;margin-top:4px;opacity:0.6;">A IA está processando os chamados do mês selecionado</p></div>
       <div class="relatorio-output" id="relatorio-output"></div>
+    </div>
+  </div>
+
+
+  <div class="page" id="page-logistica">
+    <div class="page-topbar">
+      <div><div class="page-title">🚚 Logística & Envios</div><div style="font-size:0.82rem;color:var(--ink3);margin-top:2px;" id="log-date"></div></div>
+    </div>
+    <div class="log-stats-row">
+      <div class="log-stat"><div class="log-stat-icon">✈️</div><div class="log-stat-value" id="log-total-dhl">0</div><div class="log-stat-label">DHL</div><div class="log-stat-sub">SLA: 2 dias úteis</div></div>
+      <div class="log-stat"><div class="log-stat-icon">📮</div><div class="log-stat-value" id="log-total-correio">0</div><div class="log-stat-label">Correio</div><div class="log-stat-sub">SLA: 7 dias úteis</div></div>
+      <div class="log-stat"><div class="log-stat-icon">🚗</div><div class="log-stat-value" id="log-total-uber">0</div><div class="log-stat-label">Uber Flash</div><div class="log-stat-sub">SLA: Mesmo dia</div></div>
+    </div>
+    <div class="log-charts-grid">
+      <div class="log-chart-card"><div class="log-chart-title">Distribuição por Transportadora</div><div class="log-chart-sub">Total de envios por tipo</div><canvas id="chart-log-transp" height="220"></canvas></div>
+      <div class="log-chart-card"><div class="log-chart-title">% Dentro do SLA</div><div class="log-chart-sub">Envios concluídos no prazo</div><canvas id="chart-log-sla" height="220"></canvas></div>
+    </div>
+    <div class="card" style="margin-top:1.5rem;overflow:hidden;">
+      <div style="padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-weight:700;font-size:0.95rem;">Todos os Envios</div>
+        <div id="log-count" style="font-size:0.82rem;color:var(--ink3);">0 envios</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="log-table">
+          <thead><tr><th>Protocolo</th><th>Tipo</th><th>Transportadora</th><th>Item</th><th>Destinatário</th><th>Data Envio</th><th>Status</th></tr></thead>
+          <tbody id="log-tbody"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--ink3);">Carregando...</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -1112,6 +1158,31 @@ window.setPeriodoTipo = setPeriodoTipo;
 window.aplicarPeriodo = aplicarPeriodo;
 window.initPeriodo = initPeriodo;
 // ────────────────────────────────────────────────────────────────────
+
+
+let chartsLog = {};
+function renderLogistica() {
+  const logT = allTickets.filter(t => t.categoria === 'logistica');
+  const dhl = logT.filter(t => t.transportadora === 'DHL' || t.subcategoria === 'DHL').length;
+  const cor = logT.filter(t => t.transportadora === 'Correio' || t.subcategoria === 'Correio').length;
+  const uber = logT.filter(t => t.transportadora === 'Uber Flash' || t.subcategoria === 'Uber Flash').length;
+  document.getElementById('log-total-dhl').textContent = dhl;
+  document.getElementById('log-total-correio').textContent = cor;
+  document.getElementById('log-total-uber').textContent = uber;
+  document.getElementById('log-count').textContent = logT.length + ' envios';
+  document.getElementById('log-date').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const c1 = document.getElementById('chart-log-transp')?.getContext('2d');
+  if(c1){if(chartsLog.transp)chartsLog.transp.destroy();chartsLog.transp=new Chart(c1,{type:'doughnut',data:{labels:['DHL ✈️','Correio 📮','Uber Flash 🚗'],datasets:[{data:[dhl,cor,uber],backgroundColor:['#f59e0b','#10b981','#6613D0'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{family:'Space Grotesk',size:12},padding:16}}}}});}
+  const slaLim={DHL:2,Correio:7,'Uber Flash':1};
+  const slaPct=['DHL','Correio','Uber Flash'].map(t=>{const e=logT.filter(x=>(x.transportadora===t||x.subcategoria===t)&&x.status==='Concluído');if(!e.length)return 0;const ok=e.filter(x=>{if(!x.data_abertura||!x.data_conclusao)return true;const a=x.data_abertura?.toDate?x.data_abertura.toDate():new Date(x.data_abertura);const b=x.data_conclusao?.toDate?x.data_conclusao.toDate():new Date(x.data_conclusao);return Math.ceil((b-a)/(864e5))<=slaLim[t];}).length;return Math.round(ok/e.length*100);});
+  const c2=document.getElementById('chart-log-sla')?.getContext('2d');
+  if(c2){if(chartsLog.sla)chartsLog.sla.destroy();chartsLog.sla=new Chart(c2,{type:'bar',data:{labels:['DHL','Correio','Uber Flash'],datasets:[{label:'% no prazo',data:slaPct,backgroundColor:slaPct.map(v=>v>=90?'#12b76a':v>=70?'#f59e0b':'#ef4444'),borderRadius:8}]},options:{responsive:true,scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.05)'}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});}
+  const tbody=document.getElementById('log-tbody');
+  if(!logT.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--ink3);">Nenhum envio ainda.</td></tr>';return;}
+  const tc={'DHL':'background:#fff3cd;color:#856404','Correio':'background:#d1e7dd;color:#0a3622','Uber Flash':'background:#e8f8ef;color:#12b76a'};
+  tbody.innerHTML=logT.slice(0,50).map(t=>{const dt=t.data_abertura?.toDate?t.data_abertura.toDate().toLocaleDateString('pt-BR'):'-';const tr2=t.transportadora||t.subcategoria||'-';const cor2=tc[tr2]||'background:var(--surface3);color:var(--ink3)';const sc=t.status==='Concluído'?'#12b76a':t.status==='Em andamento'?'#d97706':'#6613D0';return '<tr><td style="font-weight:700;color:var(--purple);">'+(t.id||'-')+'</td><td>'+(t.tipo_envio==='kit'?'📦 Kit':'💻 Equipamento')+'</td><td><span style="padding:3px 10px;border-radius:100px;font-size:0.72rem;font-weight:700;'+cor2+'">'+tr2+'</span></td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(t.item_enviado||'')+'">'+(t.item_enviado||'-')+'</td><td>'+(t.destinatario||'-')+'</td><td>'+(t.data_envio_desejada||dt)+'</td><td><span style="color:'+sc+';font-weight:600;">'+(t.status||'Aberto')+'</span></td></tr>';}).join('');
+}
+window.renderLogistica=renderLogistica;
 
 </script>
 </body>
