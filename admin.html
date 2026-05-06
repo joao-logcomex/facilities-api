@@ -671,9 +671,10 @@ function updateBadge() {
 
     const prios = ['Urgente','Alta','Média','Baixa'], colors = ['#ef4444','#e45c10','#d97706','#12b76a'];
     document.getElementById('sla-bars').innerHTML = prios.map((p, i) => {
-      const total = T.filter(t=>t.prioridade===p).length;
       const done = T.filter(t=>t.prioridade===p&&t.status==='Concluído').length;
-      const pct = total > 0 ? Math.round((done/total)*100) : 0;
+      const cancelled = T.filter(t=>t.prioridade===p&&t.status==='Cancelado').length;
+      const base = done + cancelled;
+      const pct = base > 0 ? Math.round((done/base)*100) : 0;
       return `<div class="sla-bar-row"><span class="sla-bar-label">${p}</span><div class="sla-bar-track"><div class="sla-bar-fill" style="width:${pct}%;background:${colors[i]};"></div></div><span class="sla-bar-count">${pct}%</span></div>`;
     }).join('');
 
@@ -1126,9 +1127,11 @@ function renderDashboardComFiltro(tickets) {
   const ab = tickets.filter(t=>t.status==='Aberto').length;
   const an = tickets.filter(t=>t.status==='Em andamento').length;
   const co = tickets.filter(t=>t.status==='Concluído').length;
+  const ca = tickets.filter(t=>t.status==='Cancelado').length;
   const ur = tickets.filter(t=>t.prioridade==='Urgente'&&t.status!=='Concluído'&&t.status!=='Cancelado').length;
   const total = tickets.length;
-  const sla = total > 0 ? Math.round((co / total) * 100) : 0;
+  const slaBase = co + ca;
+  const sla = slaBase > 0 ? Math.round((co / slaBase) * 100) : 0;
   document.getElementById('m-ab').textContent = ab;
   document.getElementById('m-an').textContent = an;
   document.getElementById('m-co').textContent = co;
