@@ -1270,6 +1270,7 @@ window.submitLogistica = async () => {
     document.getElementById('ticket-num').textContent = '#' + id;
     ['logistica-form','form-wrapper','category-grid','cat-label'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
     document.getElementById('success-screen').style.display = 'block';
+    document.getElementById('success-screen').scrollIntoView({behavior:'smooth', block:'start'});
   } catch(err) { console.error(err); alert('Erro ao salvar. Tente novamente. ' + err.message); }
 };
 
