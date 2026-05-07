@@ -923,6 +923,9 @@
   };
 
   let tc = parseInt(localStorage.getItem('lc_tc') || '1000');
+  window.tc = tc;
+  window._getTc = () => tc;
+  window._setTc = (v) => { tc = v; window.tc = v; };
 
   window.submitTicket = async (e) => {
     e.preventDefault();
@@ -934,6 +937,7 @@
       alert('Este tipo de chamado requer um anexo.'); return;
     }
     tc++;
+    window.tc = tc;
     localStorage.setItem('lc_tc', tc);
     const id = 'LOG-' + String(tc).padStart(4,'0');
     const plats = [...document.querySelectorAll('input[name="plataforma"]:checked')].map(i => i.value);
@@ -1202,8 +1206,9 @@ window.submitLogistica = async () => {
   const item = document.getElementById('log-item').value.trim();
   const dataEnvio = document.getElementById('log-data-envio').value;
   if (!dest || !end || !item || !dataEnvio) { alert('Preencha todos os campos obrigatórios.'); return; }
-  tc++; localStorage.setItem('lc_tc', tc);
-  const id = 'LOG-' + String(tc).padStart(4,'0');
+  let _tc = window._getTc ? window._getTc() : parseInt(localStorage.getItem('lc_tc') || '1000');
+  _tc++; if (window._setTc) window._setTc(_tc); localStorage.setItem('lc_tc', _tc);
+  const id = 'LOG-' + String(_tc).padStart(4,'0');
   try {
     const addDoc = window._addDoc;
     const collection = window._collection;
