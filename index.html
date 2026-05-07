@@ -497,6 +497,17 @@
           <!-- DETALHES DO ITEM -->
           <div id="campos-item" style="display:none;">
             <p class="fs-title gap">📋 Detalhes do Item</p>
+            <div class="field gap">
+              <label>Centro de Custo <span class="req">*</span></label>
+              <select id="log-centro-custo" required>
+                <option value="">Selecione seu centro de custo...</option>
+                <optgroup label="─ CORPORATE ─"><option>RH CORPORATE</option><option>DP CORPORATE</option><option>DIRETORIA CORPORATE</option><option>FINANCEIRO CORPORATE</option><option>CONTABILIDADE CORPORATE</option><option>CONTROLADORIA CORPORATE</option><option>MARKETING INSTITUCIONAL CORPORATE</option><option>LEGAL/COMPLIANCE CORPORATE</option><option>FACILITIES CORPORATE</option><option>BI E INTEGRACOES CORPORATE</option><option>COALITION CORPORATE</option><option>RELGOV CORPORATE</option><option>OUTROS CORPORATE</option></optgroup>
+                <optgroup label="─ GROWTH ─"><option>REVOPS GROWTH</option><option>REVOPS OPERATIONS GROWTH</option><option>CCO GROWTH</option><option>COMERCIAL GROWTH</option><option>PRE-VENDAS GROWTH</option><option>MARKETING GROWTH</option><option>TECH GROWTH</option><option>TECH AUTOMATION GROWTH</option><option>DADOS GERAL GROWTH</option><option>DADOS GROWTH</option><option>CS GERAL GROWTH</option><option>CS GROWTH</option><option>CS OPS &amp; INSIGHTS GROWTH</option><option>PROFESSIONAL SERVICES GROWTH</option><option>QUALIDADE GERAL GROWTH</option><option>QUALIDADE GROWTH</option><option>SUPORTE GROWTH</option></optgroup>
+                <optgroup label="─ PPMF ─"><option>COMERCIAL PPMF</option><option>COMERCIAL INTERNATIONAL PPMF</option><option>COMERCIAL MEXICO PPMF</option><option>PRE-VENDAS PPMF</option><option>MARKETING PPMF</option><option>MARKETING INTERNACIONAL PPMF</option><option>MARKETING MEXICO PPMF</option><option>TECH PPMF</option><option>TECH GERAL PPMF</option><option>TECH INTERNATIONAL PPMF</option><option>DEVOPS PPMF</option><option>DADOS PPMF</option><option>CS PPMF</option><option>CS INTERNACIONAL PPMF</option><option>CS MEXICO PPMF</option><option>QUALIDADE PPMF</option><option>SUPORTE PPMF</option><option>REVOPS INTELLIGENCE PPMF</option><option>R&amp;D GERAL PPMF</option><option>R&amp;D PPMF</option><option>R&amp;D INTERNACIONAL PPMF</option><option>R&amp;D MEXICO PPMF</option><option>NOVOS NEGOCIOS PPMF</option></optgroup>
+                <optgroup label="─ MVP ─"><option>COMERCIAL MVP</option><option>MARKETING MVP</option><option>DADOS MVP</option><option>R&amp;D MVP</option><option>TECH MVP</option></optgroup>
+                <optgroup label="─ OUTROS ─"><option>R&amp;D GROWTH</option></optgroup>
+              </select>
+            </div>
             <div class="field gap"><label>O que será enviado? <span class="req">*</span></label><input type="text" id="log-item" placeholder="Ex: Mouse + Teclado, MacBook Air 13..."></div>
             <div class="form-row gap">
               <div class="field"><label>Número de série / patrimônio</label><input type="text" id="log-serial" placeholder="Ex: 000-00220"></div>
@@ -558,7 +569,6 @@
                 <optgroup label="─ OUTROS ─"><option>R&amp;D GROWTH</option></optgroup>
               </select>
             </div>
-            <div class="field"><label>Unidade</label><select id="unidade"><option value="">Selecione...</option><option>Sede Curitiba</option><option>Home Office</option><option>Outro</option></select></div>
           </div>
           <p class="fs-title gap">📋 Sobre o chamado</p>
           <div class="form-row gap">
@@ -962,7 +972,7 @@
       await addDoc(collection(db, 'tickets'), {
         id, nome: document.getElementById('nome').value, email: document.getElementById('email').value,
         userId: user.uid, departamento: document.getElementById('departamento').value,
-        unidade: document.getElementById('unidade').value, categoria: cat,
+        categoria: cat,
         subcategoria: document.getElementById('subcategoria').value,
         titulo: document.getElementById('titulo').value, descricao: document.getElementById('descricao').value,
         prioridade: prio.value, data_desejada: document.getElementById('data-desejada').value,
@@ -1240,6 +1250,8 @@ window.submitLogistica = async () => {
 
   const item = document.getElementById('log-item')?.value.trim() || '';
   const dataEnvio = document.getElementById('log-data-envio')?.value || '';
+  const centroCusto = document.getElementById('log-centro-custo')?.value || '';
+  if (!centroCusto) { alert('Selecione o Centro de Custo.'); return; }
   if (!item || !dataEnvio) { alert('Preencha o item e a data de envio.'); return; }
 
   let _tc = window._getTc ? window._getTc() : parseInt(localStorage.getItem('lc_tc') || '1000');
@@ -1250,8 +1262,7 @@ window.submitLogistica = async () => {
     await window._addDoc(window._collection(window.db, 'tickets'), {
       id, nome: document.getElementById('nome').value, email: document.getElementById('email').value,
       userId: window.auth?.currentUser?.uid,
-      departamento: document.getElementById('departamento').value,
-      unidade: document.getElementById('unidade').value,
+      departamento: centroCusto,
       categoria: 'logistica', subcategoria: transp,
       titulo: 'Envio ' + document.getElementById('log-tipo-envio').value + ' via ' + transp,
       descricao: 'Item: ' + item + '\nDestinatário: ' + dest + '\nEndereço: ' + end,
