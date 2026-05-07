@@ -758,6 +758,8 @@
     document.getElementById('header-user').textContent = name;
     document.getElementById('nome').value = name;
     document.getElementById('email').value = user.email;
+    // Buscar centro de custo automaticamente ao logar
+    if (typeof buscarColaborador === 'function') buscarColaborador(user.email);
     const wrap = document.getElementById('admin-link-wrap');
     wrap.innerHTML = '';
     if (isAdmin) {
