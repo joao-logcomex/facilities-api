@@ -186,6 +186,13 @@
   .relatorio-title { font-weight: 700; font-size: 1.2rem; color: #fff; letter-spacing: -0.03em; }
   .relatorio-sub { font-size: 0.82rem; color: rgba(255,255,255,0.4); margin-top: 4px; line-height: 1.5; }
   .relatorio-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; position: relative; z-index: 1; margin-bottom: 1.5rem; }
+  .rel-toggle { display: flex; background: rgba(255,255,255,0.08); border-radius: 10px; padding: 3px; gap: 2px; }
+  .rel-toggle-btn { padding: 6px 16px; border-radius: 8px; border: none; font-family: 'Space Grotesk', sans-serif; font-size: 0.83rem; font-weight: 600; cursor: pointer; background: transparent; color: rgba(255,255,255,0.5); transition: all 0.18s; }
+  .rel-toggle-btn.active { background: var(--purple); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+  .rel-toggle { display: flex; background: rgba(255,255,255,0.08); border-radius: 10px; padding: 3px; gap: 2px; }
+  .rel-toggle-btn { padding: 6px 16px; border-radius: 8px; border: none; font-family: 'Space Grotesk', sans-serif; font-size: 0.83rem; font-weight: 600; cursor: pointer; background: transparent; color: rgba(255,255,255,0.5); transition: all 0.18s; }
+  .rel-toggle-btn.active { background: var(--purple); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+  #rel-selects-mes, #rel-selects-ano { display: flex; gap: 8px; align-items: center; }
   .relatorio-select { padding: 10px 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-sm); color: #fff; font-family: 'Space Grotesk', sans-serif; font-size: 0.88rem; outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; min-width: 140px; }
   .relatorio-select option { background: #1a0a3a; color: #fff; }
   .btn-gerar { padding: 11px 28px; background: var(--purple); color: #fff; border: none; border-radius: var(--radius-sm); font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.18s; display: flex; align-items: center; gap: 8px; }
@@ -392,8 +399,18 @@
     <div class="relatorio-shell">
       <div class="relatorio-header"><div class="relatorio-icon">🤖</div><div><div class="relatorio-title">Relatório Mensal de SLA</div><div class="relatorio-sub">Selecione o mês e clique em Gerar. A IA analisa todos os chamados e cria um relatório executivo completo com análise de SLA, tendências e recomendações.</div></div></div>
       <div class="relatorio-controls">
-        <select class="relatorio-select" id="rel-mes"><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select>
-        <select class="relatorio-select" id="rel-ano"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select>
+        <div class="rel-toggle">
+          <button class="rel-toggle-btn active" id="rel-btn-mes" onclick="setRelTipo('mes')">📅 Mês</button>
+          <button class="rel-toggle-btn" id="rel-btn-ano" onclick="setRelTipo('ano')">📆 Ano</button>
+          <button class="rel-toggle-btn" id="rel-btn-todos" onclick="setRelTipo('todos')">🗂 Todos</button>
+        </div>
+        <div id="rel-selects-mes" style="display:flex;gap:8px;align-items:center;">
+          <select class="relatorio-select" id="rel-mes"><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select>
+          <select class="relatorio-select" id="rel-ano-mes"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select>
+        </div>
+        <div id="rel-selects-ano" style="display:none;gap:8px;align-items:center;">
+          <select class="relatorio-select" id="rel-ano"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select>
+        </div>
         <button class="btn-gerar" id="btn-gerar" onclick="gerarRelatorio()">✨ Gerar relatório</button>
         <button class="btn-exportar" id="btn-exportar" onclick="exportarRelatorio()">⬇ Exportar PDF</button>
       </div>
@@ -832,17 +849,41 @@ function nav(page, el) {
   if(page==='historico'&&typeof renderHistorico==='function') renderHistorico();
 }
 
+let _relTipo = 'mes';
+function setRelTipo(tipo) {
+  _relTipo = tipo;
+  document.getElementById('rel-btn-mes').classList.toggle('active', tipo==='mes');
+  document.getElementById('rel-btn-ano').classList.toggle('active', tipo==='ano');
+  document.getElementById('rel-btn-todos').classList.toggle('active', tipo==='todos');
+  document.getElementById('rel-selects-mes').style.display = tipo==='mes' ? 'flex' : 'none';
+  document.getElementById('rel-selects-ano').style.display = tipo==='ano' ? 'flex' : 'none';
+}
+
 async function gerarRelatorio() {
+  const tipo = _relTipo || 'mes';
   const mes = parseInt(document.getElementById('rel-mes').value);
-  const ano = parseInt(document.getElementById('rel-ano').value);
-  let filtered = allTickets.filter(t => {
-    const d = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura || 0);
-    return d.getMonth() + 1 === mes && d.getFullYear() === ano;
-  });
+  const anoMes = parseInt(document.getElementById('rel-ano-mes')?.value || document.getElementById('rel-ano').value);
+  const ano = tipo === 'ano' ? parseInt(document.getElementById('rel-ano').value) : anoMes;
+
+  let filtered;
+  if (tipo === 'mes') {
+    filtered = allTickets.filter(t => {
+      const d = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura || 0);
+      return d.getMonth() + 1 === mes && d.getFullYear() === anoMes;
+    });
+  } else if (tipo === 'ano') {
+    filtered = allTickets.filter(t => {
+      const d = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura || 0);
+      return d.getFullYear() === ano;
+    });
+  } else {
+    filtered = [...allTickets];
+  }
+
   if (filtered.length === 0 && allTickets.length > 0) filtered = allTickets;
-  // Se Firebase vazio, gera relatório do período mesmo sem dados
   if (filtered.length === 0) {
-    filtered = [{ id: 'N/A', titulo: 'Sem chamados registrados no período', categoria: 'N/A', status: 'N/A', prioridade: 'Baixa', data_abertura: new Date(`${ano}-${String(mes).padStart(2,'0')}-01`).toISOString() }];
+    const label = tipo==='mes' ? `${anoMes}-${String(mes).padStart(2,'0')}-01` : `${ano}-01-01`;
+    filtered = [{ id: 'N/A', titulo: 'Sem chamados registrados no período', categoria: 'N/A', status: 'N/A', prioridade: 'Baixa', data_abertura: new Date(label).toISOString() }];
   }
   const btn = document.getElementById('btn-gerar');
   const loading = document.getElementById('relatorio-loading');
@@ -886,8 +927,18 @@ function markdownToHtml(md) {
 
 function exportarRelatorio() {
   const mesEl = document.getElementById('rel-mes');
-  const mes = mesEl.options[mesEl.selectedIndex].text;
-  const ano = document.getElementById('rel-ano').value;
+  const tipo = _relTipo || 'mes';
+  let mes, ano;
+  if (tipo === 'mes') {
+    mes = mesEl.options[mesEl.selectedIndex].text;
+    ano = document.getElementById('rel-ano-mes')?.value || document.getElementById('rel-ano').value;
+  } else if (tipo === 'ano') {
+    mes = 'Ano';
+    ano = document.getElementById('rel-ano').value;
+  } else {
+    mes = 'Todos os períodos';
+    ano = '';
+  }
   const outputEl = document.getElementById('relatorio-output');
   if (!outputEl || !outputEl.innerText.trim()) { showToast('Gere o relatório primeiro!'); return; }
   const win = window.open('', '_blank');
@@ -1062,6 +1113,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 window.showToast=showToast;
 
 document.getElementById('rel-mes').value = new Date().getMonth() + 1;
+if(document.getElementById('rel-ano-mes')) document.getElementById('rel-ano-mes').value = new Date().getFullYear();
 
 // ── SELETOR DE PERÍODO ──────────────────────────────────────────────
 let _periodoTipo = 'mes'; // 'mes' | 'ano' | 'todos'
