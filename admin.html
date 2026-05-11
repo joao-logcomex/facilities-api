@@ -363,9 +363,9 @@
       <div class="topbar-actions"><a href="index.html" class="btn btn-primary">+ Novo chamado</a></div>
     </div>
     <div class="kanban-board" id="kanban-board">
-      <div class="kanban-col" id="col-aberto"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--info)"></span>Aberto</div><span class="kanban-col-count" id="cnt-aberto">0</span></div><div class="kanban-cards" id="cards-aberto"></div></div>
+      <div class="kanban-col" id="col-solicitacoes"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--info)"></span>Solicitações</div><span class="kanban-col-count" id="cnt-solicitacoes">0</span></div><div class="kanban-cards" id="cards-solicitacoes"></div></div>
+      <div class="kanban-col" id="col-aprovacao-cs"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:#f59e0b"></span>Aprovação Gestor CS</div><span class="kanban-col-count" id="cnt-aprovacao-cs">0</span></div><div class="kanban-cards" id="cards-aprovacao-cs"></div></div>
       <div class="kanban-col" id="col-andamento"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--warning)"></span>Em andamento</div><span class="kanban-col-count" id="cnt-andamento">0</span></div><div class="kanban-cards" id="cards-andamento"></div></div>
-      <div class="kanban-col" id="col-aprovacao"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:#9333ea"></span>Aguardando</div><span class="kanban-col-count" id="cnt-aprovacao">0</span></div><div class="kanban-cards" id="cards-aprovacao"></div></div>
       <div class="kanban-col" id="col-concluido"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--success)"></span>Concluído</div><span class="kanban-col-count" id="cnt-concluido">0</span></div><div class="kanban-cards" id="cards-concluido"></div></div>
       <div class="kanban-col" id="col-cancelado"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--ink3)"></span>Cancelado</div><span class="kanban-col-count" id="cnt-cancelado">0</span></div><div class="kanban-cards" id="cards-cancelado"></div></div>
     </div>
@@ -727,11 +727,48 @@ function updateBadge() {
   }
 
   function renderKanban() {
-    const cols = { 'Aberto': 'aberto', 'Em andamento': 'andamento', 'Aguardando aprovação': 'aprovacao', 'Concluído': 'concluido', 'Cancelado': 'cancelado' };
-    Object.entries(cols).forEach(([status, key]) => {
-      const tickets = allTickets.filter(t => t.status === status);
-      document.getElementById('cnt-' + key).textContent = tickets.length;
+    // Mapeamento fase_pipefy → coluna
+    const FASE_COL = {
+      'Solicitações': 'solicitacoes',
+      'Aprovação Gestor CS': 'aprovacao-cs',
+      'Brinde': 'andamento',
+      'Brinde Comercial': 'andamento',
+      'Brinde Coleta': 'andamento',
+      'Acessos': 'andamento',
+      'Suprimentos de escritório': 'andamento',
+      'AGUARDANDO COLETA SUPRIMENTO': 'andamento',
+      'Emprestimo': 'andamento',
+      'Manutenção': 'andamento',
+      'Recebimento de Encomendas': 'andamento',
+      'Brinde Baixa Datalens': 'andamento',
+      'Elogios ou Sugestões': 'andamento',
+      'Solicitações concluídas': 'concluido',
+      'Solicitações Canceladas': 'cancelado',
+    };
+    // Status → coluna (fallback para tickets manuais)
+    const STATUS_COL = {
+      'Aberto': 'solicitacoes',
+      'Aguardando aprovação': 'aprovacao-cs',
+      'Em andamento': 'andamento',
+      'Concluído': 'concluido',
+      'Cancelado': 'cancelado',
+    };
+
+    const cols = ['solicitacoes','aprovacao-cs','andamento','concluido','cancelado'];
+    const buckets = {};
+    cols.forEach(c => buckets[c] = []);
+
+    allTickets.forEach(t => {
+      const col = FASE_COL[t.fase_pipefy] || STATUS_COL[t.status] || 'andamento';
+      buckets[col].push(t);
+    });
+
+    cols.forEach(key => {
+      const tickets = buckets[key];
+      const cntEl = document.getElementById('cnt-' + key);
       const container = document.getElementById('cards-' + key);
+      if (!cntEl || !container) return;
+      cntEl.textContent = tickets.length;
       if (!tickets.length) { container.innerHTML = '<div class="kanban-empty">Nenhum chamado</div>'; return; }
       container.innerHTML = tickets.map(t => `
         <div class="kanban-card" onclick="openT('${t._docId}')" style="${t.origem==='pipefy'?'border-left:3px solid #FE8F1C;':''}">
@@ -739,7 +776,7 @@ function updateBadge() {
           <div class="kanban-card-title">${t.titulo||''}</div>
           <div class="kanban-card-meta">
             <span class="kanban-prio kp-${t.prioridade}">${t.prioridade}</span>
-            <span>${(CATLABELS[t.categoria]||t.tipo_pipefy||t.categoria||'').replace(/[^\w\s]/g,'').trim()}</span>
+            <span>${t.fase_pipefy||(CATLABELS[t.categoria]||t.tipo_pipefy||t.categoria||'').replace(/[^\w\s]/g,'').trim()}</span>
             ${t.nome ? `<span>· ${t.nome.split(' ')[0]}</span>` : ''}
           </div>
         </div>`).join('');
