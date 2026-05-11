@@ -480,7 +480,6 @@
         <div class="detail-item"><label>Solicitante</label><p id="d-nome"></p></div>
         <div class="detail-item"><label>E-mail</label><p id="d-email" style="word-break:break-all;font-size:0.8rem;"></p></div>
         <div class="detail-item"><label>Centro de Custo</label><p id="d-dept" style="font-size:0.82rem;"></p></div>
-        <div class="detail-item"><label>Unidade</label><p id="d-unidade"></p></div>
         <div class="detail-item"><label>Categoria</label><p id="d-cat"></p></div>
         <div class="detail-item"><label>Subcategoria</label><p id="d-sub"></p></div>
         <div class="detail-item"><label>Prioridade</label><p id="d-prio"></p></div>
@@ -837,11 +836,10 @@ function updateBadge() {
     document.getElementById('d-nome').textContent = t.nome||'-';
     document.getElementById('d-email').textContent = t.email||'-';
     document.getElementById('d-dept').textContent = t.departamento||'-';
-    document.getElementById('d-unidade').textContent = t.unidade||'-';
     document.getElementById('d-cat').textContent = CATLABELS[t.categoria]||t.categoria;
     document.getElementById('d-sub').textContent = t.subcategoria||'-';
     document.getElementById('d-prio').innerHTML = `<span class="pb pb-${t.prioridade}">${t.prioridade}</span>`;
-    document.getElementById('d-data').textContent = t.data_desejada||'-';
+    document.getElementById('d-data').textContent = t.data_desejada || t.data_envio_desejada || '-';
     document.getElementById('d-desc').textContent = t.descricao;
     const pr = document.getElementById('d-plat-row');
     if (t.plataformas) { pr.style.display='block'; document.getElementById('d-plat').textContent=t.plataformas; } else { pr.style.display='none'; }
