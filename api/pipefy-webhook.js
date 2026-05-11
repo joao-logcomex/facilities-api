@@ -38,8 +38,8 @@ const FASE_STATUS = {
   'Acessos': 'Em andamento',
   'Suprimentos de escritório': 'Em andamento',
   'Manutenção': 'Em andamento',
-  'Recebimento de Encomendas': 'Em andamento',
-  'Elogios ou Sugestões': 'Em andamento',
+  'Recebimento de Encomendas': 'Concluído',
+  'Elogios ou Sugestões': 'Concluído',
   'Solicitações concluídas': 'Concluído',
   'Solicitações Canceladas': 'Cancelado',
 };
