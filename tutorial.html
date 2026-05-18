@@ -8,33 +8,21 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;background:#09001c;font-family:'Sora',sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
-#wrap{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px}
+#wrap{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px}
 #stage{position:relative;width:100%;max-width:600px}
 #stage::before{content:'';display:block;padding-top:56.25%}
 canvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:14px}
 #ctrl{width:100%;max-width:600px;display:flex;align-items:center;gap:10px}
-#pbtn{display:flex;align-items:center;justify-content:center;width:46px;height:46px;min-width:46px;background:#6613D0;border:none;border-radius:50%;cursor:pointer;flex-shrink:0}
+#pbtn{display:flex;align-items:center;justify-content:center;width:46px;height:46px;min-width:46px;background:#6613D0;border:none;border-radius:50%;cursor:pointer;flex-shrink:0;transition:background .15s}
+#pbtn:hover{background:#4e0fa0}
 #pbtn:active{transform:scale(.93)}
 #pbtn svg{width:18px;height:18px;fill:#fff}
 #pw{flex:1;height:6px;background:rgba(255,255,255,0.12);border-radius:3px;cursor:pointer}
-#pf{height:100%;width:0%;background:#FF6B2B;border-radius:3px;pointer-events:none}
-#tl{font-size:12px;color:rgba(255,255,255,0.3);min-width:50px;text-align:right}
-#vbtn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;min-width:36px;background:none;border:none;cursor:pointer}
-#vbtn svg{width:20px;height:20px}
-#sub{
-  width:100%;max-width:600px;min-height:54px;
-  background:rgba(0,0,0,0.55);border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-  padding:8px 20px;
-}
-#sub p{font-size:14px;line-height:1.55;color:rgba(255,255,255,0.93);text-align:center;font-style:italic}
-#hint{
-  position:absolute;bottom:60px;left:50%;transform:translateX(-50%);
-  background:rgba(102,19,208,0.92);color:#fff;font-size:13px;
-  font-family:'Sora',sans-serif;padding:10px 22px;border-radius:22px;
-  pointer-events:none;white-space:nowrap;
-  animation:fh 3.5s ease forwards
-}
+#pf{height:100%;width:0%;background:#FF6B2B;border-radius:3px;pointer-events:none;transition:width .1s linear}
+#tl{font-size:12px;color:rgba(255,255,255,0.3);min-width:52px;text-align:right}
+#mbtn{display:flex;align-items:center;justify-content:center;width:38px;height:38px;min-width:38px;background:none;border:none;cursor:pointer}
+#mbtn svg{width:20px;height:20px}
+#hint{position:absolute;bottom:62px;left:50%;transform:translateX(-50%);background:rgba(102,19,208,0.9);color:#fff;font-size:13px;font-family:'Sora',sans-serif;padding:10px 22px;border-radius:22px;pointer-events:none;white-space:nowrap;animation:fh 3.5s ease forwards}
 @keyframes fh{0%{opacity:0}10%{opacity:1}75%{opacity:1}100%{opacity:0}}
 </style>
 </head>
@@ -42,7 +30,7 @@ canvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:14px}
 <div id="wrap">
   <div id="stage">
     <canvas id="cv"></canvas>
-    <div id="hint">▶ Toque para assistir com narração</div>
+    <div id="hint">▶ Toque para assistir com música</div>
   </div>
   <div id="ctrl">
     <button id="pbtn" onclick="tog()" aria-label="Play">
@@ -51,247 +39,286 @@ canvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:14px}
       <svg id="ipr" style="display:none" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.1"/></svg>
     </button>
     <div id="pw" onclick="seek(event)"><div id="pf"></div></div>
-    <span id="tl">0s / 60s</span>
-    <button id="vbtn" onclick="toggleVoz()" aria-label="Voz">
-      <svg id="vs" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-linecap="round">
+    <span id="tl">0s / 50s</span>
+    <button id="mbtn" onclick="toggleMute()" aria-label="Som">
+      <svg id="ms" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-linecap="round">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19" fill="rgba(255,255,255,0.55)" stroke="none"/>
         <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
         <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
       </svg>
-      <svg id="vm" style="display:none" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-linecap="round">
+      <svg id="mm" style="display:none" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-linecap="round">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19" fill="rgba(255,255,255,0.2)" stroke="none"/>
         <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
       </svg>
     </button>
   </div>
-  <div id="sub"><p id="stxt">&nbsp;</p></div>
 </div>
 
 <script>
-// ─── Canvas setup ───────────────────────────────────────────
+// ── Canvas ────────────────────────────────────────────────────
 const cv = document.getElementById('cv');
-const c = cv.getContext('2d');
-const W = 600, H = 338, DUR = 60000; // 60 segundos
+const cx = cv.getContext('2d');
+const W = 600, H = 338, DUR = 50000;
 cv.width = W; cv.height = H;
 
-let T=0, playing=false, prev=null, raf=null;
-let vozOn=true, falando=false, filaFala=[], ultimoFalado=-1, ac=null;
+let T=0, playing=false, prev=null, raf=null, muted=false;
+let ac=null, masterGain=null, musicNodes=[];
 
-// ─── ROTEIRO — frases curtas, palavras simples, sem siglas ───
-// "at" = momento em ms em que a frase é disparada
-// Cada frase é curta para a síntese de voz soar natural
-const roteiro = [
-  // CENA 1 — Boas-vindas (0-10s)
-  { at: 500,
-    fala: "Olá! Bem-vindo ao sistema de chamados do Facilities da LogComex.",
-    legenda: "Olá! Bem-vindo ao sistema de chamados do Facilities." },
-  { at: 5000,
-    fala: "Com ele você resolve qualquer necessidade do escritório de forma rápida e simples.",
-    legenda: "Resolva qualquer necessidade do escritório de forma rápida." },
+// ── MÚSICA GENERATIVA ─────────────────────────────────────────
+// Escala pentatônica de Lá menor: A C D E G
+// Soa suave, positiva, sem dissonância — perfeita para tutorial
 
-  // CENA 2 — Dados reais (10-18s)
-  { at: 10500,
-    fala: "Só no ano de 2025, o time de Facilities resolveu mais de mil e trezentos chamados.",
-    legenda: "Em 2025, mais de 1.300 chamados resolvidos." },
-  { at: 15500,
-    fala: "E com uma taxa de cumprimento de prazo de noventa e oito por cento.",
-    legenda: "Taxa de cumprimento de prazo: 98% em 2025." },
-
-  // CENA 3 — Login (18-28s)
-  { at: 19000,
-    fala: "Para começar, acesse o sistema com o seu e-mail da LogComex.",
-    legenda: "Acesse com seu e-mail da LogComex." },
-  { at: 23500,
-    fala: "Clique em Entrar com Google. Seu nome e setor já aparecem automaticamente, sem precisar digitar nada.",
-    legenda: "Clique em Entrar com Google. Tudo é preenchido automaticamente." },
-
-  // CENA 4 — Categorias (28-38s)
-  { at: 29000,
-    fala: "Em seguida, escolha a categoria que melhor descreve o que você precisa.",
-    legenda: "Escolha a categoria do seu chamado." },
-  { at: 33500,
-    fala: "Temos opções para manutenção, suprimentos de escritório, brindes, envios e entregas, acessos ao sistema, limpeza e outras solicitações.",
-    legenda: "Manutenção, Suprimentos, Brindes, Logística, Acessos, Limpeza e mais." },
-
-  // CENA 5 — Formulário (38-50s)
-  { at: 39000,
-    fala: "Agora preencha o formulário descrevendo o que você precisa.",
-    legenda: "Preencha o formulário com detalhes." },
-  { at: 43500,
-    fala: "Quanto mais informações você colocar, mais rápido o time consegue te ajudar.",
-    legenda: "Mais detalhes = resolução mais rápida." },
-  { at: 47500,
-    fala: "Escolha uma data desejada para a conclusão e clique em Enviar chamado.",
-    legenda: "Informe a data desejada e clique em Enviar chamado." },
-
-  // CENA 6 — Acompanhamento (50-60s)
-  { at: 51500,
-    fala: "Pronto! A partir daí você acompanha tudo pelo Slack.",
-    legenda: "Pronto! Acompanhe tudo pelo Slack." },
-  { at: 55000,
-    fala: "Quando o chamado for concluído, você recebe uma mensagem direta no Slack para avaliar o atendimento.",
-    legenda: "Ao concluir, você recebe mensagem no Slack para avaliar." },
-  { at: 58500,
-    fala: "Para envios pela transportadora, o código de rastreio também chega direto no seu Slack. Bom trabalho!",
-    legenda: "Envios via transportadora: código de rastreio direto no Slack." },
-];
-
-// ─── Fila de fala (não interrompe a voz no meio da frase) ───
-function dispararFala(item) {
-  if (!vozOn || !window.speechSynthesis) return;
-  filaFala.push(item);
-  processarFila();
+function initAudio() {
+  if (ac) return;
+  ac = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = ac.createGain();
+  masterGain.gain.value = 0.55;
+  masterGain.connect(ac.destination);
 }
 
-function processarFila() {
-  if (falando || filaFala.length === 0 || !vozOn) return;
-  const item = filaFala.shift();
-  falando = true;
-  document.getElementById('stxt').textContent = item.legenda;
-
-  const u = new SpeechSynthesisUtterance(item.fala);
-  u.lang = 'pt-BR';
-  u.rate = 0.90;   // levemente mais lento que o padrão — soa mais humano
-  u.pitch = 1.05;  // um toque mais alto para soar animado
-  u.volume = 1.0;
-
-  // Escolher melhor voz disponível
-  const vozes = window.speechSynthesis.getVoices();
-  const voz = vozes.find(v => v.lang === 'pt-BR' && /luciana|vitoria|fernanda|eddy/i.test(v.name))
-    || vozes.find(v => v.lang === 'pt-BR')
-    || vozes.find(v => v.lang === 'pt_BR')
-    || vozes.find(v => v.lang.startsWith('pt'));
-  if (voz) u.voice = voz;
-
-  u.onend = () => {
-    falando = false;
-    setTimeout(processarFila, 180); // pequena pausa natural entre frases
-  };
-  u.onerror = () => { falando = false; };
-
-  window.speechSynthesis.speak(u);
+function nota(freq, start, dur, vol, type) {
+  if (!ac || muted) return;
+  const o = ac.createOscillator();
+  const g = ac.createGain();
+  const fil = ac.createBiquadFilter();
+  fil.type = 'lowpass';
+  fil.frequency.value = 2200;
+  o.connect(fil); fil.connect(g); g.connect(masterGain);
+  o.type = type || 'triangle';
+  o.frequency.value = freq;
+  const t = ac.currentTime + start;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.04);
+  g.gain.setValueAtTime(vol, t + dur * 0.7);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.start(t);
+  o.stop(t + dur + 0.05);
+  musicNodes.push(o);
 }
 
-function pararVoz() {
-  window.speechSynthesis?.cancel();
-  filaFala = [];
-  falando = false;
-  document.getElementById('stxt').textContent = '\u00a0';
+function pad(freq, start, dur, vol) {
+  if (!ac || muted) return;
+  const o = ac.createOscillator();
+  const g = ac.createGain();
+  const fil = ac.createBiquadFilter();
+  fil.type = 'lowpass'; fil.frequency.value = 800;
+  o.connect(fil); fil.connect(g); g.connect(masterGain);
+  o.type = 'sine';
+  o.frequency.value = freq;
+  const t = ac.currentTime + start;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.5);
+  g.gain.setValueAtTime(vol, t + dur - 0.5);
+  g.gain.linearRampToValueAtTime(0, t + dur);
+  o.start(t); o.stop(t + dur + 0.1);
+  musicNodes.push(o);
 }
 
-function verificarRoteiro(T) {
-  if (!playing) return;
-  for (let i = 0; i < roteiro.length; i++) {
-    if (T >= roteiro[i].at && ultimoFalado < i) {
-      ultimoFalado = i;
-      dispararFala(roteiro[i]);
-      break;
+function kick(start) {
+  if (!ac || muted) return;
+  const o = ac.createOscillator();
+  const g = ac.createGain();
+  o.connect(g); g.connect(masterGain);
+  o.type = 'sine';
+  o.frequency.setValueAtTime(120, ac.currentTime + start);
+  o.frequency.exponentialRampToValueAtTime(40, ac.currentTime + start + 0.15);
+  g.gain.setValueAtTime(0.4, ac.currentTime + start);
+  g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + start + 0.25);
+  o.start(ac.currentTime + start);
+  o.stop(ac.currentTime + start + 0.3);
+  musicNodes.push(o);
+}
+
+function hihat(start, vol) {
+  if (!ac || muted) return;
+  const buf = ac.createBuffer(1, ac.sampleRate * 0.05, ac.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1);
+  const src = ac.createBufferSource();
+  const g = ac.createGain();
+  const fil = ac.createBiquadFilter();
+  fil.type = 'highpass'; fil.frequency.value = 6000;
+  src.buffer = buf;
+  src.connect(fil); fil.connect(g); g.connect(masterGain);
+  g.gain.setValueAtTime(vol||0.06, ac.currentTime + start);
+  g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + start + 0.05);
+  src.start(ac.currentTime + start);
+  musicNodes.push(src);
+}
+
+// Escala pentatônica Am: A2 C3 D3 E3 G3 A3 C4 D4 E4 G4 A4
+const notas = {
+  A2:110, C3:130.8, D3:146.8, E3:164.8, G3:196,
+  A3:220, C4:261.6, D4:293.7, E4:329.6, G4:392, A4:440,
+  C5:523.3, E5:659.3, G5:784
+};
+
+function tocarMusica() {
+  if (!ac || muted) return;
+  stopMusic();
+
+  // BPM 88 — leve, positivo, moderno
+  const bpm = 88;
+  const beat = 60 / bpm;      // 0.682s por beat
+  const bar = beat * 4;       // 2.727s por compasso
+  const total = 50;           // segundos totais
+
+  // ── INTRO (compassos 0-3): apenas pad e melodia suave ──
+  pad(notas.A2, 0, bar*4, 0.08);
+  pad(notas.E3, 0, bar*4, 0.06);
+  pad(notas.A3, 0, bar*4, 0.04);
+
+  // Melodia intro — arpejo ascendente suave
+  [[0,notas.A3,0.3],[beat*.5,notas.C4,0.28],[beat,notas.D4,0.3],[beat*1.5,notas.E4,0.32],
+   [beat*2,notas.G4,0.3],[beat*2.5,notas.A4,0.28],[beat*3,notas.E4,0.25],[beat*3.5,notas.D4,0.22]
+  ].forEach(([s,f,v]) => nota(f,s,beat*.9,v));
+
+  // Repete arpejo com variação
+  [[bar,notas.C4,0.3],[bar+beat*.5,notas.E4,0.28],[bar+beat,notas.G4,0.3],[bar+beat*1.5,notas.A4,0.32],
+   [bar+beat*2,notas.G4,0.25],[bar+beat*2.5,notas.E4,0.22],[bar+beat*3,notas.D4,0.25],[bar+beat*3.5,notas.C4,0.2]
+  ].forEach(([s,f,v]) => nota(f,s,beat*.9,v));
+
+  // ── CORPO (compassos 4 em diante): entra ritmo ──
+  for (let i = 0; i < Math.floor(total/bar)-2; i++) {
+    const t0 = bar*2 + i*bar;
+
+    // Kick no 1 e 3
+    kick(t0);
+    kick(t0 + beat*2);
+
+    // Hihat no 2 e 4
+    hihat(t0 + beat, 0.07);
+    hihat(t0 + beat*3, 0.07);
+    hihat(t0 + beat*.5, 0.04);
+    hihat(t0 + beat*1.5, 0.04);
+    hihat(t0 + beat*2.5, 0.04);
+    hihat(t0 + beat*3.5, 0.04);
+
+    // Pad de fundo — alternando harmonias Am / C / G / Em
+    const chords = [
+      [notas.A2, notas.E3, notas.A3],
+      [notas.C3, notas.G3, notas.C4],
+      [notas.G2||98, notas.D3, notas.G3],
+      [notas.E3*.5||82, notas.B3||246.9, notas.E4*.5||164.8],
+    ];
+    const ch = chords[i % chords.length];
+    ch.forEach((f,j) => pad(f, t0, bar, 0.055 - j*0.01));
+
+    // Melodia principal — frases de 2 compassos
+    if (i % 2 === 0) {
+      const melodias = [
+        [[0,notas.E4],[beat*.5,notas.G4],[beat,notas.A4],[beat*1.5,notas.G4],[beat*2,notas.E4],[beat*2.5,notas.D4],[beat*3,notas.C4],[beat*3.5,notas.D4]],
+        [[0,notas.C4],[beat*.5,notas.E4],[beat,notas.G4],[beat*1.5,notas.A4],[beat*2,notas.G4],[beat*2.5,notas.E4],[beat*3,notas.G4],[beat*3.5,notas.E4]],
+        [[0,notas.A3],[beat*.5,notas.C4],[beat,notas.E4],[beat*1.5,notas.D4],[beat*2,notas.C4],[beat*2.5,notas.D4],[beat*3,notas.E4],[beat*3.5,notas.G4]],
+      ];
+      const mel = melodias[(i/2) % melodias.length];
+      mel.forEach(([s,f]) => nota(f, t0+s, beat*.8, 0.18));
+    } else {
+      // Contra-melodia mais suave
+      [[beat*.25,notas.G4],[beat,notas.E4],[beat*1.75,notas.D4],[beat*2.5,notas.C4],[beat*3,notas.E4]].forEach(([s,f]) => nota(f,t0+s,beat*.6,0.1));
     }
+
+    // Baixo simples
+    nota(notas.A2, t0, beat*1.8, 0.12, 'sine');
+    nota(notas.A2, t0+beat*2, beat*1.8, 0.12, 'sine');
+  }
+
+  // ── OUTRO (últimos 5s): fade out gradual já no masterGain ──
+  if (masterGain) {
+    masterGain.gain.setValueAtTime(0.55, ac.currentTime + 42);
+    masterGain.gain.linearRampToValueAtTime(0, ac.currentTime + 50);
   }
 }
 
-function toggleVoz() {
-  vozOn = !vozOn;
-  if (!vozOn) pararVoz();
-  document.getElementById('vs').style.display = vozOn ? 'block' : 'none';
-  document.getElementById('vm').style.display = vozOn ? 'none' : 'block';
+function stopMusic() {
+  musicNodes.forEach(n => { try { n.stop(); } catch(e){} });
+  musicNodes = [];
+  if (masterGain) {
+    masterGain.gain.cancelScheduledValues(0);
+    masterGain.gain.value = 0.55;
+  }
 }
 
-// ─── Áudio (sons de transição suaves) ───────────────────────
-function initAudio() {
-  if (ac) return;
-  try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
-}
-function beep(freq, dur, vol, tp, delay) {
-  if (!ac || !vozOn) return;
-  const o = ac.createOscillator(), g = ac.createGain();
-  o.connect(g); g.connect(ac.destination);
-  o.type = tp || 'sine'; o.frequency.value = freq;
-  const t = ac.currentTime + (delay || 0);
-  g.gain.setValueAtTime(0, t);
-  g.gain.linearRampToValueAtTime(vol || 0.035, t + 0.02);
-  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-  o.start(t); o.stop(t + dur + 0.05);
-}
-function somCena(s) {
-  if (!ac || !vozOn) return;
-  if (s === 0) { beep(880,.1,.04,'sine',0); beep(1100,.1,.04,'sine',.12); beep(1320,.2,.05,'sine',.24); }
-  else if (s < 5) { beep(660,.08,.03,'sine',0); beep(880,.12,.035,'sine',.1); }
-  else { [523,659,784,1047].forEach((f,i) => beep(f,.1,.04,'sine',i*.08)); }
+function toggleMute() {
+  muted = !muted;
+  if (muted) { stopMusic(); if(masterGain) masterGain.gain.value=0; }
+  else { if(masterGain) masterGain.gain.value=0.55; if(playing) tocarMusica(); }
+  document.getElementById('ms').style.display = muted ? 'none' : 'block';
+  document.getElementById('mm').style.display = muted ? 'block' : 'none';
 }
 
-// ─── Utilitários de desenho ──────────────────────────────────
-const cl = (v,a,b) => Math.max(a, Math.min(b, v));
-const ez = t => t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
-const fi = (s,d,t) => ez(cl((t-s)/d, 0, 1));
-const lp = (a,b,t) => a + (b-a)*t;
+// ── Utilitários de desenho ────────────────────────────────────
+const cl = (v,a,b) => Math.max(a,Math.min(b,v));
+const ez = t => t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const fi = (s,d,t) => ez(cl((t-s)/d,0,1));
+const lp = (a,b,t) => a+(b-a)*t;
 
 function rr(x,y,w,h,r,fill,stroke,lw) {
-  c.beginPath(); c.roundRect(x,y,w,h,r);
-  if(fill){c.fillStyle=fill;c.fill();}
-  if(stroke){c.strokeStyle=stroke;c.lineWidth=lw||1.5;c.stroke();}
+  cx.beginPath(); cx.roundRect(x,y,w,h,r);
+  if(fill){cx.fillStyle=fill;cx.fill();}
+  if(stroke){cx.strokeStyle=stroke;cx.lineWidth=lw||1.5;cx.stroke();}
 }
 function txt(s,x,y,sz,cor,al,peso) {
-  c.font=`${peso||400} ${sz}px 'Sora',sans-serif`;
-  c.fillStyle=cor; c.textAlign=al||'center'; c.textBaseline='middle';
-  c.fillText(s,x,y);
+  cx.font=`${peso||400} ${sz}px 'Sora',sans-serif`;
+  cx.fillStyle=cor; cx.textAlign=al||'center'; cx.textBaseline='middle';
+  cx.fillText(s,x,y);
 }
 function pill(x,y,label,a) {
-  c.globalAlpha=a;
+  cx.globalAlpha=a;
   rr(x-64,y-14,128,28,14,'rgba(102,19,208,0.55)');
   txt(label,x,y,11,'#d4b4ff','center',600);
-  c.globalAlpha=1;
+  cx.globalAlpha=1;
 }
 function pessoa(px,py,s,cor,lbl,a) {
-  c.globalAlpha=a;
-  c.fillStyle=cor;
-  c.beginPath(); c.arc(px,py-14*s,13*s,0,6.28); c.fill();
-  c.fillStyle='rgba(255,255,255,0.82)';
-  c.beginPath(); c.arc(px-4*s,py-16*s,2.5*s,0,6.28); c.fill();
-  c.beginPath(); c.arc(px+4*s,py-16*s,2.5*s,0,6.28); c.fill();
-  c.strokeStyle='rgba(255,255,255,0.82)'; c.lineWidth=1.5*s;
-  c.beginPath(); c.arc(px,py-11*s,5*s,0,Math.PI); c.stroke();
+  cx.globalAlpha=a;
+  cx.fillStyle=cor;
+  cx.beginPath(); cx.arc(px,py-14*s,13*s,0,6.28); cx.fill();
+  cx.fillStyle='rgba(255,255,255,0.82)';
+  cx.beginPath(); cx.arc(px-4*s,py-16*s,2.5*s,0,6.28); cx.fill();
+  cx.beginPath(); cx.arc(px+4*s,py-16*s,2.5*s,0,6.28); cx.fill();
+  cx.strokeStyle='rgba(255,255,255,0.82)'; cx.lineWidth=1.5*s;
+  cx.beginPath(); cx.arc(px,py-11*s,5*s,0,Math.PI); cx.stroke();
   rr(px-13*s,py+1*s,26*s,32*s,8*s,cor);
   if(lbl) txt(lbl,px,py+48*s,10,'rgba(255,255,255,0.5)','center');
-  c.globalAlpha=1;
+  cx.globalAlpha=1;
 }
 function celular(px,py,a) {
-  c.globalAlpha=a;
-  rr(px-35,py-65,70,130,12,'#1a0042','rgba(255,255,255,0.12)');
-  rr(px-27,py-54,54,94,7,'#09001a');
-  rr(px-22,py-48,44,10,5,'rgba(102,19,208,0.7)');
-  [0,16,34,52,70].forEach(dy=>rr(px-22,py-32+dy,38,7,2,'rgba(255,255,255,0.18)'));
-  c.globalAlpha=1;
+  cx.globalAlpha=a;
+  rr(px-35,py-66,70,132,12,'#1a0042','rgba(255,255,255,0.12)');
+  rr(px-27,py-55,54,96,7,'#09001a');
+  rr(px-22,py-49,44,10,5,'rgba(102,19,208,0.7)');
+  [0,16,34,52,70].forEach(dy=>rr(px-22,py-33+dy,38,7,2,'rgba(255,255,255,0.18)'));
+  cx.globalAlpha=1;
 }
-function check(cx,cy,a) {
-  c.globalAlpha=a;
-  c.beginPath(); c.arc(cx,cy,22,0,6.28); c.fillStyle='#16a34a'; c.fill();
-  c.strokeStyle='#fff'; c.lineWidth=3; c.lineCap='round'; c.lineJoin='round';
-  c.beginPath(); c.moveTo(cx-10,cy); c.lineTo(cx-2,cy+8); c.lineTo(cx+10,cy-8); c.stroke();
-  c.globalAlpha=1;
+function check(qx,qy,a) {
+  cx.globalAlpha=a;
+  cx.beginPath(); cx.arc(qx,qy,22,0,6.28); cx.fillStyle='#16a34a'; cx.fill();
+  cx.strokeStyle='#fff'; cx.lineWidth=3; cx.lineCap='round'; cx.lineJoin='round';
+  cx.beginPath(); cx.moveTo(qx-10,qy); cx.lineTo(qx-2,qy+8); cx.lineTo(qx+10,qy-8); cx.stroke();
+  cx.globalAlpha=1;
 }
 function sino(bx,by,a) {
-  c.globalAlpha=a; c.fillStyle='#FF6B2B';
-  c.beginPath(); c.arc(bx,by-7,14,Math.PI,0);
-  c.lineTo(bx+14,by+8); c.lineTo(bx-14,by+8); c.closePath(); c.fill();
-  c.beginPath(); c.arc(bx,by+10,5,0,Math.PI); c.fill();
-  c.fillStyle='#fff'; c.beginPath(); c.arc(bx+11,by-18,5,0,6.28); c.fill();
-  c.fillStyle='#dc2626'; c.beginPath(); c.arc(bx+11,by-18,3.5,0,6.28); c.fill();
-  c.globalAlpha=1;
+  cx.globalAlpha=a; cx.fillStyle='#FF6B2B';
+  cx.beginPath(); cx.arc(bx,by-7,14,Math.PI,0);
+  cx.lineTo(bx+14,by+8); cx.lineTo(bx-14,by+8); cx.closePath(); cx.fill();
+  cx.beginPath(); cx.arc(bx,by+10,5,0,Math.PI); cx.fill();
+  cx.fillStyle='#fff'; cx.beginPath(); cx.arc(bx+11,by-18,5,0,6.28); cx.fill();
+  cx.fillStyle='#dc2626'; cx.beginPath(); cx.arc(bx+11,by-18,3.5,0,6.28); cx.fill();
+  cx.globalAlpha=1;
 }
 function envelope(bx,by,a) {
-  c.globalAlpha=a;
+  cx.globalAlpha=a;
   rr(bx-36,by-22,72,44,6,'rgba(255,107,43,0.2)','rgba(255,107,43,0.5)');
-  c.strokeStyle='rgba(255,107,43,0.55)'; c.lineWidth=1.5;
-  c.beginPath(); c.moveTo(bx-34,by-20); c.lineTo(bx,by+4); c.lineTo(bx+34,by-20); c.stroke();
-  c.globalAlpha=1;
+  cx.strokeStyle='rgba(255,107,43,0.55)'; cx.lineWidth=1.5;
+  cx.beginPath(); cx.moveTo(bx-34,by-20); cx.lineTo(bx,by+4); cx.lineTo(bx+34,by-20); cx.stroke();
+  cx.globalAlpha=1;
 }
 function numCard(x,y,num,label,a) {
-  c.globalAlpha=a;
-  rr(x-52,y-36,104,72,10,'rgba(102,19,208,0.3)','rgba(102,19,208,0.4)');
-  txt(num,x,y-8,28,'#fff','center',700);
-  txt(label,x,y+22,10,'rgba(255,255,255,0.6)','center',500);
-  c.globalAlpha=1;
+  cx.globalAlpha=a;
+  rr(x-58,y-38,116,76,10,'rgba(102,19,208,0.28)','rgba(102,19,208,0.45)');
+  txt(num,x,y-8,26,'#fff','center',700);
+  txt(label,x,y+22,10,'rgba(255,255,255,0.55)','center',500);
+  cx.globalAlpha=1;
 }
 
 const categorias = [
@@ -303,175 +330,153 @@ const categorias = [
   {e:'🧹',l:'Limpeza',    c:'rgba(236,72,153,0.4)'},
 ];
 
-// Tempos de início de cada cena (ms)
-const cenas = [0, 10000, 18000, 28000, 38000, 50000];
+const cenas = [0,10000,18000,28000,38000];
 let ultimaCena = -1;
 
 function fundo() {
-  c.fillStyle='#09001c'; c.fillRect(0,0,W,H);
-  c.fillStyle='rgba(255,255,255,0.22)';
+  cx.fillStyle='#09001c'; cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(255,255,255,0.2)';
   [[55,22],[130,65],[310,15],[470,50],[590,28],[190,150],[530,130],[85,175],[620,175],[250,85],[400,100]].forEach(([a,b])=>{
-    c.beginPath(); c.arc(a,b,.9,0,6.28); c.fill();
+    cx.beginPath(); cx.arc(a,b,.9,0,6.28); cx.fill();
   });
 }
 
-// ─── DESENHO PRINCIPAL ───────────────────────────────────────
+// ── DRAW ──────────────────────────────────────────────────────
 function draw(T) {
   fundo();
 
-  const cIdx = cenas.reduce((acc,s,i) => T>=s ? i : acc, 0);
-  if (cIdx !== ultimaCena && playing) { somCena(cIdx); ultimaCena = cIdx; }
-  if (playing) verificarRoteiro(T);
+  const cIdx = cenas.reduce((acc,s,i) => T>=s?i:acc, 0);
+  if (cIdx !== ultimaCena) ultimaCena = cIdx;
 
   // ══ CENA 1 — Boas-vindas (0–10s) ══════════════════════════
   if (T < 10600) {
     const fo = T > 9200 ? 1-fi(9200,900,T) : 1;
-    c.globalAlpha = fi(0,600,T)*fo;
+    cx.globalAlpha = fi(0,600,T)*fo;
     txt('Facilities',W/2,H/2-54,32,'#ffffff','center',700);
-    c.globalAlpha = fi(400,600,T)*fo;
+    cx.globalAlpha = fi(400,600,T)*fo;
     txt('LogComex',W/2,H/2-12,32,'#FF6B2B','center',400);
-    c.globalAlpha = fi(900,600,T)*fo;
+    cx.globalAlpha = fi(900,600,T)*fo;
     txt('Central de Chamados',W/2,H/2+34,14,'rgba(255,255,255,0.5)');
-    c.globalAlpha = fi(1500,700,T)*fo;
+    cx.globalAlpha = fi(1500,700,T)*fo;
     txt('Simples, rápido e no seu Slack',W/2,H/2+62,12,'rgba(255,255,255,0.3)');
     const pr = fi(2000,2000,T)*fo;
-    if(pr>0){c.globalAlpha=pr*.07;c.strokeStyle='#6613D0';c.lineWidth=2;c.beginPath();c.arc(W/2,H/2-32,80+pr*28,0,6.28);c.stroke();}
-    c.globalAlpha=1;
+    if(pr>0){cx.globalAlpha=pr*.07;cx.strokeStyle='#6613D0';cx.lineWidth=2;cx.beginPath();cx.arc(W/2,H/2-32,80+pr*28,0,6.28);cx.stroke();}
+    cx.globalAlpha=1;
   }
 
   // ══ CENA 2 — Dados reais (10–18s) ═════════════════════════
-  if (T >= 9600 && T < 18600) {
+  if (T>=9600 && T<18600) {
     const lt=T-10000, fo=T>17300?1-fi(17300,900,T):1;
     pill(W/2,28,'NOSSOS NÚMEROS',fi(0,500,lt)*fo);
-    c.globalAlpha=fi(300,500,lt)*fo;
-    txt('Esses são os resultados de 2025',W/2,62,14,'rgba(255,255,255,0.7)');
-
-    numCard(W/2-130, H/2+10, '1.518', 'chamados no total',    fi(600,600,lt)*fo);
-    numCard(W/2,     H/2+10, '1.382', 'chamados resolvidos',  fi(900,600,lt)*fo);
-    numCard(W/2+130, H/2+10, '98%',   'no prazo em 2025',     fi(1200,600,lt)*fo);
-
-    c.globalAlpha=fi(1800,600,lt)*fo;
-    txt('O time de Facilities está aqui pra te ajudar!',W/2,H/2+76,12,'rgba(255,255,255,0.45)');
-    c.globalAlpha=1;
+    cx.globalAlpha=fi(300,500,lt)*fo;
+    txt('Resultados do time de Facilities em 2025',W/2,62,13,'rgba(255,255,255,0.65)');
+    numCard(W/2-130,H/2+10,'1.518','chamados recebidos', fi(600,600,lt)*fo);
+    numCard(W/2,    H/2+10,'1.382','chamados resolvidos',fi(900,600,lt)*fo);
+    numCard(W/2+130,H/2+10,'98%', 'dentro do prazo',    fi(1200,600,lt)*fo);
+    cx.globalAlpha=fi(1900,600,lt)*fo;
+    txt('O time está aqui pra te ajudar!',W/2,H/2+76,12,'rgba(255,255,255,0.4)');
+    cx.globalAlpha=1;
   }
 
   // ══ CENA 3 — Login (18–28s) ════════════════════════════════
-  if (T >= 17600 && T < 28600) {
+  if (T>=17600 && T<28600) {
     const lt=T-18000, fo=T>27300?1-fi(27300,900,T):1;
     pill(W/2,28,'PASSO 1 — ENTRAR NO SISTEMA',fi(0,500,lt)*fo);
-    c.globalAlpha=fi(300,500,lt)*fo;
+    cx.globalAlpha=fi(300,500,lt)*fo;
     txt('Use seu e-mail @logcomex.com',W/2,64,15,'#ffffff','center',600);
-    c.globalAlpha=fi(550,400,lt)*fo;
+    cx.globalAlpha=fi(550,400,lt)*fo;
     txt('Clique em Entrar com Google — sem senha!',W/2,86,12,'rgba(255,255,255,0.45)');
-    // pessoa se movendo para o celular
     const pX = lp(W/2-50, W/2-90, ez(fi(800,1000,lt)));
-    pessoa(pX, H/2+8, 1.05, '#6613D0', 'Você', fi(700,500,lt)*fo);
-    celular(W/2+82, H/2-2, fi(900,500,lt)*fo);
-    // seta
-    c.globalAlpha=fi(1300,500,lt)*fo;
-    c.strokeStyle='rgba(255,107,43,0.5)'; c.lineWidth=2; c.setLineDash([5,5]);
-    c.beginPath(); c.moveTo(W/2-46,H/2-10); c.lineTo(W/2+46,H/2-10); c.stroke(); c.setLineDash([]);
-    // badge automático
-    c.globalAlpha=fi(1700,600,lt)*fo;
+    pessoa(pX,H/2+8,1.05,'#6613D0','Você',fi(700,500,lt)*fo);
+    celular(W/2+82,H/2-2,fi(900,500,lt)*fo);
+    cx.globalAlpha=fi(1300,500,lt)*fo;
+    cx.strokeStyle='rgba(255,107,43,0.5)'; cx.lineWidth=2; cx.setLineDash([5,5]);
+    cx.beginPath(); cx.moveTo(W/2-46,H/2-10); cx.lineTo(W/2+46,H/2-10); cx.stroke(); cx.setLineDash([]);
+    cx.globalAlpha=fi(1700,600,lt)*fo;
     rr(W/2-148,H/2+82,296,30,8,'rgba(102,19,208,0.3)');
     txt('Nome e centro de custo preenchidos automaticamente  ✓',W/2,H/2+97,11,'#c9a0ff','center',500);
-    c.globalAlpha=1;
+    cx.globalAlpha=1;
   }
 
   // ══ CENA 4 — Categorias (28–38s) ══════════════════════════
-  if (T >= 27600 && T < 38600) {
+  if (T>=27600 && T<38600) {
     const lt=T-28000, fo=T>37300?1-fi(37300,900,T):1;
     pill(W/2,28,'PASSO 2 — ESCOLHA A CATEGORIA',fi(0,500,lt)*fo);
-    c.globalAlpha=fi(300,500,lt)*fo;
+    cx.globalAlpha=fi(300,500,lt)*fo;
     txt('O que você precisa hoje?',W/2,64,15,'#ffffff','center',600);
     categorias.forEach((cat,i) => {
       const col=i%3, row=Math.floor(i/3);
-      const cx=W/2-120+col*120, cy=H/2-22+row*76;
-      c.globalAlpha=fi(600+i*170,400,lt)*fo;
-      rr(cx-52,cy-23,104,50,10,cat.c,'rgba(255,255,255,0.07)');
-      c.font='20px sans-serif'; c.textAlign='center'; c.textBaseline='middle';
-      c.fillText(cat.e,cx,cy-4);
-      txt(cat.l,cx,cy+16,11,'rgba(255,255,255,0.9)','center',500);
+      const bx=W/2-120+col*120, by=H/2-22+row*76;
+      cx.globalAlpha=fi(600+i*170,400,lt)*fo;
+      rr(bx-52,by-23,104,50,10,cat.c,'rgba(255,255,255,0.07)');
+      cx.font='20px sans-serif'; cx.textAlign='center'; cx.textBaseline='middle';
+      cx.fillText(cat.e,bx,by-4);
+      txt(cat.l,bx,by+16,11,'rgba(255,255,255,0.9)','center',500);
     });
-    c.globalAlpha=1;
+    cx.globalAlpha=1;
   }
 
-  // ══ CENA 5 — Formulário (38–50s) ══════════════════════════
-  if (T >= 37600 && T < 50600) {
-    const lt=T-38000, fo=T>49300?1-fi(49300,900,T):1;
+  // ══ CENA 5 — Formulário (38–44s) ══════════════════════════
+  if (T>=37600 && T<44600) {
+    const lt=T-38000, fo=T>43300?1-fi(43300,900,T):1;
     pill(W/2,28,'PASSO 3 — PREENCHA E ENVIE',fi(0,500,lt)*fo);
-    c.globalAlpha=fi(300,500,lt)*fo;
+    cx.globalAlpha=fi(300,500,lt)*fo;
     txt('Descreva o que você precisa com detalhes',W/2,64,15,'#ffffff','center',600);
-    c.globalAlpha=fi(600,400,lt)*fo;
+    cx.globalAlpha=fi(600,400,lt)*fo;
     rr(W/2-162,84,324,198,12,'rgba(255,255,255,0.04)','rgba(255,255,255,0.07)');
-    const campos=[
-      {l:'Nome',         v:'João Faria',               ok:true},
-      {l:'Centro de custo', v:'Financeiro Corporate',  ok:true},
-      {l:'Descrição',    v:'Preciso de teclado novo para o notebook...'},
-      {l:'Data desejada',v:'28 de maio de 2026'},
-    ];
-    campos.forEach((f,i) => {
-      c.globalAlpha=fi(700+i*220,420,lt)*fo;
+    [{l:'Nome',v:'João Faria',ok:true},{l:'Centro de custo',v:'Financeiro Corporate',ok:true},
+     {l:'Descrição',v:'Preciso de teclado novo...'},{l:'Data desejada',v:'28/05/2026'}
+    ].forEach((f,i) => {
+      cx.globalAlpha=fi(700+i*220,420,lt)*fo;
       const fy=100+i*44;
       txt(f.l,W/2-152,fy,10,'rgba(255,255,255,0.4)','left');
-      rr(W/2-152,fy+9,304,26,5,
-        f.ok?'rgba(102,19,208,0.3)':'rgba(255,255,255,0.05)',
-        'rgba(255,255,255,0.1)');
+      rr(W/2-152,fy+9,304,26,5,f.ok?'rgba(102,19,208,0.3)':'rgba(255,255,255,0.05)','rgba(255,255,255,0.1)');
       txt(f.v,W/2-144,fy+22,11,f.ok?'#c9a0ff':'rgba(255,255,255,0.65)','left');
     });
-    // botão aparece com leve bounce
     const bp=fi(2900,600,lt)*fo;
-    c.globalAlpha=bp;
+    cx.globalAlpha=bp;
     const bs=1+fi(2900,200,lt)*0.04;
-    c.save(); c.translate(W/2,292); c.scale(bs,bs); c.translate(-W/2,-292);
+    cx.save(); cx.translate(W/2,292); cx.scale(bs,bs); cx.translate(-W/2,-292);
     rr(W/2-66,280,132,28,8,'#6613D0');
     txt('Enviar chamado',W/2,294,12,'#fff','center',600);
-    c.restore();
-    c.globalAlpha=1;
+    cx.restore();
+    cx.globalAlpha=1;
   }
 
-  // ══ CENA 6 — Slack e rastreio (50–60s) ════════════════════
-  if (T >= 49600) {
-    const lt=T-50000;
+  // ══ CENA 6 — Slack (44–50s) ════════════════════════════════
+  if (T>=43600) {
+    const lt=T-44000;
     pill(W/2,28,'PRONTO — ACOMPANHE PELO SLACK',fi(0,500,lt));
-    c.globalAlpha=fi(300,500,lt);
+    cx.globalAlpha=fi(300,500,lt);
     txt('Você recebe tudo direto nas suas mensagens',W/2,64,15,'#ffffff','center',600);
-    // personagem central
-    pessoa(W/2, H/2+12, 1.12, '#6613D0', 'Você', fi(400,600,lt));
-    // sino vindo da direita
+    pessoa(W/2,H/2+12,1.12,'#6613D0','Você',fi(400,600,lt));
     const sinoX=lp(W/2+180,W/2+96,ez(fi(700,800,lt)));
     sino(sinoX,H/2-46,fi(650,600,lt));
-    // envelope vindo da esquerda
     const envX=lp(W/2-180,W/2-86,ez(fi(900,800,lt)));
     envelope(envX,H/2-46,fi(800,600,lt));
-    // check substituindo ícones
     check(W/2,H/2-48,fi(1800,600,lt));
-    // mensagem 1 — chamado concluído
-    c.globalAlpha=fi(2100,600,lt);
+    cx.globalAlpha=fi(2200,600,lt);
     rr(W/2-148,H/2+76,296,26,7,'rgba(255,107,43,0.2)','rgba(255,107,43,0.4)');
-    txt('Chamado concluído! Toque para avaliar o atendimento  ⭐',W/2,H/2+89,11,'rgba(255,107,43,0.9)','center',500);
-    // mensagem 2 — rastreio
-    c.globalAlpha=fi(3000,700,lt);
+    txt('Chamado concluído! Toque para avaliar  ⭐',W/2,H/2+89,11,'rgba(255,107,43,0.9)','center',500);
+    cx.globalAlpha=fi(3000,700,lt);
     rr(W/2-148,H/2+108,296,26,7,'rgba(22,163,74,0.2)','rgba(22,163,74,0.45)');
-    txt('Rastreio enviado: seu pacote está a caminho!  📦',W/2,H/2+121,11,'rgba(134,239,172,0.9)','center',500);
-    // URL final
-    c.globalAlpha=fi(4000,900,lt);
+    txt('Rastreio enviado — seu pacote está a caminho!  📦',W/2,H/2+121,11,'rgba(134,239,172,0.9)','center',500);
+    cx.globalAlpha=fi(4000,900,lt);
     txt('facilities-api.vercel.app',W/2,H-20,14,'#FF6B2B','center',600);
-    c.globalAlpha=1;
+    cx.globalAlpha=1;
   }
 
-  // Progresso e tempo
   document.getElementById('pf').style.width = Math.min(T/DUR*100,100)+'%';
-  document.getElementById('tl').textContent = Math.floor(T/1000)+'s / 60s';
+  document.getElementById('tl').textContent = Math.floor(T/1000)+'s / 50s';
 }
 
-// ─── Loop de animação ────────────────────────────────────────
+// ── Loop ──────────────────────────────────────────────────────
 function loop(ts) {
   if (!prev) prev=ts;
   T=Math.min(T+(ts-prev),DUR); prev=ts; draw(T);
   if (T<DUR && playing) raf=requestAnimationFrame(loop);
   else if (T>=DUR) {
-    playing=false; pararVoz();
+    playing=false; stopMusic();
     document.getElementById('ip').style.display='none';
     document.getElementById('ipa').style.display='none';
     document.getElementById('ipr').style.display='block';
@@ -480,34 +485,28 @@ function loop(ts) {
 
 function tog() {
   initAudio();
-  if (window.speechSynthesis) window.speechSynthesis.getVoices();
   if (T>=DUR) {
-    T=0; ultimaCena=-1; ultimoFalado=-1; filaFala=[]; falando=false;
-    document.getElementById('stxt').textContent='\u00a0';
+    T=0; ultimaCena=-1;
     document.getElementById('ipr').style.display='none';
   }
   playing=!playing;
   document.getElementById('ip').style.display=playing?'none':'block';
   document.getElementById('ipa').style.display=playing?'block':'none';
-  if (playing) { prev=null; raf=requestAnimationFrame(loop); }
-  else { cancelAnimationFrame(raf); pararVoz(); }
+  if (playing) { prev=null; raf=requestAnimationFrame(loop); if(!muted) tocarMusica(); }
+  else { cancelAnimationFrame(raf); stopMusic(); }
 }
 
 function seek(e) {
   initAudio();
   const r=e.currentTarget.getBoundingClientRect();
   T=Math.round(Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*DUR);
-  ultimaCena=-1; ultimoFalado=-1; filaFala=[]; falando=false;
-  pararVoz(); draw(T);
+  ultimaCena=-1;
+  stopMusic();
+  draw(T);
+  if (playing && !muted) tocarMusica();
 }
 
-window.addEventListener('load',()=>{
-  if(window.speechSynthesis) window.speechSynthesis.getVoices();
-  draw(0);
-});
-if(window.speechSynthesis){
-  speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();
-}
+window.addEventListener('load',()=>draw(0));
 </script>
 </body>
 </html>
