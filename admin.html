@@ -15,12 +15,7 @@
     --surface: #ffffff; --surface2: #f5f3ff; --surface3: #ede9fe;
     --border: rgba(102,19,208,0.12);
     --success: #16a34a; --error: #dc2626;
-    --border: rgba(102,19,208,0.1);
-    --success: #12b76a; --success-bg: #e8f8ef;
-    --warning: #d97706; --warning-bg: #fffbeb;
-    --danger: #ef4444; --danger-bg: #fef2f2;
-    --info: #0ea5e9; --info-bg: #e0f2fe;
-    --radius: 12px; --radius-sm: 8px; --sidebar: 240px;
+    --radius: 14px; --radius-sm: 9px;
   }
   html, body { height: 100%; overflow: hidden; }
   body { font-family: 'Sora', sans-serif; background: var(--surface2); color: var(--ink); display: flex; min-height: 100vh; }
@@ -38,10 +33,7 @@
   .sidebar-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
   .sb-logo { display: flex; align-items: center; gap: 10px; padding: 0 0.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 1.2rem; }
-  .sb-logo-mark { width: 30px; height: 30px; background: var(--purple); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-  .sb-logo-mark::before { content: ''; position: absolute; width: 10px; height: 10px; background: var(--orange); border-radius: 50%; top: 2px; right: 2px; }
-  .sb-logo-mark::after { content: 'L'; position: absolute; bottom: 2px; left: 6px; color: #fff; font-size: 12px; font-weight: 700; }
-  .sb-logo-text { font-weight: 700; font-size: 0.9rem; color: #fff; letter-spacing: -0.02em; }
+  .sb-logo-text { font-weight: 800; font-size: 0.95rem; color: #fff; letter-spacing: -0.03em; }
   .sb-logo-sub { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 1px; }
   .sb-nav { flex: 1; }
   .sb-section { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.22); padding: 0 0.5rem; margin: 1.2rem 0 0.5rem; }
@@ -265,12 +257,10 @@
 <aside class="sidebar" id="sidebar" style="display:none;">
 <div class="sidebar-inner">
   <div class="sb-logo">
-    <svg width="30" height="30" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="26" height="26" x="0" y="14" rx="4" fill="#ffffff"/>
-      <rect width="26" height="26" x="14" y="0" rx="4" fill="#F28C28"/>
-      <rect width="14" height="14" x="14" y="14" rx="2" fill="#0B0D19"/>
-    </svg>
-    <div><div class="sb-logo-text">Facilities</div><div class="sb-logo-sub">LogComex · Admin</div></div>
+    <div>
+      <div class="sb-logo-text">Facilities <span style="color:#FF6B2B;font-weight:400;">LogComex</span></div>
+      <div class="sb-logo-sub">Admin</div>
+    </div>
   </div>
   <nav class="sb-nav">
     <div class="sb-section">Principal</div>
@@ -492,6 +482,14 @@
       <div class="detail-desc" id="d-desc"></div>
       <div class="modal-section">Atualizar status</div>
       <div class="status-btns" id="status-btns"></div>
+      <div id="rastreio-row" style="display:none;margin-bottom:1rem;">
+        <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink3);margin-bottom:6px;">Código de Rastreio DHL</div>
+        <div style="display:flex;gap:8px;">
+          <input id="rastreio-input" type="text" placeholder="Ex: 1234567890" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sora',sans-serif;font-size:0.85rem;color:var(--ink);outline:none;" oninput="this.style.borderColor='#6613D0'">
+          <button onclick="salvarRastreio()" style="background:var(--purple);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-family:'Sora',sans-serif;font-weight:600;font-size:0.83rem;cursor:pointer;">Salvar e Notificar</button>
+        </div>
+        <div style="font-size:0.72rem;color:var(--ink3);margin-top:4px;">Ao salvar, um e-mail sera enviado automaticamente ao colaborador com o codigo de rastreio.</div>
+      </div>
       <div class="modal-section">Adicionar comentário</div>
       <div class="comment-box">
         <textarea id="cmt-text" placeholder="Atualizações, observações, próximos passos..."></textarea>
@@ -882,9 +880,50 @@ function updateBadge() {
     } else { brindeSec.style.display = 'none'; }
     const statuses = ['Aberto','Em andamento','Aguardando aprovação','Concluído','Cancelado'];
     document.getElementById('status-btns').innerHTML = statuses.map(s => `<button class="status-btn ${t.status===s?'active-s':''}" onclick="updS('${s}')">${s}</button>`).join('');
+    // Mostrar campo de rastreio apenas para logística DHL/Correio
+    const rastreioRow = document.getElementById('rastreio-row');
+    if (t.categoria === 'logistica' && t.transportadora !== 'Uber Flash') {
+      rastreioRow.style.display = 'block';
+      document.getElementById('rastreio-input').value = t.rastreio || '';
+    } else {
+      rastreioRow.style.display = 'none';
+    }
     renderHist(t.historico||[]);
     document.getElementById('cmt-text').value = '';
     document.getElementById('modal-ov').classList.add('open');
+  };
+
+  window.salvarRastreio = async () => {
+    const codigo = document.getElementById('rastreio-input').value.trim();
+    if (!codigo) { alert('Digite o código de rastreio.'); return; }
+    const t = allTickets.find(x => x._docId === currentDocId);
+    if (!t) return;
+    try {
+      // Salvar no Firebase
+      await updateDoc(doc(db, 'tickets', currentDocId), {
+        rastreio: codigo,
+        updatedAt: new Date(),
+        historico: [...(t.historico||[]), { acao: 'Codigo de rastreio adicionado: ' + codigo, data: new Date().toISOString(), usuario: 'Admin' }]
+      });
+      // Notificar via Slack/API
+      if (t.email) {
+        await fetch('/api/notify-slack', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo: 'rastreio',
+            ticket: t.id,
+            titulo: t.titulo,
+            nome: t.nome,
+            email: t.email,
+            transportadora: t.transportadora,
+            rastreio: codigo,
+            item: t.item_enviado || '',
+          })
+        });
+      }
+      showToast('Rastreio salvo! Colaborador notificado.');
+    } catch(err) { console.error(err); showToast('Erro ao salvar rastreio.'); }
   };
 
   window.renderHist = (h) => {
