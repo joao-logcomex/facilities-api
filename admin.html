@@ -9,6 +9,7 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
+    --sidebar: 220px;
     --purple: #6613D0; --purple-dark: #4e0fa0; --purple-light: #f3eaff; --purple-mid: #c9a0ff;
     --orange: #FF6B2B; --orange-light: #ff8c57; --black: #0B0D19;
     --ink: #1e1b4b; --ink2: #6b7280; --ink3: #9ca3af;
@@ -26,7 +27,7 @@
   .unauth-screen h2 { color: #fff; font-size: 1.5rem; font-weight: 700; }
   .unauth-screen p { color: rgba(255,255,255,0.4); font-size: 0.9rem; }
   .btn-back { background: var(--purple); color: #fff; border: none; padding: 12px 28px; border-radius: var(--radius-sm); font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 0.5rem; }
-  .sidebar { width: var(--sidebar); background: var(--black); height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; padding: 0; z-index: 50; overflow: hidden; }
+  .sidebar { width: var(--sidebar, 220px); background: var(--black); height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; padding: 0; z-index: 50; overflow: hidden; }
   .sidebar-inner { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 1.5rem 1rem; display: flex; flex-direction: column; }
   .sidebar-inner::-webkit-scrollbar { width: 3px; }
   .sidebar-inner::-webkit-scrollbar-track { background: transparent; }
@@ -48,7 +49,7 @@
   .user-role { font-size: 0.7rem; color: rgba(255,255,255,0.28); }
   .logout-btn { width: 100%; margin-top: 8px; padding: 8px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); color: rgba(255,255,255,0.35); font-size: 0.82rem; cursor: pointer; font-family: 'Sora', sans-serif; transition: all 0.15s; }
   .logout-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.65); }
-  .main { margin-left: var(--sidebar); flex: 1; padding: 2rem; height: 100vh; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; }
+  .main { margin-left: var(--sidebar, 220px); flex: 1; padding: 2rem; height: 100vh; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; }
   .main::-webkit-scrollbar { width: 6px; }
   .main::-webkit-scrollbar-track { background: transparent; }
   .main::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 6px; }
