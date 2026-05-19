@@ -58,7 +58,7 @@ canvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:14px}
 // ── Canvas ────────────────────────────────────────────────────
 const cv = document.getElementById('cv');
 const cx = cv.getContext('2d');
-const W = 600, H = 338, DUR = 50000;
+const W = 600, H = 338, DUR = 46000;
 cv.width = W; cv.height = H;
 
 let T=0, playing=false, prev=null, raf=null, muted=false;
@@ -313,13 +313,6 @@ function envelope(bx,by,a) {
   cx.beginPath(); cx.moveTo(bx-34,by-20); cx.lineTo(bx,by+4); cx.lineTo(bx+34,by-20); cx.stroke();
   cx.globalAlpha=1;
 }
-function numCard(x,y,num,label,a) {
-  cx.globalAlpha=a;
-  rr(x-58,y-38,116,76,10,'rgba(102,19,208,0.28)','rgba(102,19,208,0.45)');
-  txt(num,x,y-8,26,'#fff','center',700);
-  txt(label,x,y+22,10,'rgba(255,255,255,0.55)','center',500);
-  cx.globalAlpha=1;
-}
 
 const categorias = [
   {e:'🔧',l:'Manutenção', c:'rgba(102,19,208,0.5)'},
@@ -330,7 +323,7 @@ const categorias = [
   {e:'🧹',l:'Limpeza',    c:'rgba(236,72,153,0.4)'},
 ];
 
-const cenas = [0,10000,18000,28000,38000];
+const cenas = [0,10000,20000,30000,38000];
 let ultimaCena = -1;
 
 function fundo() {
@@ -364,23 +357,9 @@ function draw(T) {
     cx.globalAlpha=1;
   }
 
-  // ══ CENA 2 — Dados reais (10–18s) ═════════════════════════
-  if (T>=9600 && T<18600) {
-    const lt=T-10000, fo=T>17300?1-fi(17300,900,T):1;
-    pill(W/2,28,'NOSSOS NÚMEROS',fi(0,500,lt)*fo);
-    cx.globalAlpha=fi(300,500,lt)*fo;
-    txt('Resultados do time de Facilities em 2025',W/2,62,13,'rgba(255,255,255,0.65)');
-    numCard(W/2-130,H/2+10,'1.518','chamados recebidos', fi(600,600,lt)*fo);
-    numCard(W/2,    H/2+10,'1.382','chamados resolvidos',fi(900,600,lt)*fo);
-    numCard(W/2+130,H/2+10,'98%', 'dentro do prazo',    fi(1200,600,lt)*fo);
-    cx.globalAlpha=fi(1900,600,lt)*fo;
-    txt('O time está aqui pra te ajudar!',W/2,H/2+76,12,'rgba(255,255,255,0.4)');
-    cx.globalAlpha=1;
-  }
-
-  // ══ CENA 3 — Login (18–28s) ════════════════════════════════
-  if (T>=17600 && T<28600) {
-    const lt=T-18000, fo=T>27300?1-fi(27300,900,T):1;
+  // ══ CENA 2 — Login (10–20s) ════════════════════════════════
+  if (T>=9600 && T<20600) {
+    const lt=T-10000, fo=T>19300?1-fi(19300,900,T):1;
     pill(W/2,28,'PASSO 1 — ENTRAR NO SISTEMA',fi(0,500,lt)*fo);
     cx.globalAlpha=fi(300,500,lt)*fo;
     txt('Use seu e-mail @logcomex.com',W/2,64,15,'#ffffff','center',600);
@@ -398,9 +377,9 @@ function draw(T) {
     cx.globalAlpha=1;
   }
 
-  // ══ CENA 4 — Categorias (28–38s) ══════════════════════════
-  if (T>=27600 && T<38600) {
-    const lt=T-28000, fo=T>37300?1-fi(37300,900,T):1;
+  // ══ CENA 3 — Categorias (20–30s) ══════════════════════════
+  if (T>=19600 && T<30600) {
+    const lt=T-20000, fo=T>29300?1-fi(29300,900,T):1;
     pill(W/2,28,'PASSO 2 — ESCOLHA A CATEGORIA',fi(0,500,lt)*fo);
     cx.globalAlpha=fi(300,500,lt)*fo;
     txt('O que você precisa hoje?',W/2,64,15,'#ffffff','center',600);
@@ -416,9 +395,9 @@ function draw(T) {
     cx.globalAlpha=1;
   }
 
-  // ══ CENA 5 — Formulário (38–44s) ══════════════════════════
-  if (T>=37600 && T<44600) {
-    const lt=T-38000, fo=T>43300?1-fi(43300,900,T):1;
+  // ══ CENA 4 — Formulário (30–38s) ══════════════════════════
+  if (T>=29600 && T<38600) {
+    const lt=T-30000, fo=T>37300?1-fi(37300,900,T):1;
     pill(W/2,28,'PASSO 3 — PREENCHA E ENVIE',fi(0,500,lt)*fo);
     cx.globalAlpha=fi(300,500,lt)*fo;
     txt('Descreva o que você precisa com detalhes',W/2,64,15,'#ffffff','center',600);
@@ -443,9 +422,9 @@ function draw(T) {
     cx.globalAlpha=1;
   }
 
-  // ══ CENA 6 — Slack (44–50s) ════════════════════════════════
-  if (T>=43600) {
-    const lt=T-44000;
+  // ══ CENA 5 — Slack (38–46s) ════════════════════════════════
+  if (T>=37600) {
+    const lt=T-38000;
     pill(W/2,28,'PRONTO — ACOMPANHE PELO SLACK',fi(0,500,lt));
     cx.globalAlpha=fi(300,500,lt);
     txt('Você recebe tudo direto nas suas mensagens',W/2,64,15,'#ffffff','center',600);
@@ -467,7 +446,7 @@ function draw(T) {
   }
 
   document.getElementById('pf').style.width = Math.min(T/DUR*100,100)+'%';
-  document.getElementById('tl').textContent = Math.floor(T/1000)+'s / 50s';
+  document.getElementById('tl').textContent = Math.floor(T/1000)+'s / 46s';
 }
 
 // ── Loop ──────────────────────────────────────────────────────
