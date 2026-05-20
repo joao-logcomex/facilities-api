@@ -1053,6 +1053,21 @@
       document.getElementById('fb-header').style.display = 'none';
       document.getElementById('fb-chamado-banner').style.display = 'none';
       document.getElementById('fb-success').style.display = 'block';
+      // Notificar canal #compras-facilities no Slack
+      fetch('/api/notify-slack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'novo_feedback',
+          canal_id: 'C06D4FV1H52',
+          tipo_feedback: tipo ? tipo.value : 'Geral',
+          assunto: document.getElementById('fb-assunto').value,
+          texto: anon ? '(Anônimo)' : texto.substring(0, 200),
+          nome: anon ? 'Anônimo' : (auth.currentUser?.email || 'Usuário'),
+          chamado_ref: chamadoRef || null,
+          anon
+        })
+      }).catch(e => console.log('Slack feedback err:', e));
     } catch(err) { alert('Erro ao enviar feedback. Tente novamente.'); }
   };
 </script>
