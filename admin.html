@@ -41,6 +41,17 @@
   .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: var(--radius-sm); color: rgba(255,255,255,0.45); font-size: 0.87rem; cursor: pointer; transition: all 0.15s; text-decoration: none; font-weight: 500; }
   .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
   .nav-item.active { background: rgba(102,19,208,0.25); color: var(--purple-mid); }
+  .nav-group { margin-bottom: 2px; }
+  .nav-group-header { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:var(--radius-sm); color:rgba(255,255,255,0.55); font-size:0.87rem; cursor:pointer; transition:all .15s; font-weight:600; user-select:none; }
+  .nav-group-header:hover { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.85); }
+  .nav-group-header.open { color:#fff; background:rgba(102,19,208,0.15); }
+  .nav-group-icon { font-size:1rem; }
+  .nav-group-arrow { margin-left:auto; font-size:1rem; transition:transform .2s; display:inline-block; }
+  .nav-group-header.open .nav-group-arrow { transform:rotate(90deg); }
+  .nav-group-items { padding-left:8px; overflow:hidden; }
+  .nav-sub-item { display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:var(--radius-sm); color:rgba(255,255,255,0.4); font-size:0.83rem; cursor:pointer; transition:all .15s; font-weight:500; border-left:2px solid rgba(255,255,255,0.06); margin-left:8px; }
+  .nav-sub-item:hover { background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.75); border-left-color:rgba(102,19,208,0.4); }
+  .nav-sub-item.active { background:rgba(102,19,208,0.2); color:var(--purple-mid); border-left-color:var(--purple); }
   .nav-badge { margin-left: auto; background: var(--orange); color: #fff; font-size: 0.68rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; min-width: 20px; text-align: center; }
   .sb-footer { border-top: 1px solid rgba(255,255,255,0.07); padding: 1rem; background: var(--black); flex-shrink: 0; }
   .user-info { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
@@ -329,10 +340,18 @@
     <div class="nav-item" onclick="nav('logistica',this)"><span>🚚</span> Envios</div>
     <div class="sb-section">Histórico</div>
     <div class="nav-item" onclick="nav('historico',this)"><span>📈</span> Histórico Pipefy</div>
-    <div class="nav-section">IMOBILIÁRIO</div>
-    <div class="nav-item" onclick="nav('imoveis',this)"><span>🏢</span> Espaços</div>
-    <div class="nav-item" onclick="nav('patrimonio',this)"><span>💻</span> Patrimônio</div>
-    <div class="nav-item" onclick="nav('contratos',this)"><span>📄</span> Contratos</div>
+    <div class="nav-group" id="grupo-imoveis">
+      <div class="nav-group-header" onclick="toggleGrupo('imoveis')">
+        <span class="nav-group-icon">🏢</span>
+        <span>Imobiliário</span>
+        <span class="nav-group-arrow" id="arrow-imoveis">›</span>
+      </div>
+      <div class="nav-group-items" id="items-imoveis" style="display:none;">
+        <div class="nav-sub-item" onclick="nav('imoveis',this)"><span>🏢</span> Espaços</div>
+        <div class="nav-sub-item" onclick="nav('patrimonio',this)"><span>💻</span> Patrimônio</div>
+        <div class="nav-sub-item" onclick="nav('contratos',this)"><span>📄</span> Contratos</div>
+      </div>
+    </div>
     <div class="nav-item" onclick="syncPipefy()" id="btn-sync-pipefy" style="cursor:pointer;margin-top:4px;border:1px solid rgba(254,143,28,0.3);border-radius:8px;color:rgba(254,143,28,0.8);"><span>🔄</span> Sincronizar Pipefy</div>
     <div class="sb-section">Links</div>
     <a href="index.html" class="nav-item"><span>↗</span> Formulário público</a>
@@ -1931,11 +1950,33 @@ window.renderHistorico = renderHistorico;
   });
 
   // Inicializar quando navegar para as páginas imobiliárias
+  window.toggleGrupo = (id) => {
+    const items = document.getElementById('items-' + id);
+    const header = items?.previousElementSibling;
+    if (!items) return;
+    const aberto = items.style.display !== 'none';
+    items.style.display = aberto ? 'none' : 'block';
+    if (header) header.classList.toggle('open', !aberto);
+  };
+
+  // Abrir grupo automaticamente ao navegar para sub-item
   const _navOriginal = window.nav;
   window.nav = (page, el) => {
     _navOriginal(page, el);
-    if (['imoveis','patrimonio','contratos'].includes(page) && !imobData.espacos.length && !imobData.patrimonio.length && !imobData.contratos.length) {
-      carregarImob();
+    // Marcar sub-item como ativo
+    document.querySelectorAll('.nav-sub-item').forEach(x => x.classList.remove('active'));
+    if (el?.classList.contains('nav-sub-item')) el.classList.add('active');
+    // Abrir grupo imobiliário automaticamente
+    if (['imoveis','patrimonio','contratos'].includes(page)) {
+      const items = document.getElementById('items-imoveis');
+      const header = items?.previousElementSibling;
+      if (items && items.style.display === 'none') {
+        items.style.display = 'block';
+        header?.classList.add('open');
+      }
+      if (!imobData.espacos.length && !imobData.patrimonio.length && !imobData.contratos.length) {
+        carregarImob();
+      }
     }
   };
 
