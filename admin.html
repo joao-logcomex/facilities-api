@@ -160,6 +160,14 @@
   .detail-desc { background: var(--surface2); border-radius: var(--radius-sm); padding: 0.9rem; font-size: 0.86rem; color: var(--ink2); line-height: 1.6; margin-bottom: 1.2rem; white-space: pre-wrap; border: 1px solid var(--border); }
   .modal-section { font-size: 0.7rem; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.7rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
   .status-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .aprovacao-box { background: rgba(102,19,208,0.06); border: 1.5px solid rgba(102,19,208,0.2); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; }
+  .aprovacao-box .aprov-titulo { font-size: 0.72rem; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+  .aprovacao-box .aprov-desc { font-size: 0.82rem; color: var(--ink2); margin-bottom: 0.85rem; line-height: 1.5; }
+  .aprovacao-btns { display: flex; gap: 8px; }
+  .btn-aprovar { flex: 1; padding: 10px; background: #16a34a; color: #fff; border: none; border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background .15s; }
+  .btn-aprovar:hover { background: #15803d; }
+  .btn-recusar { flex: 1; padding: 10px; background: #fff; color: var(--error); border: 1.5px solid var(--error); border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .15s; }
+  .btn-recusar:hover { background: #fef2f2; }
   .status-btn { padding: 7px 13px; border-radius: 100px; border: 1.5px solid var(--surface3); font-size: 0.78rem; font-weight: 600; cursor: pointer; background: var(--surface2); color: var(--ink3); font-family: 'Sora', sans-serif; transition: all 0.15s; }
   .status-btn.active-s { background: var(--purple-light); color: var(--purple); border-color: var(--purple); }
   .comment-box textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--surface3); border-radius: var(--radius-sm); font-family: 'Sora', sans-serif; font-size: 0.86rem; color: var(--ink); background: var(--surface); resize: vertical; min-height: 75px; outline: none; }
@@ -481,6 +489,14 @@
       </div>
       <div class="modal-section">Descrição</div>
       <div class="detail-desc" id="d-desc"></div>
+      <div id="aprovacao-box" class="aprovacao-box" style="display:none;">
+        <div class="aprov-titulo">🎁 Solicitação de Brinde — Aguardando Aprovação</div>
+        <div class="aprov-desc" id="aprovacao-desc">Revise os itens solicitados acima e aprove ou recuse esta solicitação.</div>
+        <div class="aprovacao-btns">
+          <button class="btn-aprovar" onclick="aprovarBrinde()">✅ Aprovar solicitação</button>
+          <button class="btn-recusar" onclick="recusarBrinde()">✕ Recusar</button>
+        </div>
+      </div>
       <div class="modal-section">Atualizar status</div>
       <div class="status-btns" id="status-btns"></div>
       <div id="rastreio-row" style="display:none;margin-bottom:1rem;">
@@ -881,6 +897,15 @@ function updateBadge() {
     } else { brindeSec.style.display = 'none'; }
     const statuses = ['Aberto','Em andamento','Aguardando aprovação','Concluído','Cancelado'];
     document.getElementById('status-btns').innerHTML = statuses.map(s => `<button class="status-btn ${t.status===s?'active-s':''}" onclick="updS('${s}')">${s}</button>`).join('');
+    // Mostrar box de aprovação para brindes em aguardando aprovação
+    const aprovBox = document.getElementById('aprovacao-box');
+    if (t.categoria === 'brindes' && t.status === 'Aguardando aprovação') {
+      aprovBox.style.display = 'block';
+      const itens = t.itens_brinde ? `\n\nItens solicitados: ${t.itens_brinde}` : '';
+      document.getElementById('aprovacao-desc').textContent = `Solicitado por ${t.nome || t.email} — revise os itens acima e aprove ou recuse.${itens}`;
+    } else {
+      aprovBox.style.display = 'none';
+    }
     // Mostrar campo de rastreio apenas para logística DHL/Correio
     const rastreioRow = document.getElementById('rastreio-row');
     if (t.categoria === 'logistica' && t.transportadora !== 'Uber Flash') {
@@ -925,6 +950,84 @@ function updateBadge() {
       }
       showToast('Rastreio salvo! Colaborador notificado.');
     } catch(err) { console.error(err); showToast('Erro ao salvar rastreio.'); }
+  };
+
+  window.aprovarBrinde = async () => {
+    if (!currentDocId) return;
+    const t = allTickets.find(x => x._docId === currentDocId);
+    if (!t) return;
+    const btn = document.querySelector('.btn-aprovar');
+    btn.textContent = 'Aprovando...'; btn.disabled = true;
+    try {
+      await updateDoc(doc(db, 'tickets', currentDocId), {
+        status: 'Em andamento',
+        updatedAt: new Date(),
+        historico: [...(t.historico||[]), {
+          acao: 'Brinde aprovado pelo gestor — encaminhado para Facilities',
+          data: new Date().toISOString(),
+          usuario: auth.currentUser?.email || 'Admin'
+        }]
+      });
+      // Notificar colaborador via Slack
+      if (t.email) {
+        fetch('/api/notify-slack', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo: 'aprovacao_brinde',
+            ticket: t.id,
+            titulo: t.titulo,
+            nome: t.nome,
+            email: t.email,
+            itens: t.itens_brinde || '',
+            aprovado: true
+          })
+        });
+      }
+      document.getElementById('aprovacao-box').style.display = 'none';
+      showToast('✅ Brinde aprovado! Colaborador notificado no Slack.');
+      closeModal();
+    } catch(err) { console.error(err); btn.textContent = '✅ Aprovar solicitação'; btn.disabled = false; }
+  };
+
+  window.recusarBrinde = async () => {
+    const motivo = prompt('Motivo da recusa (opcional):') ?? '';
+    if (motivo === null) return; // cancelou
+    if (!currentDocId) return;
+    const t = allTickets.find(x => x._docId === currentDocId);
+    if (!t) return;
+    try {
+      await updateDoc(doc(db, 'tickets', currentDocId), {
+        status: 'Cancelado',
+        motivo_recusa: motivo,
+        updatedAt: new Date(),
+        historico: [...(t.historico||[]), {
+          acao: `Brinde recusado pelo gestor${motivo ? ': ' + motivo : ''}`,
+          data: new Date().toISOString(),
+          usuario: auth.currentUser?.email || 'Admin'
+        }]
+      });
+      // Notificar colaborador via Slack
+      if (t.email) {
+        fetch('/api/notify-slack', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo: 'aprovacao_brinde',
+            ticket: t.id,
+            titulo: t.titulo,
+            nome: t.nome,
+            email: t.email,
+            itens: t.itens_brinde || '',
+            aprovado: false,
+            motivo
+          })
+        });
+      }
+      document.getElementById('aprovacao-box').style.display = 'none';
+      showToast('Solicitação recusada. Colaborador notificado no Slack.');
+      closeModal();
+    } catch(err) { console.error(err); }
   };
 
   window.renderHist = (h) => {
