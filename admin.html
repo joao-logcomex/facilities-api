@@ -386,7 +386,7 @@
       <select class="fi-input" id="f-cat" onchange="renderTable()"><option value="">Todas categorias</option><option value="manutencao">Manutenção</option><option value="infraestrutura">Infraestrutura</option><option value="limpeza">Limpeza</option><option value="seguranca">Segurança</option><option value="brindes">Brindes</option><option value="suprimentos">Suprimentos</option><option value="plataformas">Plataformas</option></select>
       <select class="fi-input" id="f-prio" onchange="renderTable()"><option value="">Todas prioridades</option><option>Baixa</option><option>Média</option><option>Alta</option><option>Urgente</option></select>
     </div>
-    <div class="table-wrapper"><table><thead><tr><th>Protocolo</th><th>Título</th><th>Solicitante</th><th>Centro de Custo</th><th>Prioridade</th><th>Status</th><th>Data</th></tr></thead><tbody id="tickets-tb"></tbody></table></div>
+    <div class="table-wrapper"><table><thead><tr><th>Protocolo</th><th>Título</th><th>Solicitante</th><th>Centro de Custo</th><th>Prioridade</th><th>Status</th><th>Data</th><th>SLA</th></tr></thead><tbody id="tickets-tb"></tbody></table></div>
     <div style="padding:0.75rem 1rem;font-size:0.8rem;color:var(--ink3);" id="tcount"></div>
   </div>
 
@@ -823,6 +823,21 @@ function updateBadge() {
       <td><span class="pb pb-${t.prioridade}">${t.prioridade||''}</span></td>
       <td><span class="badge ${SBADGE[t.status]||''}">${t.status||''}</span></td>
       <td style="white-space:nowrap;font-size:0.78rem;color:var(--ink3);">${fds(t.data_abertura)}</td>
+      <td>${(() => {
+        if (t.status === 'Concluído' || t.status === 'Cancelado') {
+          return t.dentroSLA === true ? '<span class="sla-badge sla-ok">✓ OK</span>' : 
+                 t.dentroSLA === false ? '<span class="sla-badge sla-vencido">✗ Fora</span>' : '-';
+        }
+        if (!t.data_abertura) return '-';
+        const SLA_DIAS = {brindes:5,suprimentos:7,manutencao:60,seguranca:2,logistica:3,outros:7,infraestrutura:7};
+        const diasSLA = SLA_DIAS[t.categoria] || 7;
+        const abertura = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura);
+        const diasPassados = (Date.now() - abertura.getTime()) / 86400000;
+        const restam = diasSLA - diasPassados;
+        if (restam < 0) return '<span class="sla-badge sla-vencido">⚠ Vencido</span>';
+        if (restam <= 1) return '<span class="sla-badge sla-risco">⏱ ' + restam.toFixed(0) + 'd</span>';
+        return '<span class="sla-badge sla-ok">' + Math.ceil(restam) + 'd</span>';
+      })()}</td>
     </tr>`).join('') : '<tr><td colspan="7"><div class="empty-state"><div>🔍</div>Nenhum chamado encontrado</div></td></tr>';
     document.getElementById('tcount').textContent = T.length ? `${T.length} chamado${T.length>1?'s':''} encontrado${T.length>1?'s':''}` : '';
   };
