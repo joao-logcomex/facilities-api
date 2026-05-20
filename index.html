@@ -972,7 +972,7 @@
     } : null;
     const user = auth.currentUser;
     try {
-      await addDoc(collection(db, 'tickets'), {
+      const novoDoc = await addDoc(collection(db, 'tickets'), {
         id, nome: document.getElementById('nome').value, email: document.getElementById('email').value,
         userId: user.uid, departamento: document.getElementById('departamento').value,
         categoria: cat,
@@ -999,12 +999,32 @@
       const successMsg = document.getElementById('success-msg');
       if (successMsg) {
         if (cat === 'brindes') {
-          successMsg.textContent = 'Sua solicitação foi enviada e está aguardando aprovação do gestor. Você será notificado pelo Slack quando aprovada.';
+          successMsg.textContent = 'Sua solicitação foi enviada! O gestor receberá uma notificação no Slack para aprovar. Você será avisado quando houver resposta.';
         } else {
           successMsg.textContent = 'Nossa equipe analisará em breve.';
         }
       }
       document.getElementById('success-screen').style.display = 'block';
+      // Notificar gestor no Slack quando for brinde
+      if (cat === 'brindes') {
+        const docRef = await addDoc(collection(db, 'tickets'), {}); // já foi salvo acima, pegar o docId
+        // Chamar API para notificar o Leandro
+        fetch('/api/notify-slack', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo: 'novo_brinde_gestor',
+            ticket: id,
+            titulo: document.getElementById('titulo').value,
+            docId: novoDoc?.id || id,
+            emailColaborador: document.getElementById('email').value,
+            nomeColaborador: document.getElementById('nome').value,
+            itensBrinde: itensBrinde.join(', '),
+            email: document.getElementById('email').value,
+            nome: document.getElementById('nome').value,
+          })
+        }).catch(err => console.log('Slack notif error:', err));
+      }
     } catch(err) { alert('Erro ao salvar chamado. Tente novamente.'); }
   };
 
