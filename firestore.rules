@@ -1,7 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     function isAdmin() {
       return request.auth != null && request.auth.token.email in [
         'joao.faria@logcomex.com',
@@ -11,25 +11,38 @@ service cloud.firestore {
         'daniel.alle@logcomex.com'
       ];
     }
-    
+
     match /tickets/{ticketId} {
       allow create: if request.auth != null;
       allow read, update: if request.auth != null &&
         (request.auth.uid == resource.data.userId || isAdmin());
       allow delete: if isAdmin();
     }
-    
+
     match /feedbacks/{feedbackId} {
       allow create: if request.auth != null;
       allow read, delete: if isAdmin();
     }
-    
+
     match /admin_flags/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
+
     match /colaboradores/{docId} {
       allow read, write: if request.auth != null;
+    }
+
+    // Módulo Imobiliário — acesso apenas para admins
+    match /imob_espacos/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /imob_patrimonio/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /imob_contratos/{docId} {
+      allow read, write: if isAdmin();
     }
   }
 }
