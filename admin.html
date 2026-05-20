@@ -182,6 +182,49 @@
   .history-meta { font-size: 0.73rem; color: var(--ink3); margin-top: 2px; }
   .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--black); color: #fff; padding: 12px 20px; border-radius: var(--radius-sm); font-size: 0.87rem; z-index: 999; opacity: 0; transform: translateY(10px); transition: all 0.25s; pointer-events: none; border: 1px solid rgba(102,19,208,0.3); }
   .toast.show { opacity: 1; transform: translateY(0); }
+  /* ── IMOBILIÁRIO ── */
+  .imob-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:10px; }
+  .imob-title { font-size:1.2rem; font-weight:700; color:var(--ink); letter-spacing:-0.03em; }
+  .imob-tabs { display:flex; gap:6px; background:var(--surface2); border-radius:10px; padding:4px; }
+  .imob-tab { padding:7px 16px; border-radius:7px; font-size:0.82rem; font-weight:600; cursor:pointer; border:none; background:none; color:var(--ink2); font-family:'Sora',sans-serif; transition:all .15s; }
+  .imob-tab.active { background:var(--surface); color:var(--purple); box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+  .imob-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin-bottom:1.5rem; }
+  .imob-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:all .15s; }
+  .imob-card:hover { border-color:var(--purple); box-shadow:0 2px 12px rgba(102,19,208,0.08); }
+  .imob-card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
+  .imob-card-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+  .imob-card-id { font-size:0.7rem; font-weight:600; color:var(--ink3); text-transform:uppercase; letter-spacing:0.05em; }
+  .imob-card-name { font-size:0.95rem; font-weight:700; color:var(--ink); margin-bottom:4px; }
+  .imob-card-meta { font-size:0.78rem; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px; }
+  .imob-card-meta span { background:var(--surface2); padding:2px 8px; border-radius:20px; }
+  .imob-status { display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; font-weight:600; padding:3px 10px; border-radius:20px; }
+  .imob-status-ok { background:rgba(22,163,74,0.1); color:#16a34a; }
+  .imob-status-atencao { background:rgba(234,179,8,0.1); color:#b45309; }
+  .imob-status-critico { background:rgba(220,38,38,0.1); color:#dc2626; }
+  .imob-status-manutencao { background:rgba(102,19,208,0.1); color:#6613D0; }
+  .imob-btn-add { display:flex; align-items:center; gap:6px; padding:9px 18px; background:var(--purple); color:#fff; border:none; border-radius:8px; font-family:'Sora',sans-serif; font-size:0.83rem; font-weight:600; cursor:pointer; transition:background .15s; }
+  .imob-btn-add:hover { background:var(--purple-dark); }
+  .imob-empty { text-align:center; padding:3rem; color:var(--ink3); }
+  .imob-empty .imob-empty-icon { font-size:2.5rem; margin-bottom:0.75rem; }
+  .imob-modal { display:none; position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.45); align-items:center; justify-content:center; padding:16px; }
+  .imob-modal.open { display:flex; }
+  .imob-modal-box { background:var(--surface); border-radius:16px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; padding:1.5rem; }
+  .imob-modal-title { font-size:1rem; font-weight:700; color:var(--ink); margin-bottom:1.2rem; }
+  .imob-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .imob-form-grid .full { grid-column:1/-1; }
+  .imob-field label { display:block; font-size:0.75rem; font-weight:600; color:var(--ink2); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.04em; }
+  .imob-field input, .imob-field select, .imob-field textarea { width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:8px; font-family:'Sora',sans-serif; font-size:0.85rem; color:var(--ink); outline:none; transition:border-color .15s; background:var(--surface); }
+  .imob-field input:focus, .imob-field select:focus, .imob-field textarea:focus { border-color:var(--purple); }
+  .imob-field textarea { resize:vertical; min-height:72px; }
+  .imob-modal-btns { display:flex; gap:8px; margin-top:1.2rem; justify-content:flex-end; }
+  .imob-btn-save { padding:9px 20px; background:var(--purple); color:#fff; border:none; border-radius:8px; font-family:'Sora',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer; }
+  .imob-btn-cancel { padding:9px 20px; background:none; color:var(--ink2); border:1.5px solid var(--border); border-radius:8px; font-family:'Sora',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer; }
+  .imob-btn-del { padding:9px 16px; background:none; color:var(--error); border:1.5px solid rgba(220,38,38,0.3); border-radius:8px; font-family:'Sora',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer; margin-right:auto; }
+  .imob-stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:1.5rem; }
+  .imob-stat { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+  .imob-stat-num { font-size:1.5rem; font-weight:700; color:var(--ink); }
+  .imob-stat-label { font-size:0.72rem; color:var(--ink3); margin-top:2px; }
+  .imob-alerta { background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.3); border-radius:10px; padding:12px 16px; margin-bottom:1rem; display:flex; align-items:center; gap:10px; font-size:0.83rem; color:#b45309; }
   .relatorio-shell { background: linear-gradient(135deg, #0B0D19 0%, #1a0a3a 100%); border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
   .relatorio-shell::before { content: ''; position: absolute; top: -80px; right: -60px; width: 300px; height: 300px; background: radial-gradient(ellipse, rgba(102,19,208,0.3) 0%, transparent 70%); pointer-events: none; }
   .relatorio-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 1.5rem; position: relative; z-index: 1; }
@@ -286,6 +329,10 @@
     <div class="nav-item" onclick="nav('logistica',this)"><span>🚚</span> Envios</div>
     <div class="sb-section">Histórico</div>
     <div class="nav-item" onclick="nav('historico',this)"><span>📈</span> Histórico Pipefy</div>
+    <div class="nav-section">IMOBILIÁRIO</div>
+    <div class="nav-item" onclick="nav('imoveis',this)"><span>🏢</span> Espaços</div>
+    <div class="nav-item" onclick="nav('patrimonio',this)"><span>💻</span> Patrimônio</div>
+    <div class="nav-item" onclick="nav('contratos',this)"><span>📄</span> Contratos</div>
     <div class="nav-item" onclick="syncPipefy()" id="btn-sync-pipefy" style="cursor:pointer;margin-top:4px;border:1px solid rgba(254,143,28,0.3);border-radius:8px;color:rgba(254,143,28,0.8);"><span>🔄</span> Sincronizar Pipefy</div>
     <div class="sb-section">Links</div>
     <a href="index.html" class="nav-item"><span>↗</span> Formulário público</a>
@@ -457,6 +504,72 @@
 
 
   <!-- PÁGINA HISTÓRICO PIPEFY -->
+    <!-- ═══ ESPAÇOS ═══ -->
+    <div class="page" id="page-imoveis">
+      <div class="topbar"><div class="page-title">🏢 Espaços</div></div>
+      <div style="padding:0 0.5rem;">
+        <div class="imob-header">
+          <div><div class="imob-title">Espaços e Salas</div><div style="font-size:0.82rem;color:var(--ink2);margin-top:2px;">Gerencie os espaços físicos do escritório</div></div>
+          <button class="imob-btn-add" onclick="abrirModalImob('espaco')">+ Adicionar espaço</button>
+        </div>
+        <div class="imob-stats" id="stats-espacos"></div>
+        <div class="imob-grid" id="grid-espacos"></div>
+      </div>
+    </div>
+
+    <!-- ═══ PATRIMÔNIO ═══ -->
+    <div class="page" id="page-patrimonio">
+      <div class="topbar"><div class="page-title">💻 Patrimônio</div></div>
+      <div style="padding:0 0.5rem;">
+        <div class="imob-header">
+          <div><div class="imob-title">Patrimônio e Equipamentos</div><div style="font-size:0.82rem;color:var(--ink2);margin-top:2px;">Controle todos os itens e equipamentos da empresa</div></div>
+          <button class="imob-btn-add" onclick="abrirModalImob('patrimonio')">+ Adicionar item</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;">
+          <input id="busca-patrim" type="text" placeholder="🔍 Buscar por nome, número ou responsável..."
+            oninput="filtrarPatrimonio(this.value)"
+            style="flex:1;min-width:200px;padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sora',sans-serif;font-size:0.83rem;color:var(--ink);outline:none;">
+          <select id="filtro-patrim-status" onchange="filtrarPatrimonio(document.getElementById('busca-patrim').value)"
+            style="padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sora',sans-serif;font-size:0.83rem;color:var(--ink);outline:none;">
+            <option value="">Todos os status</option>
+            <option value="Em uso">Em uso</option>
+            <option value="Disponível">Disponível</option>
+            <option value="Em manutenção">Em manutenção</option>
+            <option value="Descartado">Descartado</option>
+          </select>
+        </div>
+        <div class="imob-stats" id="stats-patrimonio"></div>
+        <div class="imob-grid" id="grid-patrimonio"></div>
+      </div>
+    </div>
+
+    <!-- ═══ CONTRATOS ═══ -->
+    <div class="page" id="page-contratos">
+      <div class="topbar"><div class="page-title">📄 Contratos</div></div>
+      <div style="padding:0 0.5rem;">
+        <div class="imob-header">
+          <div><div class="imob-title">Contratos de Locação</div><div style="font-size:0.82rem;color:var(--ink2);margin-top:2px;">Acompanhe contratos e vencimentos de imóveis</div></div>
+          <button class="imob-btn-add" onclick="abrirModalImob('contrato')">+ Adicionar contrato</button>
+        </div>
+        <div id="alertas-contratos"></div>
+        <div class="imob-stats" id="stats-contratos"></div>
+        <div class="imob-grid" id="grid-contratos"></div>
+      </div>
+    </div>
+
+    <!-- ═══ MODAL ═══ -->
+    <div class="imob-modal" id="imob-modal">
+      <div class="imob-modal-box">
+        <div class="imob-modal-title" id="imob-modal-title">Adicionar</div>
+        <div id="imob-modal-form"></div>
+        <div class="imob-modal-btns">
+          <button class="imob-btn-del" id="imob-btn-del" style="display:none;" onclick="deletarItemImob()">🗑 Excluir</button>
+          <button class="imob-btn-cancel" onclick="fecharModalImob()">Cancelar</button>
+          <button class="imob-btn-save" onclick="salvarItemImob()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
   <div class="page" id="page-historico">
     <div class="page-topbar">
       <div><div class="page-title">📈 Histórico Pipefy</div><div style="font-size:0.82rem;color:var(--ink3);margin-top:2px;">Chamados importados do Pipefy</div></div>
@@ -1543,6 +1656,288 @@ function renderHistorico() {
   container.innerHTML = '<div style="margin-bottom:1rem;font-size:0.85rem;color:var(--ink3);">'+tickets.length+' chamados importados do Pipefy</div><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.83rem;"><thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:8px 12px;font-size:0.72rem;color:var(--ink3);text-transform:uppercase;">ID</th><th style="text-align:left;padding:8px 12px;font-size:0.72rem;color:var(--ink3);text-transform:uppercase;">Título</th><th style="text-align:left;padding:8px 12px;font-size:0.72rem;color:var(--ink3);text-transform:uppercase;">Categoria</th><th style="text-align:left;padding:8px 12px;font-size:0.72rem;color:var(--ink3);text-transform:uppercase;">Status</th><th style="text-align:left;padding:8px 12px;font-size:0.72rem;color:var(--ink3);text-transform:uppercase;">Data</th></tr></thead><tbody>'+tickets.slice(0,100).map(t=>{const dt=t.data_abertura?.toDate?t.data_abertura.toDate().toLocaleDateString('pt-BR'):'-';const sc=t.status==='Concluído'?'#12b76a':t.status==='Em andamento'?'#d97706':'#6613D0';return '<tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:700;color:var(--purple);">'+(t.id||t.card_id||'-')+'</td><td style="padding:10px 12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(t.titulo||'-')+'</td><td style="padding:10px 12px;">'+(t.categoria||'-')+'</td><td style="padding:10px 12px;"><span style="color:'+sc+';font-weight:600;">'+(t.status||'-')+'</span></td><td style="padding:10px 12px;">'+dt+'</td></tr>';}).join('')+'</tbody></table></div>';
 }
 window.renderHistorico = renderHistorico;
+
+  // ══════════════════════════════════════════════════════════
+  //  MÓDULO IMOBILIÁRIO
+  // ══════════════════════════════════════════════════════════
+  let imobData = { espacos: [], patrimonio: [], contratos: [] };
+  let imobTipo = null, imobEditId = null;
+
+  // Carregar dados do Firebase
+  async function carregarImob() {
+    const { collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    ['espacos','patrimonio','contratos'].forEach(col => {
+      onSnapshot(collection(db, 'imob_' + col), snap => {
+        imobData[col] = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+        renderImob(col);
+      });
+    });
+  }
+
+  function renderImob(col) {
+    if (col === 'espacos') renderEspacos();
+    else if (col === 'patrimonio') renderPatrimonio();
+    else if (col === 'contratos') renderContratos();
+  }
+
+  // ── ESPAÇOS ──────────────────────────────────────────────
+  function renderEspacos() {
+    const data = imobData.espacos;
+    const stats = document.getElementById('stats-espacos');
+    const grid = document.getElementById('grid-espacos');
+    if (!stats || !grid) return;
+
+    const total = data.length;
+    const disponiveis = data.filter(x => x.status === 'Disponível').length;
+    const ocupados = data.filter(x => x.status === 'Ocupado').length;
+    const manutencao = data.filter(x => x.status === 'Em manutenção').length;
+
+    stats.innerHTML = [
+      {n: total, l: 'Total de espaços', c: '#6613D0'},
+      {n: disponiveis, l: 'Disponíveis', c: '#16a34a'},
+      {n: ocupados, l: 'Ocupados', c: '#FF6B2B'},
+      {n: manutencao, l: 'Em manutenção', c: '#b45309'},
+    ].map(s => `<div class="imob-stat"><div class="imob-stat-num" style="color:${s.c}">${s.n}</div><div class="imob-stat-label">${s.l}</div></div>`).join('');
+
+    if (!data.length) {
+      grid.innerHTML = '<div class="imob-empty"><div class="imob-empty-icon">🏢</div><div>Nenhum espaço cadastrado ainda</div><div style="font-size:0.8rem;margin-top:4px;opacity:.6">Clique em + Adicionar espaço para começar</div></div>';
+      return;
+    }
+
+    const statusClass = { 'Disponível':'imob-status-ok', 'Ocupado':'imob-status-atencao', 'Em manutenção':'imob-status-manutencao', 'Inativo':'imob-status-critico' };
+    grid.innerHTML = data.map(e => `
+      <div class="imob-card" onclick="editarItemImob('espaco','${e._id}')">
+        <div class="imob-card-top">
+          <div class="imob-card-icon" style="background:rgba(102,19,208,0.1);">🏢</div>
+          <span class="imob-status ${statusClass[e.status]||'imob-status-ok'}">${e.status||'—'}</span>
+        </div>
+        <div class="imob-card-name">${e.nome||'—'}</div>
+        <div class="imob-card-meta">
+          ${e.andar ? `<span>📍 ${e.andar}</span>` : ''}
+          ${e.capacidade ? `<span>👥 ${e.capacidade} pessoas</span>` : ''}
+          ${e.tipo ? `<span>${e.tipo}</span>` : ''}
+        </div>
+        ${e.responsavel ? `<div style="font-size:0.75rem;color:var(--ink3);margin-top:8px;">Resp: ${e.responsavel}</div>` : ''}
+      </div>`).join('');
+  }
+
+  // ── PATRIMÔNIO ────────────────────────────────────────────
+  function renderPatrimonio(filtro) {
+    let data = imobData.patrimonio;
+    const busca = document.getElementById('busca-patrim')?.value?.toLowerCase() || filtro || '';
+    const statusFiltro = document.getElementById('filtro-patrim-status')?.value || '';
+    if (busca) data = data.filter(x => (x.nome||'').toLowerCase().includes(busca) || (x.num_patrimonio||'').toLowerCase().includes(busca) || (x.responsavel||'').toLowerCase().includes(busca));
+    if (statusFiltro) data = data.filter(x => x.status === statusFiltro);
+
+    const stats = document.getElementById('stats-patrimonio');
+    const grid = document.getElementById('grid-patrimonio');
+    if (!stats || !grid) return;
+
+    const all = imobData.patrimonio;
+    stats.innerHTML = [
+      {n: all.length, l: 'Total de itens', c: '#6613D0'},
+      {n: all.filter(x=>x.status==='Em uso').length, l: 'Em uso', c: '#FF6B2B'},
+      {n: all.filter(x=>x.status==='Disponível').length, l: 'Disponíveis', c: '#16a34a'},
+      {n: all.filter(x=>x.status==='Em manutenção').length, l: 'Em manutenção', c: '#b45309'},
+    ].map(s => `<div class="imob-stat"><div class="imob-stat-num" style="color:${s.c}">${s.n}</div><div class="imob-stat-label">${s.l}</div></div>`).join('');
+
+    const statusClass = { 'Em uso':'imob-status-atencao', 'Disponível':'imob-status-ok', 'Em manutenção':'imob-status-manutencao', 'Descartado':'imob-status-critico' };
+    const catIcon = { 'Notebook':'💻', 'Monitor':'🖥️', 'Teclado':'⌨️', 'Mouse':'🖱️', 'Cadeira':'🪑', 'Mesa':'🪵', 'Telefone':'📱', 'Impressora':'🖨️', 'Outro':'📦' };
+
+    if (!data.length) {
+      grid.innerHTML = '<div class="imob-empty"><div class="imob-empty-icon">💻</div><div>Nenhum item encontrado</div></div>';
+      return;
+    }
+
+    grid.innerHTML = data.map(p => `
+      <div class="imob-card" onclick="editarItemImob('patrimonio','${p._id}')">
+        <div class="imob-card-top">
+          <div class="imob-card-icon" style="background:rgba(255,107,43,0.1);">${catIcon[p.categoria]||'📦'}</div>
+          <span class="imob-status ${statusClass[p.status]||'imob-status-ok'}">${p.status||'—'}</span>
+        </div>
+        <div class="imob-card-id">${p.num_patrimonio ? '#'+p.num_patrimonio : 'Sem nº'}</div>
+        <div class="imob-card-name">${p.nome||'—'}</div>
+        <div class="imob-card-meta">
+          ${p.categoria ? `<span>${p.categoria}</span>` : ''}
+          ${p.localizacao ? `<span>📍 ${p.localizacao}</span>` : ''}
+        </div>
+        ${p.responsavel ? `<div style="font-size:0.75rem;color:var(--ink3);margin-top:8px;">Resp: ${p.responsavel}</div>` : ''}
+      </div>`).join('');
+  }
+
+  window.filtrarPatrimonio = (v) => renderPatrimonio(v);
+
+  // ── CONTRATOS ─────────────────────────────────────────────
+  function renderContratos() {
+    const data = imobData.contratos;
+    const stats = document.getElementById('stats-contratos');
+    const grid = document.getElementById('grid-contratos');
+    const alertas = document.getElementById('alertas-contratos');
+    if (!stats || !grid) return;
+
+    const hoje = new Date();
+    const ativos = data.filter(x => x.status === 'Ativo').length;
+    const vencendo = data.filter(x => {
+      if (!x.data_vencimento) return false;
+      const dias = (new Date(x.data_vencimento) - hoje) / 86400000;
+      return dias >= 0 && dias <= 60;
+    });
+
+    stats.innerHTML = [
+      {n: data.length, l: 'Total', c: '#6613D0'},
+      {n: ativos, l: 'Ativos', c: '#16a34a'},
+      {n: vencendo.length, l: 'Vencem em 60 dias', c: '#b45309'},
+    ].map(s => `<div class="imob-stat"><div class="imob-stat-num" style="color:${s.c}">${s.n}</div><div class="imob-stat-label">${s.l}</div></div>`).join('');
+
+    // Alertas de vencimento
+    if (alertas) {
+      alertas.innerHTML = vencendo.map(c => {
+        const dias = Math.ceil((new Date(c.data_vencimento) - hoje) / 86400000);
+        return `<div class="imob-alerta">⚠️ <b>${c.nome||c.imovel}</b> — contrato vence em <b>${dias} dias</b> (${new Date(c.data_vencimento).toLocaleDateString('pt-BR')})</div>`;
+      }).join('');
+    }
+
+    if (!data.length) {
+      grid.innerHTML = '<div class="imob-empty"><div class="imob-empty-icon">📄</div><div>Nenhum contrato cadastrado ainda</div></div>';
+      return;
+    }
+
+    const statusClass = { 'Ativo':'imob-status-ok', 'Encerrado':'imob-status-critico', 'Em renovação':'imob-status-atencao' };
+    grid.innerHTML = data.map(c => {
+      const dias = c.data_vencimento ? Math.ceil((new Date(c.data_vencimento) - hoje) / 86400000) : null;
+      const alertaVenc = dias !== null && dias <= 60 && dias >= 0;
+      return `
+        <div class="imob-card" onclick="editarItemImob('contrato','${c._id}')" style="${alertaVenc ? 'border-color:rgba(234,179,8,0.4);' : ''}">
+          <div class="imob-card-top">
+            <div class="imob-card-icon" style="background:rgba(22,163,74,0.1);">📄</div>
+            <span class="imob-status ${statusClass[c.status]||'imob-status-ok'}">${c.status||'—'}</span>
+          </div>
+          <div class="imob-card-name">${c.nome||c.imovel||'—'}</div>
+          <div class="imob-card-meta">
+            ${c.endereco ? `<span>📍 ${c.endereco}</span>` : ''}
+            ${c.valor ? `<span>R$ ${c.valor}</span>` : ''}
+          </div>
+          ${c.data_vencimento ? `<div style="font-size:0.75rem;margin-top:8px;color:${alertaVenc?'#b45309':'var(--ink3)'};">${alertaVenc?'⚠️ ':''}Vence: ${new Date(c.data_vencimento).toLocaleDateString('pt-BR')}</div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  // ── MODAL ─────────────────────────────────────────────────
+  const IMOB_FORMS = {
+    espaco: [
+      { id:'nome', label:'Nome do espaço', type:'text', full:true, placeholder:'Ex: Sala de Reunião A' },
+      { id:'tipo', label:'Tipo', type:'select', opts:['Sala de reunião','Escritório','Copa','Almoxarifado','Banheiro','Recepção','Outro'] },
+      { id:'andar', label:'Andar / Localização', type:'text', placeholder:'Ex: 3º andar' },
+      { id:'capacidade', label:'Capacidade (pessoas)', type:'number', placeholder:'Ex: 10' },
+      { id:'status', label:'Status', type:'select', opts:['Disponível','Ocupado','Em manutenção','Inativo'] },
+      { id:'responsavel', label:'Responsável', type:'text', placeholder:'Nome ou e-mail' },
+      { id:'observacoes', label:'Observações', type:'textarea', full:true, placeholder:'Informações adicionais...' },
+    ],
+    patrimonio: [
+      { id:'nome', label:'Nome do item', type:'text', full:true, placeholder:'Ex: Notebook Dell Latitude' },
+      { id:'num_patrimonio', label:'Número de patrimônio', type:'text', placeholder:'Ex: 001234' },
+      { id:'categoria', label:'Categoria', type:'select', opts:['Notebook','Monitor','Teclado','Mouse','Cadeira','Mesa','Telefone','Impressora','Outro'] },
+      { id:'status', label:'Status', type:'select', opts:['Em uso','Disponível','Em manutenção','Descartado'] },
+      { id:'responsavel', label:'Responsável', type:'text', placeholder:'Nome do colaborador' },
+      { id:'localizacao', label:'Localização', type:'text', placeholder:'Ex: Mesa 14, 3º andar' },
+      { id:'num_serie', label:'Número de série', type:'text', placeholder:'Opcional' },
+      { id:'data_aquisicao', label:'Data de aquisição', type:'date', placeholder:'' },
+      { id:'valor', label:'Valor (R$)', type:'text', placeholder:'Ex: 3500,00' },
+      { id:'observacoes', label:'Observações', type:'textarea', full:true, placeholder:'Estado, histórico, etc...' },
+    ],
+    contrato: [
+      { id:'nome', label:'Nome / Identificação', type:'text', full:true, placeholder:'Ex: Contrato Sede Curitiba' },
+      { id:'imovel', label:'Imóvel', type:'text', full:true, placeholder:'Ex: Edifício Alpha, sala 301' },
+      { id:'endereco', label:'Endereço completo', type:'text', full:true, placeholder:'Rua, número, cidade, CEP' },
+      { id:'status', label:'Status', type:'select', opts:['Ativo','Encerrado','Em renovação','Em negociação'] },
+      { id:'valor', label:'Valor mensal (R$)', type:'text', placeholder:'Ex: 8500,00' },
+      { id:'data_inicio', label:'Data de início', type:'date' },
+      { id:'data_vencimento', label:'Data de vencimento', type:'date' },
+      { id:'locador', label:'Locador / Proprietário', type:'text', placeholder:'Nome ou empresa' },
+      { id:'contato_locador', label:'Contato do locador', type:'text', placeholder:'Telefone ou e-mail' },
+      { id:'observacoes', label:'Observações', type:'textarea', full:true, placeholder:'Cláusulas importantes, reajustes, etc...' },
+    ]
+  };
+
+  const IMOB_TITLES = { espaco:'Espaço', patrimonio:'Item de Patrimônio', contrato:'Contrato' };
+
+  window.abrirModalImob = (tipo, dadosExistentes) => {
+    imobTipo = tipo;
+    imobEditId = dadosExistentes?._id || null;
+    const campos = IMOB_FORMS[tipo] || [];
+    document.getElementById('imob-modal-title').textContent = (imobEditId ? 'Editar ' : 'Adicionar ') + IMOB_TITLES[tipo];
+    document.getElementById('imob-btn-del').style.display = imobEditId ? 'flex' : 'none';
+    document.getElementById('imob-modal-form').innerHTML = `
+      <div class="imob-form-grid">
+        ${campos.map(c => `
+          <div class="imob-field ${c.full ? 'full' : ''}">
+            <label>${c.label}</label>
+            ${c.type === 'select'
+              ? `<select id="imob-f-${c.id}">${(c.opts||[]).map(o => `<option value="${o}" ${dadosExistentes?.[c.id]===o?'selected':''}>${o}</option>`).join('')}</select>`
+              : c.type === 'textarea'
+              ? `<textarea id="imob-f-${c.id}" placeholder="${c.placeholder||''}">${dadosExistentes?.[c.id]||''}</textarea>`
+              : `<input id="imob-f-${c.id}" type="${c.type||'text'}" placeholder="${c.placeholder||''}" value="${dadosExistentes?.[c.id]||''}">`
+            }
+          </div>`).join('')}
+      </div>`;
+    document.getElementById('imob-modal').classList.add('open');
+  };
+
+  window.editarItemImob = (tipo, id) => {
+    const item = imobData[tipo === 'espaco' ? 'espacos' : tipo === 'patrimonio' ? 'patrimonio' : 'contratos'].find(x => x._id === id);
+    if (item) abrirModalImob(tipo, item);
+  };
+
+  window.fecharModalImob = () => {
+    document.getElementById('imob-modal').classList.remove('open');
+    imobTipo = null; imobEditId = null;
+  };
+
+  window.salvarItemImob = async () => {
+    const { collection, doc, addDoc, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const campos = IMOB_FORMS[imobTipo] || [];
+    const dados = { updatedAt: new Date(), criadoPor: auth.currentUser?.email || '' };
+    campos.forEach(c => {
+      const el = document.getElementById('imob-f-' + c.id);
+      if (el) dados[c.id] = el.value;
+    });
+    const colName = 'imob_' + (imobTipo === 'espaco' ? 'espacos' : imobTipo === 'patrimonio' ? 'patrimonio' : 'contratos');
+    try {
+      if (imobEditId) {
+        await updateDoc(doc(db, colName, imobEditId), dados);
+      } else {
+        dados.criadoEm = new Date();
+        await addDoc(collection(db, colName), dados);
+      }
+      fecharModalImob();
+      showToast(imobEditId ? '✅ Item atualizado!' : '✅ Item cadastrado!');
+    } catch(err) { console.error(err); showToast('Erro ao salvar.'); }
+  };
+
+  window.deletarItemImob = async () => {
+    if (!confirm('Tem certeza que deseja excluir este item?')) return;
+    const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const colName = 'imob_' + (imobTipo === 'espaco' ? 'espacos' : imobTipo === 'patrimonio' ? 'patrimonio' : 'contratos');
+    try {
+      await deleteDoc(doc(db, colName, imobEditId));
+      fecharModalImob();
+      showToast('Item excluído.');
+    } catch(err) { console.error(err); }
+  };
+
+  // Fechar modal ao clicar fora
+  document.getElementById('imob-modal')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('imob-modal')) fecharModalImob();
+  });
+
+  // Inicializar quando navegar para as páginas imobiliárias
+  const _navOriginal = window.nav;
+  window.nav = (page, el) => {
+    _navOriginal(page, el);
+    if (['imoveis','patrimonio','contratos'].includes(page) && !imobData.espacos.length && !imobData.patrimonio.length && !imobData.contratos.length) {
+      carregarImob();
+    }
+  };
 
 </script>
 </body>
