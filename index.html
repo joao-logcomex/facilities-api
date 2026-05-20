@@ -1184,30 +1184,83 @@ async function buscaCep(cep) {
   } catch(e) {}
 }
 function resetForm(){
-  document.getElementById('ticket-form').reset();
-  document.getElementById('file-name').textContent='';
-  document.querySelectorAll('.cat-card').forEach(c=>c.classList.remove('selected'));
-  document.getElementById('plat-section').style.display='none';
-  document.getElementById('attach-wrap').style.display='none';
-  document.getElementById('gestao-form').style.display='none';
-  document.getElementById('logistica-form').style.display='none';
-  document.getElementById('ticket-form').style.display='none';
-  document.getElementById('default-state').style.display='block';
-  document.getElementById('form-wrapper').style.display='block';
-  document.getElementById('category-grid').style.display='grid';
-  document.getElementById('success-screen').style.display='none';
-  document.getElementById('cat-label').style.display='flex';
-  document.getElementById('hdr-icon').textContent='📋';
-  document.getElementById('hdr-title').textContent='Abrir chamado';
-  document.getElementById('hdr-sub').textContent='Selecione uma categoria acima para começar';
-  document.getElementById('fb-form').style.display='block';
-  document.getElementById('fb-header').style.display='flex';
-  document.getElementById('fb-success').style.display='none';
-  document.getElementById('fb-chamado-banner').style.display='none';
-  document.getElementById('fb-chamado-id').textContent='';
-  document.getElementById('fb-title').textContent='Gestão & Melhoria';
-  document.getElementById('fb-subtitle').textContent='Sua opinião molda o LogComex.';
-  window.scrollTo({top:0,behavior:'smooth'});
+  // Limpar TODOS os inputs, selects e textareas do formulário
+  document.querySelectorAll('#ticket-form input, #ticket-form select, #ticket-form textarea').forEach(el => {
+    if (el.type === 'checkbox' || el.type === 'radio') { el.checked = false; }
+    else if (el.type === 'hidden') { /* manter */ }
+    else { el.value = ''; }
+  });
+
+  // Limpar formulário de logística completamente
+  document.querySelectorAll('#logistica-form input, #logistica-form select, #logistica-form textarea').forEach(el => {
+    if (el.type === 'hidden') { /* manter */ }
+    else { el.value = ''; }
+  });
+
+  // Resetar tipo de envio para padrão
+  document.querySelectorAll('.tipo-envio-btn').forEach(b => b.classList.remove('active'));
+  const primTipoEnvio = document.querySelector('.tipo-envio-btn');
+  if (primTipoEnvio) { primTipoEnvio.classList.add('active'); }
+  const logTipoEl = document.getElementById('log-tipo-envio');
+  if (logTipoEl) logTipoEl.value = 'equipamento';
+
+  // Resetar transportadora selecionada
+  document.querySelectorAll('.transp-card').forEach(c => c.classList.remove('selected'));
+  const logTranspEl = document.getElementById('log-transportadora');
+  if (logTranspEl) logTranspEl.value = '';
+
+  // Resetar campos DHL
+  ['dhl-section','dhl-uber-section','dhl-correio-section'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  // Resetar categorias selecionadas
+  document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('selected'));
+
+  // Resetar itens de brinde desmarcados
+  document.querySelectorAll('.brinde-item input[type="checkbox"]').forEach(c => c.checked = false);
+
+  // Resetar plataformas desmarcadas
+  document.querySelectorAll('.plat-check input[type="checkbox"]').forEach(c => c.checked = false);
+
+  // Limpar nome do arquivo
+  const fileNameEl = document.getElementById('file-name');
+  if (fileNameEl) fileNameEl.textContent = '';
+
+  // Limpar badge de cargo
+  const cargoEl = document.getElementById('cargo-badge');
+  if (cargoEl) cargoEl.textContent = '';
+
+  // Esconder seções extras
+  ['plat-section','attach-wrap','gestao-form','logistica-form','ticket-form'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  // Mostrar tela inicial
+  const defState = document.getElementById('default-state');
+  if (defState) defState.style.display = 'block';
+  document.getElementById('form-wrapper').style.display = 'block';
+  document.getElementById('category-grid').style.display = 'grid';
+  document.getElementById('success-screen').style.display = 'none';
+  document.getElementById('cat-label').style.display = 'flex';
+
+  // Resetar cabeçalho
+  document.getElementById('hdr-icon').textContent = '📋';
+  document.getElementById('hdr-title').textContent = 'Abrir chamado';
+  document.getElementById('hdr-sub').textContent = 'Selecione uma categoria acima para começar';
+
+  // Resetar feedback
+  document.getElementById('fb-form').style.display = 'block';
+  document.getElementById('fb-header').style.display = 'flex';
+  document.getElementById('fb-success').style.display = 'none';
+  document.getElementById('fb-chamado-banner').style.display = 'none';
+  document.getElementById('fb-chamado-id').textContent = '';
+  document.getElementById('fb-title').textContent = 'Gestão & Melhoria';
+  document.getElementById('fb-subtitle').textContent = 'Sua opinião molda o LogComex.';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 document.getElementById('departamento').addEventListener('change', function() {
   if(document.getElementById('categoria').value === 'brindes') {
