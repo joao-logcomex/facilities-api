@@ -49,7 +49,10 @@ export default async function handler(req, res) {
         const concluidos = list.filter(t => t.status === 'Concluído').length;
         const cancelados = list.filter(t => t.status === 'Cancelado').length;
         const andamento = total - concluidos - cancelados;
-        const sla = (concluidos + cancelados) > 0 ? Math.round((concluidos / (concluidos + cancelados)) * 100) : 0;
+        // SLA real: usa campo dentroSLA salvo no Firebase
+        const comSLA = list.filter(t => t.dentroSLA === true || t.dentroSLA === false);
+        const dentroDeSLA = comSLA.filter(t => t.dentroSLA === true).length;
+        const sla = comSLA.length > 0 ? Math.round((dentroDeSLA / comSLA.length) * 100) : 0;
         const porTipo = {};
         list.forEach(t => {
           const tipo = CATLABELS[t.categoria] || t.tipo_pipefy || t.categoria || 'Outros';
