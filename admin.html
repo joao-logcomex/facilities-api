@@ -356,7 +356,8 @@
         <div class="nav-sub-item" onclick="nav('kanban',this)"><span>🗂️</span> Kanban <span class="nav-badge" id="badge-n" style="margin-left:auto;">0</span></div>
         <div class="nav-sub-item" onclick="nav('chamados',this)"><span>🎫</span> Todos os chamados</div>
         <div class="nav-sub-item" onclick="nav('feedbacks',this)"><span>💡</span> Feedbacks <span class="nav-badge" id="badge-fb" style="margin-left:auto;background:var(--purple);">0</span></div>
-        <div class="nav-sub-item" onclick="nav('estoque',this)"><span>🎁</span> Estoque Brindes <span class="nav-badge" id="badge-estoque" style="margin-left:auto;background:#b45309;display:none;">!</span></div>
+        <div class="nav-sub-item" onclick="nav('estoque',this)"><span>📦</span> Estoque Brindes <span class="nav-badge" id="badge-estoque" style="margin-left:auto;background:#b45309;display:none;">!</span></div>
+        <div class="nav-sub-item" onclick="nav('brindes-dash',this)"><span>🎁</span> Dashboard Brindes</div>
         <div class="nav-sub-item" onclick="nav('relatorio',this)"><span>🤖</span> Relatório IA</div>
       </div>
     </div>
@@ -609,6 +610,77 @@
       </div>
     </div>
 
+    <!-- ═══ DASHBOARD BRINDES ═══ -->
+    <div class="page" id="page-brindes-dash">
+      <div class="topbar"><div class="page-title">🎁 Dashboard de Brindes</div></div>
+      <div style="padding:0 0.5rem;">
+
+        <!-- KPIs -->
+        <div class="imob-stats" id="brindes-kpis" style="margin-bottom:1.5rem;"></div>
+
+        <!-- Linha 1: Itens mais solicitados + Solicitações por mês -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+
+          <!-- Ranking de itens -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;">
+            <div style="font-size:0.85rem;font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:6px;">🏆 Itens Mais Solicitados</div>
+            <div id="brindes-ranking"></div>
+          </div>
+
+          <!-- Gráfico por mês -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;">
+            <div style="font-size:0.85rem;font-weight:700;color:var(--ink);margin-bottom:14px;">📅 Solicitações por Mês</div>
+            <canvas id="brindes-chart-mes" height="180"></canvas>
+          </div>
+        </div>
+
+        <!-- Linha 2: Estoque atual + Tempo médio aprovação -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+
+          <!-- Estoque resumido -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;">
+            <div style="font-size:0.85rem;font-weight:700;color:var(--ink);margin-bottom:14px;">📦 Estoque Atual</div>
+            <div id="brindes-estoque-resumo"></div>
+          </div>
+
+          <!-- SLA e tempo médio -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;">
+            <div style="font-size:0.85rem;font-weight:700;color:var(--ink);margin-bottom:14px;">⏱ Tempo Médio de Aprovação</div>
+            <div id="brindes-sla-info"></div>
+          </div>
+        </div>
+
+        <!-- Linha 3: Histórico de solicitações -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+            <span>📋 Histórico de Solicitações</span>
+            <select id="brindes-filtro-status" onchange="renderBrindesDash()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-family:'Poppins',sans-serif;font-size:0.78rem;color:var(--ink);">
+              <option value="">Todos os status</option>
+              <option value="Aguardando aprovação">Aguardando aprovação</option>
+              <option value="Em andamento">Aprovados</option>
+              <option value="Cancelado">Recusados</option>
+              <option value="Concluído">Concluídos</option>
+            </select>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border);">
+                  <th style="text-align:left;padding:8px 10px;font-size:0.72rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;">Protocolo</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:0.72rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;">Solicitante</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:0.72rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;">Itens</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:0.72rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;">Data</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:0.72rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="brindes-historico-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- ═══ ESPAÇOS ═══ -->
     <div class="page" id="page-imoveis">
       <div class="topbar"><div class="page-title">🏢 Espaços</div></div>
@@ -775,6 +847,9 @@
   const db = getFirestore(app);
   window.db = db;
   const ADMINS = ['christian.bertolino@logcomex.com','joao.faria@logcomex.com','henrique.silva@logcomex.com','adriano.martins@logcomex.com','daniel.alle@logcomex.com'];
+const VIEWERS = ['leandro.oliveira@logcomex.com']; // Acesso somente leitura
+const isViewer = (email) => VIEWERS.includes(email);
+const isAdminOrViewer = (email) => ADMINS.includes(email) || VIEWERS.includes(email);
 
   let allTickets = [];
   window.allTickets = allTickets;
@@ -2080,6 +2155,10 @@ window.renderHistorico = renderHistorico;
     if (page === 'estoque') {
       if (!estoqueData.length) carregarEstoqueAdmin();
     }
+    if (page === 'brindes-dash') {
+      if (!estoqueData.length) carregarEstoqueAdmin();
+      setTimeout(() => renderBrindesDash(), 300);
+    }
     if (['imoveis','patrimonio','contratos'].includes(page)) {
       const items = document.getElementById('items-imoveis');
       const header = items?.previousElementSibling;
@@ -2413,6 +2492,173 @@ window.renderHistorico = renderHistorico;
   document.getElementById('estoque-modal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('estoque-modal')) fecharEstoqueModal();
   });
+  // ══════════════════════════════════════════════════════════
+  //  DASHBOARD DE BRINDES
+  // ══════════════════════════════════════════════════════════
+
+  window.renderBrindesDash = function() {
+    const todos = allTickets || [];
+    const brindes = todos.filter(t => t.categoria === 'brindes');
+    const filtroStatus = document.getElementById('brindes-filtro-status')?.value || '';
+    const brindFiltrados = filtroStatus ? brindes.filter(t => t.status === filtroStatus) : brindes;
+
+    // ── KPIs ──────────────────────────────────────────────────
+    const total = brindes.length;
+    const aprovados = brindes.filter(t => t.status === 'Em andamento' || t.status === 'Concluído').length;
+    const aguardando = brindes.filter(t => t.status === 'Aguardando aprovação').length;
+    const cancelados = brindes.filter(t => t.status === 'Cancelado').length;
+    const taxaAprov = total > 0 ? Math.round(aprovados / (aprovados + cancelados || 1) * 100) : 0;
+
+    const kpisEl = document.getElementById('brindes-kpis');
+    if (kpisEl) {
+      kpisEl.innerHTML = [
+        { n: total,      l: 'Total de solicitações', c: '#6613D0' },
+        { n: aguardando, l: 'Aguardando aprovação',  c: '#b45309' },
+        { n: aprovados,  l: 'Aprovados',             c: '#16a34a' },
+        { n: cancelados, l: 'Recusados',             c: '#dc2626' },
+        { n: taxaAprov + '%', l: 'Taxa de aprovação', c: '#6613D0' },
+      ].map(s => `<div class="imob-stat"><div class="imob-stat-num" style="color:${s.c};font-size:1.4rem;">${s.n}</div><div class="imob-stat-label">${s.l}</div></div>`).join('');
+    }
+
+    // ── Ranking de itens ──────────────────────────────────────
+    const contagem = {};
+    brindes.forEach(t => {
+      const itens = (t.itens_brinde || '').split(',').map(s => s.trim()).filter(Boolean);
+      itens.forEach(item => {
+        // Remover quantidade do nome: "Contêiner Preto x2" → "Contêiner Preto"
+        const nome = item.replace(/\s*x\d+$/, '').replace(/\s*\(\d+\)$/, '').trim();
+        if (nome) contagem[nome] = (contagem[nome] || 0) + 1;
+      });
+    });
+    const ranking = Object.entries(contagem).sort((a,b) => b[1]-a[1]).slice(0, 8);
+    const maxVal = ranking[0]?.[1] || 1;
+
+    const rankEl = document.getElementById('brindes-ranking');
+    if (rankEl) {
+      rankEl.innerHTML = ranking.length ? ranking.map(([nome, qtd], i) => `
+        <div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <span style="font-size:0.8rem;font-weight:500;color:var(--ink);">${i+1}. ${nome}</span>
+            <span style="font-size:0.78rem;font-weight:700;color:var(--purple);">${qtd}x</span>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;">
+            <div style="height:100%;width:${Math.round(qtd/maxVal*100)}%;background:var(--purple);border-radius:3px;"></div>
+          </div>
+        </div>`).join('') : '<div style="color:var(--ink3);font-size:0.82rem;">Nenhum dado disponível.</div>';
+    }
+
+    // ── Gráfico por mês ───────────────────────────────────────
+    const porMes = {};
+    brindes.forEach(t => {
+      const d = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura || 0);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      porMes[key] = (porMes[key] || 0) + 1;
+    });
+    const ultimos6 = Object.entries(porMes).sort().slice(-6);
+    const mesesLabels = { '01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez' };
+
+    const chartEl = document.getElementById('brindes-chart-mes');
+    if (chartEl && window.Chart) {
+      if (chartEl._chartInstance) chartEl._chartInstance.destroy();
+      chartEl._chartInstance = new Chart(chartEl.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: ultimos6.map(([k]) => mesesLabels[k.split('-')[1]] + '/' + k.split('-')[0].slice(2)),
+          datasets: [{ label: 'Solicitações', data: ultimos6.map(([,v]) => v), backgroundColor: 'rgba(102,19,208,0.7)', borderRadius: 6 }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      });
+    }
+
+    // ── Estoque resumido ──────────────────────────────────────
+    const estoqueEl = document.getElementById('brindes-estoque-resumo');
+    if (estoqueEl) {
+      if (estoqueData && estoqueData.length) {
+        estoqueEl.innerHTML = estoqueData.filter(x => x.ativo !== false).map(item => {
+          const cor = item.estoque_total <= 0 ? '#dc2626' : item.estoque_total <= item.minimo_alerta ? '#b45309' : '#16a34a';
+          const pct = Math.min(100, Math.round((item.estoque_total||0) / Math.max(1, (item.estoque_storage||0)+(item.estoque_sede||100)) * 100));
+          return `<div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+              <span style="font-size:0.8rem;font-weight:500;color:var(--ink);">${item.emoji} ${item.nome}</span>
+              <span style="font-size:0.78rem;font-weight:700;color:${cor};">${item.estoque_total||0} un.</span>
+            </div>
+            <div style="height:5px;background:var(--surface2);border-radius:3px;">
+              <div style="height:100%;width:${pct}%;background:${cor};border-radius:3px;"></div>
+            </div>
+          </div>`;
+        }).join('');
+      } else {
+        estoqueEl.innerHTML = '<div style="color:var(--ink3);font-size:0.82rem;">Carregando estoque...</div>';
+        // Tentar carregar estoque
+        if (typeof carregarEstoqueAdmin === 'function') carregarEstoqueAdmin();
+      }
+    }
+
+    // ── SLA / Tempo médio de aprovação ────────────────────────
+    const slaEl = document.getElementById('brindes-sla-info');
+    if (slaEl) {
+      // Tickets com data de aprovação (histórico)
+      let somaAprov = 0, countAprov = 0;
+      brindes.filter(t => t.status === 'Em andamento' || t.status === 'Concluído').forEach(t => {
+        const abertura = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura||0);
+        // Buscar no histórico a data de aprovação
+        const histAprov = (t.historico||[]).find(h => h.acao?.includes('aprovado'));
+        if (histAprov) {
+          const dataAprov = new Date(histAprov.data);
+          const horas = (dataAprov - abertura) / 3600000;
+          if (horas >= 0 && horas < 720) { somaAprov += horas; countAprov++; }
+        }
+      });
+      const mediaHoras = countAprov > 0 ? (somaAprov / countAprov).toFixed(1) : null;
+      const mediaDias = mediaHoras ? (mediaHoras / 24).toFixed(1) : null;
+
+      // SLA brindes (5 dias)
+      const comSLA = brindes.filter(t => t.dentroSLA === true || t.dentroSLA === false);
+      const sla = comSLA.length > 0 ? Math.round(comSLA.filter(t=>t.dentroSLA===true).length / comSLA.length * 100) : 0;
+
+      slaEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:700;color:var(--purple);">${sla}%</div>
+            <div style="font-size:0.7rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">SLA Geral</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:700;color:var(--ink);">${mediaDias ? mediaDias + 'd' : '—'}</div>
+            <div style="font-size:0.7rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Tempo médio aprovação</div>
+          </div>
+        </div>
+        <div style="font-size:0.78rem;color:var(--ink3);line-height:1.5;">
+          SLA de brindes: <strong style="color:var(--ink);">5 dias úteis</strong><br>
+          Aprovações analisadas: <strong style="color:var(--ink);">${countAprov}</strong>
+        </div>`;
+    }
+
+    // ── Histórico tabela ─────────────────────────────────────
+    const tbodyEl = document.getElementById('brindes-historico-tbody');
+    if (tbodyEl) {
+      const SBADGE_LOCAL = { 'Aguardando aprovação':'badge-warn','Em andamento':'badge-prog','Concluído':'badge-done','Cancelado':'badge-cancel' };
+      tbodyEl.innerHTML = brindFiltrados.length
+        ? brindFiltrados.slice().sort((a,b) => {
+            const da = a.data_abertura?.toDate ? a.data_abertura.toDate() : new Date(a.data_abertura||0);
+            const db2 = b.data_abertura?.toDate ? b.data_abertura.toDate() : new Date(b.data_abertura||0);
+            return db2 - da;
+          }).slice(0,50).map(t => {
+            const d = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura||0);
+            const dtStr = d.toLocaleDateString('pt-BR');
+            return `<tr onclick="openT('${t._docId}')" style="cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+              <td style="padding:10px;font-size:0.82rem;font-weight:600;color:var(--purple);">#${t.id||'—'}</td>
+              <td style="padding:10px;font-size:0.82rem;color:var(--ink);">${t.nome||t.email||'—'}</td>
+              <td style="padding:10px;font-size:0.78rem;color:var(--ink2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.itens_brinde||t.titulo||'—'}</td>
+              <td style="padding:10px;font-size:0.78rem;color:var(--ink3);">${dtStr}</td>
+              <td style="padding:10px;"><span class="badge ${SBADGE_LOCAL[t.status]||''}">${t.status||'—'}</span></td>
+            </tr>`;
+          }).join('')
+        : '<tr><td colspan="5" style="padding:2rem;text-align:center;color:var(--ink3);">Nenhuma solicitação encontrada.</td></tr>';
+    }
+  };
+
+  // Carregar dashboard de brindes ao navegar
+
 </script>
 </body>
 </html>
