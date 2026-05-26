@@ -657,7 +657,7 @@
 
           <!-- Ranking de itens -->
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;">
-            <div style="font-size:0.85rem;font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:6px;">🏆 Itens Mais Solicitados</div>
+            <div style="font-size:0.85rem;font-weight:700;color:var(--ink);margin-bottom:14px;">🏆 Rankings de Brindes</div>
             <div id="brindes-ranking"></div>
           </div>
 
@@ -2606,31 +2606,70 @@ window.renderHistorico = renderHistorico;
       ].map(s => `<div class="imob-stat"><div class="imob-stat-num" style="color:${s.c};font-size:1.4rem;">${s.n}</div><div class="imob-stat-label">${s.l}</div></div>`).join('');
     }
 
-    // ── Ranking de itens ──────────────────────────────────────
-    const contagem = {};
-    brindes.forEach(t => {
-      const itens = (t.itens_brinde || '').split(',').map(s => s.trim()).filter(Boolean);
+    // ── Ranking duplo: itens (sistema) + pessoas (Pipefy + sistema) ──
+    // Ranking de ITENS — só tickets do sistema que têm itens_brinde
+    const contagemItens = {};
+    brindes.filter(t => t.itens_brinde).forEach(t => {
+      const itens = t.itens_brinde.split(',').map(s => s.trim()).filter(Boolean);
       itens.forEach(item => {
-        // Remover quantidade do nome: "Contêiner Preto x2" → "Contêiner Preto"
         const nome = item.replace(/\s*x\d+$/, '').replace(/\s*\(\d+\)$/, '').trim();
-        if (nome) contagem[nome] = (contagem[nome] || 0) + 1;
+        if (nome) contagemItens[nome] = (contagemItens[nome] || 0) + 1;
       });
     });
-    const ranking = Object.entries(contagem).sort((a,b) => b[1]-a[1]).slice(0, 8);
-    const maxVal = ranking[0]?.[1] || 1;
+    const rankingItens = Object.entries(contagemItens).sort((a,b) => b[1]-a[1]).slice(0, 6);
+
+    // Ranking de PESSOAS — todos os tickets (Pipefy + sistema)
+    const contagemPessoas = {};
+    brindes.forEach(t => {
+      // Pipefy: título é o nome. Sistema: campo nome
+      const pessoa = t.origem === 'pipefy' ? (t.titulo || '').trim() : (t.nome || t.email || '').trim();
+      if (pessoa && pessoa.length > 2) {
+        // Pegar só primeiro e último nome para ficar curto
+        const partes = pessoa.split(' ');
+        const nomeFormatado = partes.length > 1 ? `${partes[0]} ${partes[partes.length-1]}` : partes[0];
+        contagemPessoas[nomeFormatado] = (contagemPessoas[nomeFormatado] || 0) + 1;
+      }
+    });
+    const rankingPessoas = Object.entries(contagemPessoas).sort((a,b) => b[1]-a[1]).slice(0, 6);
 
     const rankEl = document.getElementById('brindes-ranking');
     if (rankEl) {
-      rankEl.innerHTML = ranking.length ? ranking.map(([nome, qtd], i) => `
-        <div style="margin-bottom:10px;">
+      const maxItens = rankingItens[0]?.[1] || 1;
+      const maxPessoas = rankingPessoas[0]?.[1] || 1;
+
+      const htmlItens = rankingItens.length
+        ? rankingItens.map(([nome, qtd], i) => `
+          <div style="margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+              <span style="font-size:0.78rem;font-weight:500;color:var(--ink);">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'  '} ${nome}</span>
+              <span style="font-size:0.75rem;font-weight:700;color:var(--purple);">${qtd}x</span>
+            </div>
+            <div style="height:5px;background:var(--surface2);border-radius:3px;">
+              <div style="height:100%;width:${Math.round(qtd/maxItens*100)}%;background:var(--purple);border-radius:3px;"></div>
+            </div>
+          </div>`).join('')
+        : '<div style="color:var(--ink3);font-size:0.78rem;padding:8px 0;">Dados do sistema ainda não disponíveis para este período.<br><small>Os tickets do Pipefy não contêm os itens detalhados.</small></div>';
+
+      const htmlPessoas = rankingPessoas.map(([nome, qtd], i) => `
+        <div style="margin-bottom:8px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
-            <span style="font-size:0.8rem;font-weight:500;color:var(--ink);">${i+1}. ${nome}</span>
-            <span style="font-size:0.78rem;font-weight:700;color:var(--purple);">${qtd}x</span>
+            <span style="font-size:0.78rem;font-weight:500;color:var(--ink);">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'  '} ${nome}</span>
+            <span style="font-size:0.75rem;font-weight:700;color:#FF6B2B;">${qtd} solicitação${qtd>1?'ões':''}</span>
           </div>
-          <div style="height:6px;background:var(--surface2);border-radius:3px;">
-            <div style="height:100%;width:${Math.round(qtd/maxVal*100)}%;background:var(--purple);border-radius:3px;"></div>
+          <div style="height:5px;background:var(--surface2);border-radius:3px;">
+            <div style="height:100%;width:${Math.round(qtd/maxPessoas*100)}%;background:#FF6B2B;border-radius:3px;"></div>
           </div>
-        </div>`).join('') : '<div style="color:var(--ink3);font-size:0.82rem;">Nenhum dado disponível.</div>';
+        </div>`).join('');
+
+      rankEl.innerHTML = `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">🎁 Itens mais pedidos</div>
+          ${htmlItens}
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:12px;">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">👤 Quem mais solicita</div>
+          ${htmlPessoas}
+        </div>`;
     }
 
     // ── Gráfico por mês ───────────────────────────────────────
