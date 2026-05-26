@@ -615,6 +615,40 @@
       <div class="topbar"><div class="page-title">🎁 Dashboard de Brindes</div></div>
       <div style="padding:0 0.5rem;">
 
+        <!-- Filtros de período -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.2rem;flex-wrap:wrap;">
+          <div style="display:flex;background:var(--surface2);border-radius:8px;padding:3px;gap:2px;">
+            <button onclick="setBrindesPeriodo('mes')" id="bp-mes" class="bp-btn active" style="padding:6px 14px;border:none;border-radius:6px;font-family:'Poppins',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;background:var(--purple);color:#fff;transition:all .15s;">Mês</button>
+            <button onclick="setBrindesPeriodo('ano')" id="bp-ano" class="bp-btn" style="padding:6px 14px;border:none;border-radius:6px;font-family:'Poppins',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;background:transparent;color:var(--ink2);transition:all .15s;">Ano</button>
+            <button onclick="setBrindesPeriodo('todos')" id="bp-todos" class="bp-btn" style="padding:6px 14px;border:none;border-radius:6px;font-family:'Poppins',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;background:transparent;color:var(--ink2);transition:all .15s;">Todos</button>
+          </div>
+          <!-- Seletor de mês -->
+          <div id="bp-sel-mes" style="display:flex;gap:6px;align-items:center;">
+            <select id="bp-mes-val" onchange="renderBrindesDash()" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.82rem;color:var(--ink);outline:none;">
+              <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+              <option value="3">Março</option><option value="4">Abril</option>
+              <option value="5">Maio</option><option value="6">Junho</option>
+              <option value="7">Julho</option><option value="8">Agosto</option>
+              <option value="9">Setembro</option><option value="10">Outubro</option>
+              <option value="11">Novembro</option><option value="12">Dezembro</option>
+            </select>
+            <select id="bp-ano-mes-val" onchange="renderBrindesDash()" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.82rem;color:var(--ink);outline:none;">
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+            </select>
+          </div>
+          <!-- Seletor só de ano -->
+          <div id="bp-sel-ano" style="display:none;">
+            <select id="bp-ano-val" onchange="renderBrindesDash()" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.82rem;color:var(--ink);outline:none;">
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+            </select>
+          </div>
+          <span id="bp-periodo-label" style="font-size:0.8rem;color:var(--ink3);"></span>
+        </div>
+
         <!-- KPIs -->
         <div class="imob-stats" id="brindes-kpis" style="margin-bottom:1.5rem;"></div>
 
@@ -2157,6 +2191,14 @@ window.renderHistorico = renderHistorico;
     }
     if (page === 'brindes-dash') {
       if (!estoqueData.length) carregarEstoqueAdmin();
+      // Setar mês/ano atual como padrão
+      const agora = new Date();
+      const selMes = document.getElementById('bp-mes-val');
+      const selAno = document.getElementById('bp-ano-mes-val');
+      const selAnoY = document.getElementById('bp-ano-val');
+      if (selMes) selMes.value = agora.getMonth()+1;
+      if (selAno) selAno.value = agora.getFullYear();
+      if (selAnoY) selAnoY.value = agora.getFullYear();
       setTimeout(() => renderBrindesDash(), 300);
     }
     if (['imoveis','patrimonio','contratos'].includes(page)) {
@@ -2496,9 +2538,53 @@ window.renderHistorico = renderHistorico;
   //  DASHBOARD DE BRINDES
   // ══════════════════════════════════════════════════════════
 
+  // Controle de período do dashboard de brindes
+  window._brindesPeriodo = 'mes';
+
+  window.setBrindesPeriodo = function(tipo) {
+    window._brindesPeriodo = tipo;
+    // Atualizar botões
+    ['mes','ano','todos'].forEach(t => {
+      const btn = document.getElementById('bp-' + t);
+      if (btn) {
+        btn.style.background = t === tipo ? 'var(--purple)' : 'transparent';
+        btn.style.color = t === tipo ? '#fff' : 'var(--ink2)';
+      }
+    });
+    // Mostrar/esconder seletores
+    const selMes = document.getElementById('bp-sel-mes');
+    const selAno = document.getElementById('bp-sel-ano');
+    if (selMes) selMes.style.display = tipo === 'mes' ? 'flex' : 'none';
+    if (selAno) selAno.style.display = tipo === 'ano' ? 'block' : 'none';
+    renderBrindesDash();
+  };
+
   window.renderBrindesDash = function() {
     const todos = allTickets || [];
-    const brindes = todos.filter(t => t.categoria === 'brindes');
+    const periodo = window._brindesPeriodo || 'mes';
+
+    // Filtrar por período
+    const mesSel = parseInt(document.getElementById('bp-mes-val')?.value || new Date().getMonth()+1);
+    const anoMesSel = parseInt(document.getElementById('bp-ano-mes-val')?.value || new Date().getFullYear());
+    const anoSel = parseInt(document.getElementById('bp-ano-val')?.value || new Date().getFullYear());
+
+    const brindes = todos.filter(t => {
+      if (t.categoria !== 'brindes') return false;
+      const d = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura||0);
+      if (periodo === 'mes') return d.getMonth()+1 === mesSel && d.getFullYear() === anoMesSel;
+      if (periodo === 'ano') return d.getFullYear() === anoSel;
+      return true; // todos
+    });
+
+    // Label do período
+    const mesesNomes = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const labelEl = document.getElementById('bp-periodo-label');
+    if (labelEl) {
+      if (periodo === 'mes') labelEl.textContent = `${mesesNomes[mesSel]} ${anoMesSel} — ${brindes.length} solicitações`;
+      else if (periodo === 'ano') labelEl.textContent = `Ano ${anoSel} — ${brindes.length} solicitações`;
+      else labelEl.textContent = `Todos os períodos — ${brindes.length} solicitações`;
+    }
+
     const filtroStatus = document.getElementById('brindes-filtro-status')?.value || '';
     const brindFiltrados = filtroStatus ? brindes.filter(t => t.status === filtroStatus) : brindes;
 
