@@ -899,8 +899,11 @@
   window.db = db;
   const ADMINS = ['christian.bertolino@logcomex.com','joao.faria@logcomex.com','henrique.silva@logcomex.com','adriano.martins@logcomex.com','daniel.alle@logcomex.com'];
 const VIEWERS = ['leandro.oliveira@logcomex.com']; // Acesso somente leitura
-const isViewer = (email) => VIEWERS.includes(email);
-const isAdminOrViewer = (email) => ADMINS.includes(email) || VIEWERS.includes(email);
+const isViewer = (email) => VIEWERS.includes((email||'').toLowerCase().trim());
+const isAdminOrViewer = (email) => {
+  const e = (email||'').toLowerCase().trim();
+  return ADMINS.map(a=>a.toLowerCase()).includes(e) || VIEWERS.includes(e);
+};
 
   let allTickets = [];
   window.allTickets = allTickets;
@@ -948,14 +951,15 @@ const isAdminOrViewer = (email) => ADMINS.includes(email) || VIEWERS.includes(em
 
   onAuthStateChanged(auth, async (user) => {
     document.getElementById('loading-screen').style.display = 'none';
-    if (!user || !isAdminOrViewer(user.email)) {
+    const userEmail = (user?.email || '').toLowerCase().trim();
+    if (!user || !isAdminOrViewer(userEmail)) {
       document.getElementById('unauth-screen').style.display = 'flex';
       return;
     }
     document.getElementById('sidebar').style.display = 'flex';
     document.getElementById('main-content').style.display = 'block';
     // Modo viewer — Leandro só vê brindes
-    if (isViewer(user.email)) {
+    if (isViewer(userEmail)) {
       document.documentElement.classList.add('viewer-mode');
     }
     // Ativa scroll do mouse/touchpad no sidebar — versão robusta
@@ -2429,15 +2433,18 @@ window.renderHistorico = renderHistorico;
 
   // Controle para não disparar o mesmo alerta duas vezes seguidas
   let _ultimoAlertaEstoque = '';
+  let _alertaJaEnviado = false; // Só envia UMA vez por sessão
 
   async function verificarAlertaEstoque(dados) {
+    if (_alertaJaEnviado) return; // Já notificou nesta sessão
     const baixos = dados.filter(x => x.ativo !== false && x.estoque_total <= x.minimo_alerta);
     if (!baixos.length) return;
 
-    // Criar chave única para evitar spam (só notifica se mudou)
+    // Criar chave única para evitar spam
     const chave = baixos.map(x => x._id + ':' + x.estoque_total).join(',');
     if (chave === _ultimoAlertaEstoque) return;
     _ultimoAlertaEstoque = chave;
+    _alertaJaEnviado = true; // Marcar como enviado
 
     // Enviar notificação para o Leandro via Slack
     try {
