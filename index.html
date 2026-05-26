@@ -708,9 +708,9 @@
           </div>
           <div id="brinde-section" style="display:none;">
             <div class="brinde-section">
-              <div class="brinde-section-title">🎁 Selecione os itens</div>
+              <div class="brinde-section-title">🎁 Selecione os itens e a quantidade desejada</div>
               <div class="itens-grid" id="itens-brinde-grid"></div>
-              <div id="brinde-sem-itens" style="display:none;font-size:0.82rem;color:var(--ink3);padding:0.5rem 0;">Selecione seu centro de custo acima para ver os itens disponíveis.</div>
+              <div id="brinde-sem-itens" style="display:none;font-size:0.82rem;color:var(--ink3);padding:0.5rem 0;">Nenhum item disponível no momento.</div>
             </div>
             <div class="brinde-section">
               <div class="brinde-section-title">📦 Tipo de entrega</div>
@@ -1261,7 +1261,7 @@ function onCatChange(forceCat) {
   document.getElementById('brinde-section').style.display=cat==='brindes'?'block':'none';
   if(cat==='brindes'){
     document.getElementById('titulo').value='Solicitação de Brinde';
-    updateItensBrinde(document.getElementById('departamento').value);
+    updateItensBrinde(document.getElementById('departamento')?.value || '');
   } else if(document.getElementById('titulo').value==='Solicitação de Brinde'){
     document.getElementById('titulo').value='';
   }
@@ -1274,26 +1274,64 @@ function onFile(input){document.getElementById('file-name').textContent=input.fi
 const ITENS_COMERCIAL = ['Mini agenda','Garrafa','Sacola preta','Caneta'];
 const ITENS_CS = ['Container branco','Container preto','Container roxo','Container laranja','Garrafa preta','Garrafa branca','Moleskine','Copo egg branco','Copo egg preto','Caneta','Tapa câmera','Sacola preta'];
 
-function updateItensBrinde(dept) {
+// Estoque de brindes carregado do Firebase
+window._estoqueBrindes = null;
+
+async function carregarEstoqueBrindes() {
+  if (window._estoqueBrindes) return window._estoqueBrindes;
+  try {
+    const { collection, getDocs, query, where } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const snap = await getDocs(query(collection(db, 'estoque_brindes'), where('ativo', '==', true)));
+    window._estoqueBrindes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return window._estoqueBrindes;
+  } catch(e) {
+    console.error('Erro ao carregar estoque:', e);
+    return [];
+  }
+}
+
+async function updateItensBrinde(dept) {
   const grid = document.getElementById('itens-brinde-grid');
   const semItens = document.getElementById('brinde-sem-itens');
-  let itens = [];
-  if (dept && dept.toUpperCase().includes('COMERCIAL')) itens = ITENS_COMERCIAL;
-  else if (dept && dept.toUpperCase().includes('CS ')) itens = ITENS_CS;
-  if (!itens.length) {
+
+  grid.innerHTML = '<div style="font-size:0.82rem;color:var(--ink3);padding:0.5rem 0;">Carregando itens...</div>';
+  grid.style.display = 'block';
+  semItens.style.display = 'none';
+
+  const estoque = await carregarEstoqueBrindes();
+
+  if (!estoque.length) {
     grid.innerHTML = '';
     grid.style.display = 'none';
     semItens.style.display = 'block';
+    semItens.textContent = 'Nenhum item disponível no momento.';
     return;
   }
+
   grid.style.display = 'grid';
   semItens.style.display = 'none';
-  grid.innerHTML = itens.map((item, i) => `
-    <div class="item-brinde">
-      <input type="checkbox" id="brinde-item-${i}" name="brinde_item" value="${item}" onchange="this.closest('.item-brinde').querySelector('.qty-input').value=this.checked?'1':''">
-      <label for="brinde-item-${i}">${item}</label>
-      <input type="number" class="qty-input" min="1" max="99" value="" placeholder="Qtd" data-item="${item}">
-    </div>`).join('');
+
+  grid.innerHTML = estoque.map((item, i) => {
+    const total = item.estoque_total || 0;
+    const sede = item.estoque_sede || 0;
+    const esgotado = total <= 0;
+    const baixo = total > 0 && total <= item.minimo_alerta;
+
+    let badge = '';
+    if (esgotado) badge = `<span style="font-size:0.65rem;font-weight:700;color:#dc2626;background:rgba(220,38,38,0.1);padding:2px 8px;border-radius:99px;">Esgotado</span>`;
+    else if (baixo) badge = `<span style="font-size:0.65rem;font-weight:700;color:#b45309;background:rgba(234,179,8,0.1);padding:2px 8px;border-radius:99px;">Estoque baixo</span>`;
+    else badge = `<span style="font-size:0.65rem;font-weight:600;color:#16a34a;background:rgba(22,163,74,0.08);padding:2px 8px;border-radius:99px;">${sede} na sede</span>`;
+
+    return `
+    <div class="item-brinde" style="${esgotado ? 'opacity:0.5;pointer-events:none;' : ''}">
+      <input type="checkbox" id="brinde-item-${i}" name="brinde_item" value="${item.nome}" data-id="${item.id}" data-max="${sede}"
+        onchange="this.closest('.item-brinde').querySelector('.qty-input').value=this.checked?'1':''">
+      <span style="font-size:1rem;">${item.emoji}</span>
+      <label for="brinde-item-${i}" style="flex:1;">${item.nome}</label>
+      ${badge}
+      <input type="number" class="qty-input" min="1" max="${sede}" value="" placeholder="Qtd" data-item="${item.nome}" data-id="${item.id}">
+    </div>`;
+  }).join('');
 }
 
 function onEntregaChange() {
