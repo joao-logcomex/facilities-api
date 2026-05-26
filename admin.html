@@ -193,6 +193,23 @@
   .history-meta { font-size: 0.73rem; color: var(--ink3); margin-top: 2px; }
   .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--black); color: #fff; padding: 12px 20px; border-radius: var(--radius-sm); font-size: 0.87rem; z-index: 999; opacity: 0; transform: translateY(10px); transition: all 0.25s; pointer-events: none; border: 1px solid rgba(102,19,208,0.3); }
   .toast.show { opacity: 1; transform: translateY(0); }
+  /* ── VIEWER MODE — Leandro vê só Brindes ── */
+  .viewer-mode .nav-item { display: none !important; }
+  .viewer-mode .nav-group { display: none !important; }
+  .viewer-mode #grupo-chamados { display: block !important; }
+  .viewer-mode #grupo-chamados .nav-group-header { display: none !important; }
+  .viewer-mode #items-chamados { display: block !important; }
+  .viewer-mode #items-chamados .nav-sub-item { display: none !important; }
+  .viewer-mode #items-chamados .nav-sub-item[onclick*="estoque"],
+  .viewer-mode #items-chamados .nav-sub-item[onclick*="brindes-dash"] { display: flex !important; }
+  .viewer-mode .sidebar-inner > div:last-child { display: none !important; }
+  .viewer-mode #items-chamados::before {
+    content: '🎁 Gestão de Brindes';
+    display: block; font-size: 0.68rem; font-weight: 700;
+    color: rgba(226,208,250,0.4); text-transform: uppercase;
+    letter-spacing: 0.08em; padding: 0 10px 8px;
+  }
+
   /* ── IMOBILIÁRIO ── */
   .imob-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:10px; }
   .imob-title { font-size:1.2rem; font-weight:700; color:var(--ink); letter-spacing:-0.03em; }
@@ -931,12 +948,16 @@ const isAdminOrViewer = (email) => ADMINS.includes(email) || VIEWERS.includes(em
 
   onAuthStateChanged(auth, async (user) => {
     document.getElementById('loading-screen').style.display = 'none';
-    if (!user || !ADMINS.includes(user.email)) {
+    if (!user || !isAdminOrViewer(user.email)) {
       document.getElementById('unauth-screen').style.display = 'flex';
       return;
     }
     document.getElementById('sidebar').style.display = 'flex';
     document.getElementById('main-content').style.display = 'block';
+    // Modo viewer — Leandro só vê brindes
+    if (isViewer(user.email)) {
+      document.documentElement.classList.add('viewer-mode');
+    }
     // Ativa scroll do mouse/touchpad no sidebar — versão robusta
     setTimeout(() => {
       const _sb = document.getElementById('sidebar');
@@ -953,6 +974,10 @@ const isAdminOrViewer = (email) => ADMINS.includes(email) || VIEWERS.includes(em
     document.getElementById('uname').textContent = name;
     document.getElementById('uav').textContent = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
     document.getElementById('dash-date').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    // Viewer: redirecionar para brindes ao carregar
+    if (isViewer(user.email)) {
+      setTimeout(() => nav('brindes-dash', null), 800);
+    }
 
     const tq = query(collection(db, 'tickets'), orderBy('data_abertura', 'desc'));
     onSnapshot(tq, (snap) => {
