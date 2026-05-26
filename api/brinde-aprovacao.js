@@ -67,6 +67,40 @@ export default async function handler(req, res) {
       }]
     });
 
+    // 2. Baixar estoque automaticamente quando aprovado
+    if (isAprovado && itens) {
+      try {
+        // itens vem como string: "Contêiner Laranja x2, Moleskine x1"
+        const itensList = itens.split(',').map(s => s.trim()).filter(Boolean);
+        for (const itemStr of itensList) {
+          // Formato: "Nome do Item xQTD" ou "Nome do Item (QTD)"
+          const matchQty = itemStr.match(/x(\d+)$/) || itemStr.match(/\((\d+)\)$/);
+          const qty = matchQty ? parseInt(matchQty[1]) : 1;
+          const nomeItem = itemStr.replace(/\s*x\d+$/, '').replace(/\s*\(\d+\)$/, '').trim();
+
+          // Buscar o item no estoque
+          const estoqueSnap = await db.collection('estoque_brindes').get();
+          const estoqueDoc = estoqueSnap.docs.find(d => 
+            d.data().nome?.toLowerCase() === nomeItem.toLowerCase()
+          );
+
+          if (estoqueDoc) {
+            const dados = estoqueDoc.data();
+            const novoTotal = Math.max(0, (dados.estoque_total || 0) - qty);
+            const novoSede = Math.max(0, (dados.estoque_sede || 0) - qty);
+            await db.collection('estoque_brindes').doc(estoqueDoc.id).update({
+              estoque_total: novoTotal,
+              estoque_sede: novoSede,
+              updatedAt: new Date()
+            });
+            console.log(`Estoque ${nomeItem}: -${qty} unidades → total: ${novoTotal}`);
+          }
+        }
+      } catch(estoqueErr) {
+        console.error('Erro ao baixar estoque:', estoqueErr);
+      }
+    }
+
     // 2. Atualizar a mensagem original no Slack (substituir pelos botões por status)
     const responseUrl = payload.response_url;
     if (responseUrl) {
