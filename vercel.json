@@ -3,6 +3,9 @@
   "functions": {
     "api/relatorio.js": {
       "maxDuration": 30
+    },
+    "api/slack-comando.js": {
+      "maxDuration": 10
     }
   }
 }
