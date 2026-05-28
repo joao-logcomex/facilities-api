@@ -97,7 +97,8 @@ module.exports = async function handler(req, res) {
 
     snap.forEach((doc) => {
       const t = doc.data();
-      const nomeKey = norm(t.nome || t.userEmail?.split('@')[0] || '');
+      // No Firebase histórico, o nome do colaborador está em "titulo" (não em "nome")
+      const nomeKey = norm(t.titulo || t.nome || t.userEmail?.split('@')[0] || '');
       const dataK = dataKey(t.data_abertura);
       const key = `${nomeKey}|${dataK}`;
 
@@ -111,15 +112,16 @@ module.exports = async function handler(req, res) {
           alterar.push({
             docId: doc.id,
             id: t.id,
-            nome: t.nome,
+            titulo: t.titulo,
             categoria: t.categoria,
+            tipo_pipefy: t.tipo_pipefy,
             data_abertura: dataK,
             statusAtual: 'Dentro da SLA',
             statusNovo: 'Fora da SLA',
             motivo: planItem.motivo || 'Marcado como Fora na planilha Pipefy',
           });
         } else {
-          manterFalse.push({ docId: doc.id, id: t.id, nome: t.nome });
+          manterFalse.push({ docId: doc.id, id: t.id, titulo: t.titulo });
         }
       }
     });
