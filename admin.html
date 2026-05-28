@@ -2045,6 +2045,9 @@ async function syncPipefy() {
       for (const { node, tipo, descricao, dentroSLA, fase } of lote) {
         const docId = `pipefy-${node.id}`;
         const docRef = doc(window.db, 'tickets', docId);
+        // ⚠️ NÃO incluir dentroSLA no set pra não sobrescrever histórico já validado.
+        // Tickets novos (que ainda não têm dentroSLA) só recebem o campo na 1ª importação
+        // via campo separado abaixo, depois nunca mais.
         batch.set(docRef, {
           id: docId,
           titulo: node.title || 'Sem título',
@@ -2058,7 +2061,6 @@ async function syncPipefy() {
           userEmail: 'pipefy@logcomex.com',
           origem: 'pipefy',
           pipefy_id: node.id,
-          dentroSLA,
           data_abertura: node.created_at ? new Date(node.created_at) : now,
           data_conclusao: node.finished_at ? new Date(node.finished_at) : null,
           updatedAt: now,
