@@ -306,7 +306,9 @@ export default async function handler(req, res) {
     const {
       statusAtual, statusAnterior, observacao, motivo,
       faseAnterior, faseAtual, dataAbertura: dtAbertura,
-      origem // 'admin' | 'pipefy'
+      origem, // 'admin' | 'pipefy'
+      // Dados de logística (opcionais — só vêm quando há rastreio salvo)
+      rastreio, transportadora, item_enviado,
     } = req.body;
     const emailAlvo = solicitanteEmail || emailColaborador || email;
     if (!emailAlvo) return res.status(400).json({ error: 'email do colaborador obrigatório' });
@@ -367,30 +369,67 @@ export default async function handler(req, res) {
         }
       ] : [];
 
-      // ── Botão (avaliar atendimento se concluído, ver detalhes nos outros) ──
+      // ── Bloco de dados de envio (logística com rastreio) ──
+      const envioBlock = rastreio ? [
+        { type: 'divider' },
+        { type: 'section', text: { type: 'mrkdwn', text: `*📦 Dados do envio*` } },
+        {
+          type: 'section',
+          fields: [
+            ...(transportadora ? [{ type: 'mrkdwn', text: `*Transportadora:*\n${transportadora}` }] : []),
+            { type: 'mrkdwn', text: `*Código de rastreio:*\n\`${rastreio}\`` },
+            ...(item_enviado ? [{ type: 'mrkdwn', text: `*Item:*\n${item_enviado}` }] : []),
+          ]
+        },
+      ] : [];
+
+      // URL de rastreio dependendo da transportadora
+      const rastreioUrl = rastreio ? (
+        (transportadora || '').toLowerCase().includes('dhl')
+          ? `https://www.dhl.com/br-pt/home/tracking/tracking-express.html?submit=1&tracking-id=${encodeURIComponent(rastreio)}`
+          : (transportadora || '').toLowerCase().includes('correio')
+          ? `https://rastreamento.correios.com.br/app/index.php?objetos=${encodeURIComponent(rastreio)}`
+          : null
+      ) : null;
+
+      // ── Botões: avaliar (se concluído) + rastrear (se tem código) + ver detalhes ──
       const feedbackUrl = `https://facilities-api.vercel.app/?feedback=${encodeURIComponent(ticketNum)}`;
       const ctaBlocks = statusAtual === 'Concluído' ? [
         { type: 'divider' },
         { type: 'section', text: { type: 'mrkdwn', text: '💬 *Como foi o atendimento?*' } },
         {
           type: 'actions',
-          elements: [{
-            type: 'button',
-            text: { type: 'plain_text', text: '⭐ Avaliar atendimento', emoji: true },
-            url: feedbackUrl,
-            style: 'primary'
-          }]
+          elements: [
+            ...(rastreioUrl ? [{
+              type: 'button',
+              text: { type: 'plain_text', text: '🔍 Rastrear envio', emoji: true },
+              url: rastreioUrl
+            }] : []),
+            {
+              type: 'button',
+              text: { type: 'plain_text', text: '⭐ Avaliar atendimento', emoji: true },
+              url: feedbackUrl,
+              style: 'primary'
+            }
+          ]
         }
       ] : [
         { type: 'divider' },
         {
           type: 'actions',
-          elements: [{
-            type: 'button',
-            text: { type: 'plain_text', text: '📋 Ver detalhes', emoji: true },
-            url: 'https://facilities-api.vercel.app/index.html',
-            style: 'primary'
-          }]
+          elements: [
+            ...(rastreioUrl ? [{
+              type: 'button',
+              text: { type: 'plain_text', text: '🔍 Rastrear envio', emoji: true },
+              url: rastreioUrl
+            }] : []),
+            {
+              type: 'button',
+              text: { type: 'plain_text', text: '📋 Ver detalhes', emoji: true },
+              url: 'https://facilities-api.vercel.app/index.html',
+              style: 'primary'
+            }
+          ]
         }
       ];
 
@@ -425,6 +464,7 @@ export default async function handler(req, res) {
               ]
             },
             ...observacaoBlock,
+            ...envioBlock,
             ...transicaoBlock,
             ...ctaBlocks,
             { type: 'context', elements: [{ type: 'mrkdwn', text: '🏢 *Facilities LogComex* • facilities-api.vercel.app' }] }
