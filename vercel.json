@@ -3,6 +3,9 @@
   "functions": {
     "api/relatorio.js": {
       "maxDuration": 30
+    },
+    "api/recalcular-sla.js": {
+      "maxDuration": 30
     }
   }
 }
