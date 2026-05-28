@@ -1791,12 +1791,40 @@ function updateBadge() {
 <script>
 function nav(page, el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  const pageEl = document.getElementById('page-'+page);
+  if (!pageEl) return; // página inválida
+  pageEl.classList.add('active');
+  document.querySelectorAll('.nav-item, .nav-sub-item').forEach(i=>i.classList.remove('active'));
   if(el) el.classList.add('active');
+  else {
+    // Quando vem por hash (sem elemento clicado), tenta achar e ativar o nav-item correspondente
+    const subItem = document.querySelector(`.nav-sub-item[onclick*="'${page}'"]`);
+    if (subItem) subItem.classList.add('active');
+    else {
+      const navItem = document.querySelector(`.nav-item[onclick*="'${page}'"]`);
+      if (navItem) navItem.classList.add('active');
+    }
+  }
   if(page==='logistica'&&typeof renderLogistica==='function') renderLogistica();
   if(page==='historico'&&typeof renderHistorico==='function') renderHistorico();
+  // Atualiza hash sem provocar scroll/jump
+  if (window.location.hash !== '#'+page) {
+    history.replaceState(null, '', '#'+page);
+  }
 }
+
+// Ao carregar a página, se houver hash, navega pra ela
+window.addEventListener('DOMContentLoaded', () => {
+  const h = (window.location.hash || '').replace('#', '').trim();
+  if (h && document.getElementById('page-'+h)) {
+    setTimeout(() => nav(h), 50); // delay pra garantir que outros scripts inicializaram
+  }
+});
+// Permite navegar com botão voltar/avançar do navegador
+window.addEventListener('hashchange', () => {
+  const h = (window.location.hash || '').replace('#', '').trim();
+  if (h && document.getElementById('page-'+h)) nav(h);
+});
 
 let _relTipo = 'mes';
 function setRelTipo(tipo) {
