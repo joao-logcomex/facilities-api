@@ -720,47 +720,43 @@ module.exports = async function handler(req, res) {
   if (body.type === 'event_callback' && body.event) {
     const evt = body.event;
     const eventId = body.event_id;
-    console.log('📩 Event:', evt.type, 'ch_type:', evt.channel_type, 'user:', evt.user, 'event_id:', eventId, 'text:', (evt.text || '').substring(0, 50));
+    console.log('📩 Event:', evt.type, 'ch_type:', evt.channel_type, 'user:', evt.user, 'event_id:', eventId);
 
     // Ignora eventos não-relevantes
     if (evt.type !== 'message') return res.status(200).send('');
     if (evt.bot_id || evt.subtype === 'bot_message' || evt.subtype === 'message_changed' || evt.subtype === 'message_deleted') {
-      console.log('  ↳ ignorado (bot ou subtype)');
       return res.status(200).send('');
     }
-    if (evt.channel_type !== 'im') {
-      console.log('  ↳ ignorado (não DM):', evt.channel_type);
-      return res.status(200).send('');
-    }
-    if (!evt.text || !evt.user) {
-      console.log('  ↳ ignorado (sem text/user)');
-      return res.status(200).send('');
-    }
+    if (evt.channel_type !== 'im') return res.status(200).send('');
+    if (!evt.text || !evt.user) return res.status(200).send('');
 
-    // Deduplicação: Slack pode reenviar o mesmo evento se demorou >3s
+    // Deduplicação
     if (eventId) {
       try {
         const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
         const exists = await dedupeDoc.get();
         if (exists.exists) {
-          console.log('  ↳ evento duplicado ignorado:', eventId);
+          console.log('  ↳ duplicado ignorado:', eventId);
           return res.status(200).send('');
         }
         await dedupeDoc.set({ at: new Date(), user: evt.user, channel: evt.channel });
-      } catch (e) {
-        console.warn('  ↳ falha dedup (segue):', e.message);
-      }
+      } catch (e) { console.warn('dedup fail:', e.message); }
     }
 
-    // Processa SINCRONAMENTE
-    try {
-      console.log('  ↳ processando...');
-      await processarMensagemDM(evt);
-      console.log('  ↳ ✅ ok');
-    } catch (err) {
-      console.error('  ↳ ❌ erro:', err.message);
-      console.error(err.stack);
-    }
+    // Dispara processamento em endpoint separado (fire-and-forget)
+    // Faz o fetch SEM await — o Vercel mantém o socket aberto o tempo suficiente
+    // pra request sair. Não precisa esperar a resposta.
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://facilities-api.vercel.app';
+    fetch(`${baseUrl}/api/slack-processar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-key': process.env.FIREBASE_PROJECT_ID || '',
+      },
+      body: JSON.stringify({ evt }),
+    }).catch(e => console.error('disparo slack-processar:', e.message));
+
+    // Responde Slack IMEDIATAMENTE (dentro dos 3s exigidos)
     return res.status(200).send('');
   }
 
