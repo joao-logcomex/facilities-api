@@ -1,4 +1,3 @@
-// /api/slack-debug.js — TEMPORÁRIO para ver logs do fluxo Slack
 const admin = require('firebase-admin');
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -10,19 +9,17 @@ if (!admin.apps.length) {
   });
 }
 const db = admin.firestore();
-
 module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  const snap = await db.collection('slack_debug_logs')
-    .orderBy('at', 'desc')
-    .limit(30)
-    .get();
-  const logs = snap.docs.map(d => {
-    const data = d.data();
-    return {
-      ...data,
-      at: data.at?.toDate ? data.at.toDate().toISOString() : data.at,
-    };
-  });
-  res.status(200).json({ count: logs.length, logs });
+  try {
+    const snap = await db.collection('slack_debug_logs').limit(50).get();
+    const logs = snap.docs.map(d => {
+      const data = d.data();
+      return { ...data, at: data.at?.toDate ? data.at.toDate().toISOString() : null };
+    });
+    // Ordena manualmente
+    logs.sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+    res.status(200).json({ count: logs.length, logs: logs.slice(0, 30) });
+  } catch (err) {
+    res.status(200).json({ error: err.message, stack: err.stack });
+  }
 };
