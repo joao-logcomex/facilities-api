@@ -719,24 +719,49 @@ module.exports = async function handler(req, res) {
   // ============================================================
   if (body.type === 'event_callback' && body.event) {
     const evt = body.event;
+    const eventId = body.event_id;
+    console.log('📩 Event:', evt.type, 'ch_type:', evt.channel_type, 'user:', evt.user, 'event_id:', eventId, 'text:', (evt.text || '').substring(0, 50));
 
-    // Ignora eventos que NÃO são message ou que vêm do próprio bot
+    // Ignora eventos não-relevantes
     if (evt.type !== 'message') return res.status(200).send('');
     if (evt.bot_id || evt.subtype === 'bot_message' || evt.subtype === 'message_changed' || evt.subtype === 'message_deleted') {
+      console.log('  ↳ ignorado (bot ou subtype)');
       return res.status(200).send('');
     }
-    // Só processa DMs (channel_type='im')
-    if (evt.channel_type !== 'im') return res.status(200).send('');
-    if (!evt.text || !evt.user) return res.status(200).send('');
+    if (evt.channel_type !== 'im') {
+      console.log('  ↳ ignorado (não DM):', evt.channel_type);
+      return res.status(200).send('');
+    }
+    if (!evt.text || !evt.user) {
+      console.log('  ↳ ignorado (sem text/user)');
+      return res.status(200).send('');
+    }
 
-    // Ack imediato (Slack exige <3s) — processa em background
-    res.status(200).send('');
+    // Deduplicação: Slack pode reenviar o mesmo evento se demorou >3s
+    if (eventId) {
+      try {
+        const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
+        const exists = await dedupeDoc.get();
+        if (exists.exists) {
+          console.log('  ↳ evento duplicado ignorado:', eventId);
+          return res.status(200).send('');
+        }
+        await dedupeDoc.set({ at: new Date(), user: evt.user, channel: evt.channel });
+      } catch (e) {
+        console.warn('  ↳ falha dedup (segue):', e.message);
+      }
+    }
 
-    // Processa a mensagem em background
-    processarMensagemDM(evt).catch(err => {
-      console.error('Erro processando DM:', err);
-    });
-    return;
+    // Processa SINCRONAMENTE
+    try {
+      console.log('  ↳ processando...');
+      await processarMensagemDM(evt);
+      console.log('  ↳ ✅ ok');
+    } catch (err) {
+      console.error('  ↳ ❌ erro:', err.message);
+      console.error(err.stack);
+    }
+    return res.status(200).send('');
   }
 
   // ============================================================
