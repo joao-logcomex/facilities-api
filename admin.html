@@ -953,6 +953,7 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
   window.db = db;
+  window.auth = auth;
   const ADMINS = ['christian.bertolino@logcomex.com','joao.faria@logcomex.com','henrique.silva@logcomex.com','adriano.martins@logcomex.com','daniel.alle@logcomex.com'];
 const VIEWERS = ['leandro.oliveira@logcomex.com']; // Acesso somente leitura
 const isViewer = (email) => VIEWERS.includes((email||'').toLowerCase().trim());
@@ -2790,7 +2791,7 @@ window.renderHistorico = renderHistorico;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipo: 'alerta_estoque_consolidado',
-          enviado_por: (auth.currentUser?.displayName || auth.currentUser?.email || 'Admin'),
+          enviado_por: (window.auth?.currentUser?.displayName || window.auth?.currentUser?.email || 'Admin'),
           mensagem_adicional: mensagem || null,
           itens_baixos: baixos.map(x => ({
             nome: x.nome,
