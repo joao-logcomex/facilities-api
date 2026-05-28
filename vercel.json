@@ -6,9 +6,6 @@
     },
     "api/slack-comando.js": {
       "maxDuration": 30
-    },
-    "api/slack-processar.js": {
-      "maxDuration": 30
     }
   },
   "headers": [
