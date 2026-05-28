@@ -720,38 +720,51 @@ module.exports = async function handler(req, res) {
   if (body.type === 'event_callback' && body.event) {
     const evt = body.event;
     const eventId = body.event_id;
-    console.log('📩 Event:', evt.type, 'ch_type:', evt.channel_type, 'user:', evt.user, 'event_id:', eventId);
 
-    // Ignora eventos não-relevantes
+    // LOG persistente no Firestore pra debug
+    try {
+      await db.collection('slack_debug_logs').add({
+        at: new Date(),
+        type: evt.type,
+        channel_type: evt.channel_type,
+        user: evt.user,
+        text: (evt.text || '').substring(0, 200),
+        event_id: eventId,
+        has_channel: !!evt.channel,
+        bot_id: evt.bot_id || null,
+        subtype: evt.subtype || null,
+      });
+    } catch (e) { console.error('log fail:', e.message); }
+
+    // Filtros básicos
     if (evt.type !== 'message') return res.status(200).send('');
     if (evt.bot_id || evt.subtype === 'bot_message' || evt.subtype === 'message_changed' || evt.subtype === 'message_deleted') {
       return res.status(200).send('');
     }
     if (evt.channel_type !== 'im') return res.status(200).send('');
-    if (!evt.text || !evt.user) return res.status(200).send('');
+    if (!evt.text || !evt.user || !evt.channel) return res.status(200).send('');
 
-    // Deduplicação — Slack retenta se demorar >3s
+    // Dedup
     if (eventId) {
       try {
         const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
         const exists = await dedupeDoc.get();
-        if (exists.exists) {
-          console.log('  ↳ duplicado ignorado:', eventId);
-          return res.status(200).send('');
-        }
-        await dedupeDoc.set({ at: new Date(), user: evt.user, channel: evt.channel });
-      } catch (e) { console.warn('dedup fail:', e.message); }
+        if (exists.exists) return res.status(200).send('');
+        await dedupeDoc.set({ at: new Date(), user: evt.user });
+      } catch (e) { console.warn('dedup:', e.message); }
     }
 
-    // Processa SÍNCRONO. Slack pode dar timeout em 3s mas o dedup evita reprocessar.
+    // RESPONDE AO SLACK IMEDIATAMENTE — não bloqueia
+    res.status(200).send('');
+
+    // Processa depois (Vercel mantém o handler vivo até await terminar)
     try {
-      console.log('  ↳ processando msg DM...');
       await processarMensagemDM(evt);
-      console.log('  ↳ ✅ ok');
+      await db.collection('slack_debug_logs').add({ at: new Date(), evento: 'processado_ok', user: evt.user });
     } catch (err) {
-      console.error('  ↳ ❌ erro:', err.message, err.stack);
+      await db.collection('slack_debug_logs').add({ at: new Date(), evento: 'erro', erro: err.message, stack: err.stack?.substring(0, 500), user: evt.user });
     }
-    return res.status(200).send('');
+    return;
   }
 
   // ============================================================
