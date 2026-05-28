@@ -99,15 +99,25 @@
   .sla-bar-track { flex: 1; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
   .sla-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
   .sla-bar-count { width: 24px; text-align: right; color: var(--ink2); font-weight: 600; }
-  .kanban-board { display: grid; grid-template-columns: repeat(5, minmax(280px, 1fr)); gap: 12px; overflow-x: auto; overflow-y: hidden; padding-bottom: 1rem; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; cursor: grab; }
-  .kanban-board:active { cursor: grabbing; }
-  .kanban-board::-webkit-scrollbar { height: 10px; }
-  .kanban-board::-webkit-scrollbar-track { background: var(--surface2); border-radius: 100px; }
-  .kanban-board::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 100px; opacity: 0.5; }
-  .kanban-board::-webkit-scrollbar-thumb:hover { background: var(--purple-dark, #5B11BA); }
+  .kanban-board { display: grid; grid-template-columns: repeat(5, minmax(280px, 1fr)); gap: 12px; overflow-x: auto; overflow-y: hidden; padding-bottom: 0.5rem; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+  .kanban-board::-webkit-scrollbar { height: 14px; }
+  .kanban-board::-webkit-scrollbar-track { background: var(--surface2); border-radius: 100px; margin: 0 4px; }
+  .kanban-board::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 100px; border: 2px solid var(--surface2); }
+  .kanban-board::-webkit-scrollbar-thumb:hover { background: #5B11BA; }
   @media (max-width: 1400px) { .kanban-board { grid-template-columns: repeat(5, 280px); } }
   @media (max-width: 1000px) { .kanban-board { grid-template-columns: repeat(5, 280px); } }
   .kanban-col { background: var(--surface2); border-radius: var(--radius); padding: 1rem; min-height: 400px; min-width: 0; }
+
+  /* ── Barra de scroll customizada do Kanban (slider) ── */
+  .kanban-scrollbar-wrap { background: var(--surface2); border-radius: 100px; height: 14px; position: relative; cursor: pointer; margin-bottom: 1rem; user-select: none; }
+  .kanban-scrollbar-thumb { position: absolute; top: 2px; bottom: 2px; background: linear-gradient(135deg, #6613D0, #5B11BA); border-radius: 100px; cursor: grab; transition: background 0.15s, transform 0.1s; min-width: 40px; box-shadow: 0 1px 4px rgba(102,19,208,0.3); }
+  .kanban-scrollbar-thumb:hover { background: linear-gradient(135deg, #7723E0, #6613D0); }
+  .kanban-scrollbar-thumb.dragging { cursor: grabbing; background: linear-gradient(135deg, #4A0D9E, #3A0780); }
+  .kanban-scrollbar-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: var(--surface); border: 1.5px solid var(--border); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--purple); font-weight: 700; transition: all 0.15s; z-index: 2; }
+  .kanban-scrollbar-arrow:hover { background: var(--purple); color: #fff; border-color: var(--purple); transform: translateY(-50%) scale(1.1); }
+  .kanban-scrollbar-arrow.left { left: -36px; }
+  .kanban-scrollbar-arrow.right { right: -36px; }
+  .kanban-scrollbar-container { position: relative; padding: 0 40px; margin-top: 0.5rem; }
   .kanban-col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.9rem; }
   .kanban-col-title { font-weight: 700; font-size: 0.82rem; color: var(--ink2); letter-spacing: -0.01em; display: flex; align-items: center; gap: 7px; }
   .kanban-col-dot { width: 8px; height: 8px; border-radius: 50%; }
@@ -509,6 +519,14 @@
     <div class="topbar">
       <div><div class="page-title">Kanban</div><div style="font-size:0.82rem;color:var(--ink3);margin-top:2px;">Visualização de chamados por status</div></div>
       <div class="topbar-actions"><a href="index.html" class="btn btn-primary">+ Novo chamado</a></div>
+    </div>
+    <!-- Barra de navegação horizontal customizada -->
+    <div class="kanban-scrollbar-container" id="kanban-scrollbar-container" style="display:none;">
+      <div class="kanban-scrollbar-arrow left" onclick="kanbanScroll(-300)" title="Rolar para a esquerda">‹</div>
+      <div class="kanban-scrollbar-arrow right" onclick="kanbanScroll(300)" title="Rolar para a direita">›</div>
+      <div class="kanban-scrollbar-wrap" id="kanban-scrollbar-wrap">
+        <div class="kanban-scrollbar-thumb" id="kanban-scrollbar-thumb"></div>
+      </div>
     </div>
     <div class="kanban-board" id="kanban-board">
       <div class="kanban-col" id="col-solicitacoes"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--info)"></span>Solicitações</div><span class="kanban-col-count" id="cnt-solicitacoes">0</span></div><div class="kanban-cards" id="cards-solicitacoes"></div></div>
@@ -1292,38 +1310,111 @@ function updateBadge() {
         </div>`).join('');
     });
 
-    // ── Setup drag-to-scroll no Kanban (executa só uma vez) ──
-    const board = document.getElementById('kanban-board');
-    if (board && !board._dragSetup) {
-      board._dragSetup = true;
-      let isDown = false, startX, scrollLeft, moved = false;
-      board.addEventListener('mousedown', (e) => {
-        // não inicia drag se clicou num card
-        if (e.target.closest('.kanban-card')) return;
-        isDown = true; moved = false;
-        startX = e.pageX - board.offsetLeft;
-        scrollLeft = board.scrollLeft;
-        board.style.cursor = 'grabbing';
-      });
-      board.addEventListener('mouseleave', () => { isDown = false; board.style.cursor = 'grab'; });
-      board.addEventListener('mouseup', () => { isDown = false; board.style.cursor = 'grab'; });
-      board.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        const x = e.pageX - board.offsetLeft;
-        const walk = (x - startX) * 1.5;
-        if (Math.abs(walk) > 4) moved = true;
-        board.scrollLeft = scrollLeft - walk;
-      });
-      // scroll horizontal com shift+wheel (e wheel comum em desktops)
-      board.addEventListener('wheel', (e) => {
-        if (e.deltaY !== 0 && e.shiftKey) {
-          e.preventDefault();
-          board.scrollLeft += e.deltaY;
-        }
-      }, { passive: false });
-    }
+    // ── Setup da barra de scroll customizada do Kanban (uma vez só) ──
+    setupKanbanScrollbar();
   }
+
+  // Setup da barra de scroll do kanban (chamado em renderKanban e no resize)
+  function setupKanbanScrollbar() {
+    const board = document.getElementById('kanban-board');
+    const container = document.getElementById('kanban-scrollbar-container');
+    const wrap = document.getElementById('kanban-scrollbar-wrap');
+    const thumb = document.getElementById('kanban-scrollbar-thumb');
+    if (!board || !wrap || !thumb || !container) return;
+
+    // Atualiza tamanho e posição do thumb baseado no scroll do board
+    function updateThumb() {
+      const visible = board.clientWidth;
+      const total = board.scrollWidth;
+      if (total <= visible + 5) {
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'block';
+      const wrapW = wrap.clientWidth;
+      const thumbW = Math.max(40, (visible / total) * wrapW);
+      const maxScroll = total - visible;
+      const scrollPct = maxScroll > 0 ? board.scrollLeft / maxScroll : 0;
+      const maxLeft = wrapW - thumbW;
+      thumb.style.width = thumbW + 'px';
+      thumb.style.left = (scrollPct * maxLeft) + 'px';
+    }
+
+    // Setup do drag no thumb (acontece uma vez por reload)
+    if (!board._scrollbarSetup) {
+      board._scrollbarSetup = true;
+
+      board.addEventListener('scroll', updateThumb);
+      window.addEventListener('resize', updateThumb);
+
+      // Arrastar o thumb
+      let isDragging = false, dragStartX = 0, dragStartLeft = 0;
+      thumb.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        dragStartX = e.clientX;
+        dragStartLeft = parseFloat(thumb.style.left || '0');
+        thumb.classList.add('dragging');
+        e.preventDefault();
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const wrapW = wrap.clientWidth;
+        const thumbW = thumb.clientWidth;
+        const maxLeft = wrapW - thumbW;
+        const newLeft = Math.max(0, Math.min(maxLeft, dragStartLeft + (e.clientX - dragStartX)));
+        thumb.style.left = newLeft + 'px';
+        const pct = maxLeft > 0 ? newLeft / maxLeft : 0;
+        const maxScroll = board.scrollWidth - board.clientWidth;
+        board.scrollLeft = pct * maxScroll;
+      });
+      window.addEventListener('mouseup', () => {
+        if (isDragging) { isDragging = false; thumb.classList.remove('dragging'); }
+      });
+
+      // Touch (mobile/tablet)
+      thumb.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        dragStartX = e.touches[0].clientX;
+        dragStartLeft = parseFloat(thumb.style.left || '0');
+        thumb.classList.add('dragging');
+      }, { passive: true });
+      window.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const wrapW = wrap.clientWidth;
+        const thumbW = thumb.clientWidth;
+        const maxLeft = wrapW - thumbW;
+        const newLeft = Math.max(0, Math.min(maxLeft, dragStartLeft + (e.touches[0].clientX - dragStartX)));
+        thumb.style.left = newLeft + 'px';
+        const pct = maxLeft > 0 ? newLeft / maxLeft : 0;
+        const maxScroll = board.scrollWidth - board.clientWidth;
+        board.scrollLeft = pct * maxScroll;
+      }, { passive: true });
+      window.addEventListener('touchend', () => {
+        if (isDragging) { isDragging = false; thumb.classList.remove('dragging'); }
+      });
+
+      // Click na trilha (fora do thumb) → pula scroll
+      wrap.addEventListener('click', (e) => {
+        if (e.target === thumb) return;
+        const rect = wrap.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const thumbW = thumb.clientWidth;
+        const targetLeft = Math.max(0, Math.min(wrap.clientWidth - thumbW, clickX - thumbW/2));
+        const pct = (wrap.clientWidth - thumbW) > 0 ? targetLeft / (wrap.clientWidth - thumbW) : 0;
+        const maxScroll = board.scrollWidth - board.clientWidth;
+        board.scrollLeft = pct * maxScroll;
+      });
+    }
+
+    // Atualiza posição inicial
+    requestAnimationFrame(updateThumb);
+  }
+
+  // Função global para os botões de seta < >
+  window.kanbanScroll = function(delta) {
+    const board = document.getElementById('kanban-board');
+    if (board) board.scrollLeft += delta;
+  };
 
   window.renderTable = () => {
     const s = document.getElementById('search').value.toLowerCase();
