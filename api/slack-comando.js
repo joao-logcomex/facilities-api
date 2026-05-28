@@ -730,7 +730,7 @@ module.exports = async function handler(req, res) {
     if (evt.channel_type !== 'im') return res.status(200).send('');
     if (!evt.text || !evt.user) return res.status(200).send('');
 
-    // Deduplicação
+    // Deduplicação — Slack retenta se demorar >3s
     if (eventId) {
       try {
         const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
@@ -743,20 +743,14 @@ module.exports = async function handler(req, res) {
       } catch (e) { console.warn('dedup fail:', e.message); }
     }
 
-    // Dispara processamento em endpoint separado (fire-and-forget)
-    // Faz o fetch SEM await — o Vercel mantém o socket aberto o tempo suficiente
-    // pra request sair. Não precisa esperar a resposta.
-    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://facilities-api.vercel.app';
-    fetch(`${baseUrl}/api/slack-processar`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-internal-key': process.env.FIREBASE_PROJECT_ID || '',
-      },
-      body: JSON.stringify({ evt }),
-    }).catch(e => console.error('disparo slack-processar:', e.message));
-
-    // Responde Slack IMEDIATAMENTE (dentro dos 3s exigidos)
+    // Processa SÍNCRONO. Slack pode dar timeout em 3s mas o dedup evita reprocessar.
+    try {
+      console.log('  ↳ processando msg DM...');
+      await processarMensagemDM(evt);
+      console.log('  ↳ ✅ ok');
+    } catch (err) {
+      console.error('  ↳ ❌ erro:', err.message, err.stack);
+    }
     return res.status(200).send('');
   }
 
