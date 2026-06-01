@@ -442,6 +442,11 @@ export default async function handler(req, res) {
               text: { type: 'plain_text', text: '⭐ Avaliar atendimento', emoji: true },
               url: feedbackUrl,
               style: 'primary'
+            },
+            {
+              type: 'button',
+              text: { type: 'plain_text', text: '🆕 Abrir novo chamado', emoji: true },
+              url: 'https://facilities-api.vercel.app/index.html'
             }
           ]
         }
@@ -460,6 +465,11 @@ export default async function handler(req, res) {
               text: { type: 'plain_text', text: '📋 Ver detalhes', emoji: true },
               url: 'https://facilities-api.vercel.app/index.html',
               style: 'primary'
+            },
+            {
+              type: 'button',
+              text: { type: 'plain_text', text: '🆕 Abrir novo chamado', emoji: true },
+              url: 'https://facilities-api.vercel.app/index.html'
             }
           ]
         }
@@ -679,7 +689,10 @@ export default async function handler(req, res) {
         },
         { type: 'divider' },
         { type: 'section', text: { type: 'mrkdwn', text: '💬 *Como foi o atendimento?*' } },
-        { type: 'actions', elements: [{ type: 'button', text: { type: 'plain_text', text: '⭐ Avaliar atendimento', emoji: true }, url: feedbackUrl, style: 'primary' }] },
+        { type: 'actions', elements: [
+          { type: 'button', text: { type: 'plain_text', text: '⭐ Avaliar atendimento', emoji: true }, url: feedbackUrl, style: 'primary' },
+          { type: 'button', text: { type: 'plain_text', text: '🆕 Abrir novo chamado', emoji: true }, url: 'https://facilities-api.vercel.app/index.html' }
+        ] },
         { type: 'context', elements: [{ type: 'mrkdwn', text: '🏢 *Facilities LogComex* • facilities-api.vercel.app' }] }
       ];
     }
