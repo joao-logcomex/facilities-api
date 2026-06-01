@@ -8,6 +8,9 @@
       "maxDuration": 30
     }
   },
+  "rewrites": [
+    { "source": "/sobre", "destination": "/sobre.html" }
+  ],
   "headers": [
     {
       "source": "/(.*\\.html)",
