@@ -940,27 +940,22 @@ async function processarMensagemDM(evt) {
       return;
     }
 
-    // Pega estado anterior (conversa em andamento)
+    // Pega estado anterior (conversa em andamento) — opcional
     let estado = null;
-    try {
-      estado = await getEstado(userId);
-      await log('estado_lido', { tem_estado: !!estado });
-    } catch (e) {
-      await log('estado_erro', { err: e.message });
-      console.warn('[processarMensagemDM] falha getEstado (segue sem):', e.message);
-    }
+    // [pulando getEstado por enquanto pra simplificar — todo chamado é novo]
+    await log('estado_pulado');
 
     // Analisar a mensagem com IA (com timeout de 5s)
     console.log('[processarMensagemDM] chamando IA...');
     await log('antes_IA');
     const analise = await Promise.race([
-      analisarMensagem(texto, estado),
+      analisarMensagem(texto, null),
       new Promise((resolve) => setTimeout(() => {
         console.warn('[processarMensagemDM] IA timeout — usando fallback');
         resolve(analisarPorPalavrasChave(texto));
       }, 5000))
     ]);
-    await log('depois_IA', { categoria: analise?.categoria, titulo: analise?.titulo?.substring(0, 40), suficiente: analise?.tem_info_suficiente });
+    await log('depois_IA', { categoria: analise?.categoria, titulo: (analise?.titulo || '').substring(0, 40), suficiente: analise?.tem_info_suficiente });
     console.log('[processarMensagemDM] análise:', JSON.stringify(analise).substring(0, 200));
 
     // Caso 1: IA detectou saudação
