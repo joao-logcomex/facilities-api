@@ -893,57 +893,101 @@ async function processarMensagemDM(evt) {
   const userId = evt.user;
   const channel = evt.channel;
   const texto = (evt.text || '').trim();
+  const textoLower = texto.toLowerCase();
 
-  // Pega estado anterior (pode ser uma conversa em andamento)
-  const estado = await getEstado(userId);
+  console.log('[processarMensagemDM] início | user:', userId, '| channel:', channel, '| texto:', texto.substring(0, 50));
 
-  // Comandos especiais
-  if (/^(cancelar|cancel|sair|reset)$/i.test(texto)) {
-    await limparEstado(userId);
-    await enviarMensagem(channel, '✅ Conversa reiniciada. Pode mandar uma nova solicitação quando quiser! 👋');
-    return;
-  }
+  try {
+    // Comandos especiais
+    if (/^(cancelar|cancel|sair|reset)$/i.test(texto)) {
+      await limparEstado(userId);
+      await enviarMensagem(channel, '✅ Conversa reiniciada. Pode mandar uma nova solicitação quando quiser! 👋');
+      return;
+    }
 
-  // Analisar a mensagem
-  const analise = await analisarMensagem(texto, estado);
+    // ⚡ DETECÇÃO RÁPIDA DE SAUDAÇÃO (sem IA, sem Firebase)
+    // Responde imediato — não depende de quota nem de timeout
+    const padraoSaudacao = /^(oi+|oii+|ola+|ol[áa]+|hey|hi|hello|alo|al[ôo]+|bom dia|boa tarde|boa noite|e a[ií]+|eai+|menu|ajuda|help|começar|comecar|start|teste)[\s!.?,]*$/i;
+    if (padraoSaudacao.test(texto)) {
+      console.log('[processarMensagemDM] detectada saudação direta');
+      await enviarMensagem(channel, '👋 Olá! Sou o assistente do time de Facilities.', [
+        { type: 'header', text: { type: 'plain_text', text: '👋 Olá!', emoji: true } },
+        { type: 'section', text: { type: 'mrkdwn', text: `Sou o assistente do time de *Facilities da LogComex*. Posso te ajudar a abrir um chamado rapidinho! 🎯` } },
+        { type: 'section', text: { type: 'mrkdwn', text: `*Como funciona:*\nMe conta o que você precisa em uma mensagem normal. Vou entender, organizar e abrir o chamado pra você.\n\n*Exemplos:*\n• _"Preciso de um mouse novo"_\n• _"Ar condicionado da sala 3 com problema"_\n• _"Quero pedir alguns moleskines pra equipe"_\n• _"Envio via DHL para São Paulo"_` } },
+        { type: 'divider' },
+        { type: 'context', elements: [{ type: 'mrkdwn', text: '💡 Você também pode usar o formulário: <https://facilities-api.vercel.app|facilities-api.vercel.app>' }] }
+      ]);
+      console.log('[processarMensagemDM] saudação enviada ✅');
+      return;
+    }
 
-  // Caso 1: Saudação simples
-  if (analise.saudacao_apenas) {
-    await enviarMensagem(channel, null, [
-      { type: 'section', text: { type: 'mrkdwn', text: `👋 *Olá!* Sou o assistente do time de Facilities da LogComex.` } },
-      { type: 'section', text: { type: 'mrkdwn', text: `Pode me contar o que você precisa que eu te ajudo a abrir um chamado.\n\n*Exemplos:*\n• _"Preciso de um mouse novo"_\n• _"Ar condicionado da sala 3 com problema"_\n• _"Quero pedir alguns moleskines"_\n• _"Envio via DHL para São Paulo"_` } },
-      { type: 'context', elements: [{ type: 'mrkdwn', text: '💡 Você também pode usar o formulário web: facilities-api.vercel.app' }] }
+    // Pega estado anterior (conversa em andamento)
+    let estado = null;
+    try {
+      estado = await getEstado(userId);
+    } catch (e) {
+      console.warn('[processarMensagemDM] falha getEstado (segue sem):', e.message);
+    }
+
+    // Analisar a mensagem com IA (com timeout de 5s)
+    console.log('[processarMensagemDM] chamando IA...');
+    const analise = await Promise.race([
+      analisarMensagem(texto, estado),
+      new Promise((resolve) => setTimeout(() => {
+        console.warn('[processarMensagemDM] IA timeout — usando fallback');
+        resolve(analisarPorPalavrasChave(texto));
+      }, 5000))
     ]);
-    return;
-  }
+    console.log('[processarMensagemDM] análise:', JSON.stringify(analise).substring(0, 200));
 
-  // Caso 2: Falta info → faz uma pergunta e guarda estado
-  if (!analise.tem_info_suficiente && analise.pergunta_adicional) {
-    await setEstado(userId, {
-      etapa: 'aguardando_resposta',
+    // Caso 1: IA detectou saudação
+    if (analise.saudacao_apenas) {
+      await enviarMensagem(channel, '👋 Olá!', [
+        { type: 'section', text: { type: 'mrkdwn', text: `👋 *Olá!* Sou o assistente do time de Facilities da LogComex.` } },
+        { type: 'section', text: { type: 'mrkdwn', text: `Me conta o que você precisa que eu abro o chamado.\n\n*Exemplos:*\n• _"Preciso de um mouse novo"_\n• _"Ar condicionado da sala 3 com problema"_\n• _"Quero pedir moleskines"_` } }
+      ]);
+      return;
+    }
+
+    // Caso 2: Falta info → faz pergunta
+    if (!analise.tem_info_suficiente && analise.pergunta_adicional) {
+      try {
+        await setEstado(userId, {
+          etapa: 'aguardando_resposta',
+          categoria: analise.categoria,
+          titulo: analise.titulo,
+          descricao: analise.descricao,
+          prioridade: analise.prioridade,
+          texto_original: texto,
+        });
+      } catch (e) { console.warn('setEstado fail:', e.message); }
+      await enviarMensagem(channel, '🤔', [
+        { type: 'section', text: { type: 'mrkdwn', text: `🤔 ${analise.pergunta_adicional}` } },
+        { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+      ]);
+      return;
+    }
+
+    // Caso 3: Tem info suficiente → resumo com botões
+    const dados = {
       categoria: analise.categoria,
       titulo: analise.titulo,
       descricao: analise.descricao,
       prioridade: analise.prioridade,
-      texto_original: texto,
-    });
-    await enviarMensagem(channel, null, [
-      { type: 'section', text: { type: 'mrkdwn', text: `🤔 ${analise.pergunta_adicional}` } },
-      { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
-    ]);
-    return;
-  }
+      texto_original: estado?.texto_original ? `${estado.texto_original}\n\n${texto}` : texto,
+    };
+    try {
+      await setEstado(userId, { etapa: 'confirmar', ...dados });
+    } catch (e) { console.warn('setEstado fail:', e.message); }
+    await enviarResumoParaConfirmacao(channel, userId, dados);
 
-  // Caso 3: Tem info suficiente → mostra resumo com botões de confirmação
-  const dados = {
-    categoria: analise.categoria,
-    titulo: analise.titulo,
-    descricao: analise.descricao,
-    prioridade: analise.prioridade,
-    texto_original: estado?.texto_original ? `${estado.texto_original}\n\n${texto}` : texto,
-  };
-  await setEstado(userId, { etapa: 'confirmar', ...dados });
-  await enviarResumoParaConfirmacao(channel, userId, dados);
+  } catch (err) {
+    console.error('[processarMensagemDM] ERRO:', err.message, err.stack);
+    // Tenta avisar o usuário mesmo em erro
+    try {
+      await enviarMensagem(channel, '😕 Ops! Tive um probleminha. Tenta de novo ou usa o formulário: facilities-api.vercel.app');
+    } catch (e2) { console.error('  falha mensagem fallback:', e2.message); }
+  }
 }
 
 async function enviarResumoParaConfirmacao(channel, userId, dados) {
