@@ -337,11 +337,29 @@ async function getUserInfo(userId) {
     const d = await r.json();
     if (!d.ok) return null;
     const p = d.user?.profile || {};
-    return {
+    const email = p.email || null;
+    const result = {
       slackId: userId,
-      email: p.email || null,
+      email,
       nome:  p.real_name || p.display_name || d.user?.name || null,
+      centroCusto: null,
+      cargo: null,
     };
+
+    // Buscar dados extras (centro de custo, cargo) na coleção colaboradores
+    if (email) {
+      try {
+        const snap = await db.collection('colaboradores')
+          .where('email', '==', email).limit(1).get();
+        if (!snap.empty) {
+          const colab = snap.docs[0].data();
+          result.centroCusto = colab.centroCusto || colab.centro_custo || null;
+          result.cargo = colab.cargo || null;
+          if (colab.nome) result.nome = colab.nome;
+        }
+      } catch (e) { console.warn('busca colaborador falhou:', e.message); }
+    }
+    return result;
   } catch { return null; }
 }
 
@@ -371,6 +389,7 @@ async function criarTicketNoFirebase(payload) {
     titulo,
     descricao: descricao || '',
     categoria,
+    subcategoria: dadosExtras?.subcategoria || (categoria === 'logistica' ? (dadosExtras?.transportadora || null) : null),
     prioridade: prioridade || 'media',
     status: 'Aberto',
     data_abertura: new Date(),
@@ -379,6 +398,8 @@ async function criarTicketNoFirebase(payload) {
     userEmail: slackUser?.email || null,
     nome: slackUser?.nome || null,
     email: slackUser?.email || null,
+    centroCusto: slackUser?.centroCusto || null,
+    cargo: slackUser?.cargo || null,
     slack_user_id: slackUser?.slackId || null,
     dentroSLA: true,
     historico: [{
@@ -940,16 +961,20 @@ async function processarMensagemDM(evt) {
       return;
     }
 
-    // Pega estado anterior (conversa em andamento) — opcional
+    // Pega estado anterior (conversa em andamento)
     let estado = null;
-    // [pulando getEstado por enquanto pra simplificar — todo chamado é novo]
-    await log('estado_pulado');
+    try {
+      estado = await getEstado(userId);
+      await log('estado_lido', { tem_estado: !!estado, etapa: estado?.etapa });
+    } catch (e) {
+      await log('estado_erro', { err: e.message });
+    }
 
     // Analisar a mensagem com IA (com timeout de 5s)
     console.log('[processarMensagemDM] chamando IA...');
     await log('antes_IA');
     const analise = await Promise.race([
-      analisarMensagem(texto, null),
+      analisarMensagem(texto, estado),
       new Promise((resolve) => setTimeout(() => {
         console.warn('[processarMensagemDM] IA timeout — usando fallback');
         resolve(analisarPorPalavrasChave(texto));
@@ -997,6 +1022,34 @@ async function processarMensagemDM(evt) {
       prioridade: analise.prioridade,
       texto_original: estado?.texto_original ? `${estado.texto_original}\n\n${texto}` : texto,
     };
+
+    // SUB-FLUXO LOGÍSTICA: perguntar transportadora se ainda não tiver
+    if (analise.categoria === 'logistica' && !estado?.transportadora) {
+      await log('perguntando_transportadora');
+      try {
+        await setEstado(userId, { etapa: 'aguardando_transportadora', ...dados });
+      } catch (e) { console.warn('setEstado fail:', e.message); }
+      await enviarMensagem(channel, '📦 Qual transportadora?', [
+        { type: 'header', text: { type: 'plain_text', text: '📦 Qual transportadora?', emoji: true } },
+        { type: 'section', text: { type: 'mrkdwn', text: 'Pra te ajudar melhor, me diz por onde você quer enviar:' } },
+        {
+          type: 'actions',
+          elements: [
+            { type: 'button', text: { type: 'plain_text', text: '📦 DHL', emoji: true }, action_id: 'fac_transp_dhl', value: 'DHL', style: 'primary' },
+            { type: 'button', text: { type: 'plain_text', text: '📮 Correios', emoji: true }, action_id: 'fac_transp_correios', value: 'Correios' },
+            { type: 'button', text: { type: 'plain_text', text: '🚗 Uber Flash', emoji: true }, action_id: 'fac_transp_uber', value: 'Uber Flash' },
+          ]
+        },
+        { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+      ]);
+      return;
+    }
+
+    // Preserva transportadora se já tiver no estado
+    if (estado?.transportadora) {
+      dados.transportadora = estado.transportadora;
+    }
+
     try {
       await setEstado(userId, { etapa: 'confirmar', ...dados });
     } catch (e) { console.warn('setEstado fail:', e.message); }
@@ -1018,18 +1071,22 @@ async function enviarResumoParaConfirmacao(channel, userId, dados) {
   const catLabel = CATEGORIAS.find(c => c.value === dados.categoria)?.label || dados.categoria || '—';
   const prioEmoji = { baixa: '🟢 Baixa', media: '🟡 Média', alta: '🔴 Alta' }[dados.prioridade] || '🟡 Média';
 
+  const fields = [
+    { type: 'mrkdwn', text: `*Categoria:*\n${catLabel}` },
+    { type: 'mrkdwn', text: `*Prioridade:*\n${prioEmoji}` },
+  ];
+  if (dados.transportadora) {
+    fields.push({ type: 'mrkdwn', text: `*Transportadora:*\n📦 ${dados.transportadora}` });
+  }
+  fields.push({ type: 'mrkdwn', text: `*Solicitação:*\n${dados.titulo || '—'}` });
+  if (dados.descricao) {
+    fields.push({ type: 'mrkdwn', text: `*Detalhes:*\n${dados.descricao}` });
+  }
+
   await enviarMensagem(channel, '📋 Quase lá! Confira o resumo do seu chamado:', [
     { type: 'header', text: { type: 'plain_text', text: '📋 Resumo do chamado', emoji: true } },
     { type: 'section', text: { type: 'mrkdwn', text: `Confira se está tudo certo antes de eu abrir:` } },
-    {
-      type: 'section',
-      fields: [
-        { type: 'mrkdwn', text: `*Categoria:*\n${catLabel}` },
-        { type: 'mrkdwn', text: `*Prioridade:*\n${prioEmoji}` },
-        { type: 'mrkdwn', text: `*Solicitação:*\n${dados.titulo || '—'}` },
-        ...(dados.descricao ? [{ type: 'mrkdwn', text: `*Detalhes:*\n${dados.descricao}` }] : []),
-      ]
-    },
+    { type: 'section', fields },
     { type: 'divider' },
     {
       type: 'actions',
@@ -1103,6 +1160,26 @@ async function tratarBotaoFluxoConversacional(body, action) {
     return;
   }
 
+  // Botões de transportadora (fac_transp_<transp>) — sub-fluxo logística
+  if (actionId.startsWith('fac_transp_')) {
+    await log('transportadora_clicada');
+    const transportadora = action.value || actionId.replace('fac_transp_', '');
+    const estado = await getEstado(userId);
+    if (!estado) {
+      await enviarMensagem(channel, '😕 Não consegui encontrar sua solicitação. Manda nova mensagem?');
+      return;
+    }
+    const dadosAtualizados = { ...estado, transportadora, etapa: 'confirmar' };
+    await setEstado(userId, dadosAtualizados);
+    // Atualiza a mensagem dos botões pra mostrar escolha feita
+    await atualizarMensagem(channel, body.message?.ts, `📦 ${transportadora} selecionada`, [
+      { type: 'section', text: { type: 'mrkdwn', text: `✅ *Transportadora:* ${transportadora}` } }
+    ]);
+    // Mostra o resumo final
+    await enviarResumoParaConfirmacao(channel, userId, dadosAtualizados);
+    return;
+  }
+
   if (actionId === 'fac_confirmar') {
     await log('confirmar_inicio');
     let dados;
@@ -1114,13 +1191,16 @@ async function tratarBotaoFluxoConversacional(body, action) {
     await log('confirmar_user', { email: slackUser?.email, nome: slackUser?.nome });
 
     try {
+      const dadosExtras = {};
+      if (dados.transportadora) dadosExtras.transportadora = dados.transportadora;
+
       const ticket = await criarTicketNoFirebase({
         categoria: dados.categoria,
         titulo: dados.titulo,
         descricao: dados.descricao || dados.texto_original,
         prioridade: dados.prioridade || 'media',
         slackUser: slackUser || { slackId: userId },
-        dadosExtras: {},
+        dadosExtras,
       });
       await log('confirmar_ticket_criado', { id: ticket.id });
 
