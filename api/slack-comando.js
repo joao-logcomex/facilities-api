@@ -1059,31 +1059,30 @@ async function processarMensagemDM(evt) {
     }
 
     // ═══ 🎁 BRINDES ═══════════════════════════════════════
-    // Etapa única: mostra lista visual + pessoa escreve em texto livre
-    // "quero 2 moleskine e 3 garrafas pretas"
     if (cat === 'brindes' && !dados.brindes_solicitados) {
-      // Função helper: detecta se o texto parece ser uma resposta válida
-      // (tem números OU nomes específicos de brindes, e não é só genérico)
       function pareceListaDeBrindes(txt) {
         const t = txt.toLowerCase();
-        // Tem algum número no texto?
         const temNumero = /\d/.test(t);
-        // Menciona algum brinde específico?
-        const brindes = ['moleskine', 'caneta', 'container', 'garrafa', 'copo', 'egg', 'sacola', 'tapa', 'câmera', 'camera'];
+        const brindes = ['moleskine', 'moleskini', 'caneta', 'container', 'garrafa', 'copo', 'egg', 'sacola', 'tapa', 'câmera', 'camera'];
         const mencionaBrinde = brindes.some(b => t.includes(b));
-        // É texto genérico (frases como "quero abrir chamado", "preciso de brinde", etc)?
-        const ehGenerico = /chamado|brinde\b|brindes\b|solicit|pedir|abrir|nova|quero brindes/i.test(t)
-                          && !temNumero
-                          && !mencionaBrinde;
-        // Considera resposta válida se (tem número OU menciona brinde específico) E não é genérico
-        return (temNumero || mencionaBrinde) && !ehGenerico;
+        // Se tem número E menciona brinde, é claramente uma lista
+        if (temNumero && mencionaBrinde) return true;
+        // Se só tem número (sem nome), pode ser quantidade
+        if (temNumero && !mencionaBrinde) return true;
+        return false;
       }
 
-      // Se estava esperando resposta E o texto parece resposta válida → captura
-      if (estado?.etapa === 'aguardando_brindes_texto' && pareceListaDeBrindes(texto)) {
-        dados.brindes_solicitados = texto;
+      // Captura DIRETO se já dá pra entender (tem número + menção a brinde)
+      // OU se está aguardando resposta da pergunta de brindes
+      if (pareceListaDeBrindes(texto) || estado?.etapa === 'aguardando_brindes_texto') {
+        if (pareceListaDeBrindes(texto)) {
+          dados.brindes_solicitados = texto;
+        } else {
+          // Estado aguardando mas texto não parece lista — assume que é resposta mesmo
+          dados.brindes_solicitados = texto;
+        }
       } else {
-        // Senão, mostra (ou re-mostra) a pergunta com a lista
+        // Primeiro contato: mostra lista e pergunta
         await log('brindes_pergunta_lista');
         await setEstado(userId, { etapa: 'aguardando_brindes_texto', ...dados });
         await enviarMensagem(channel, '🎁 Quais brindes você precisa?', [
@@ -1107,7 +1106,7 @@ async function processarMensagemDM(evt) {
             ]
           },
           { type: 'divider' },
-          { type: 'section', text: { type: 'mrkdwn', text: '✏️ *Me diga quais brindes e quantos você quer.*\n\nPode pedir vários de uma vez, por exemplo:\n• _"Quero 2 moleskines e 3 garrafas pretas"_\n• _"5 canetas e 1 sacola preta"_\n• _"10 moleskines para um evento dia 20"_' } },
+          { type: 'section', text: { type: 'mrkdwn', text: '✏️ *Me diga quais brindes e quantos você quer.*\n\nPode pedir vários de uma vez:\n• _"Quero 2 moleskines e 3 garrafas pretas"_\n• _"5 canetas e 1 sacola preta"_' } },
           { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
         ]);
         return;
