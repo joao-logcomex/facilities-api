@@ -1023,15 +1023,87 @@ async function processarMensagemDM(evt) {
       texto_original: estado?.texto_original ? `${estado.texto_original}\n\n${texto}` : texto,
     };
 
-    // SUB-FLUXO LOGÍSTICA: perguntar transportadora se ainda não tiver
-    if (analise.categoria === 'logistica' && !estado?.transportadora) {
-      await log('perguntando_transportadora');
-      try {
-        await setEstado(userId, { etapa: 'aguardando_transportadora', ...dados });
-      } catch (e) { console.warn('setEstado fail:', e.message); }
+    // ════════════════════════════════════════════════════
+    //  SUB-FLUXOS POR CATEGORIA — coletam detalhes extras
+    // ════════════════════════════════════════════════════
+    // O estado controla em qual etapa do sub-fluxo a pessoa está.
+    // Cada categoria tem suas próprias etapas, e quando todas estão
+    // preenchidas, mostramos o resumo final.
+
+    const cat = analise.categoria;
+    const etapaAtual = estado?.etapa;
+
+    // Preservar dados já coletados do estado anterior
+    if (estado?.item_brinde) dados.item_brinde = estado.item_brinde;
+    if (estado?.quantidade) dados.quantidade = estado.quantidade;
+    if (estado?.transportadora) dados.transportadora = estado.transportadora;
+    if (estado?.destinatario_envio) dados.destinatario_envio = estado.destinatario_envio;
+    if (estado?.detalhes_extras) dados.detalhes_extras = estado.detalhes_extras;
+
+    // ─── BRINDES: 1º item, 2º quantidade ───
+    if (cat === 'brindes' && !dados.item_brinde) {
+      await log('brinde_pergunta_item');
+      await setEstado(userId, { etapa: 'aguardando_item_brinde', ...dados });
+      await enviarMensagem(channel, '🎁 Qual brinde você precisa?', [
+        { type: 'header', text: { type: 'plain_text', text: '🎁 Qual brinde?', emoji: true } },
+        { type: 'section', text: { type: 'mrkdwn', text: 'Escolhe o item da nossa lista de brindes:' } },
+        {
+          type: 'actions',
+          elements: [
+            { type: 'button', text: { type: 'plain_text', text: '📓 Moleskine', emoji: true }, action_id: 'fac_brd_moleskine', value: 'Moleskine' },
+            { type: 'button', text: { type: 'plain_text', text: '🖤 Container Preto', emoji: true }, action_id: 'fac_brd_cpreto', value: 'Container Preto' },
+            { type: 'button', text: { type: 'plain_text', text: '🧡 Container Laranja', emoji: true }, action_id: 'fac_brd_claranja', value: 'Container Laranja' },
+            { type: 'button', text: { type: 'plain_text', text: '🤍 Container Branco', emoji: true }, action_id: 'fac_brd_cbranco', value: 'Container Branco' },
+            { type: 'button', text: { type: 'plain_text', text: '💜 Container Roxo', emoji: true }, action_id: 'fac_brd_croxo', value: 'Container Roxo' },
+          ]
+        },
+        {
+          type: 'actions',
+          elements: [
+            { type: 'button', text: { type: 'plain_text', text: '🤍 Garrafa Branca', emoji: true }, action_id: 'fac_brd_gbranca', value: 'Garrafa Branca' },
+            { type: 'button', text: { type: 'plain_text', text: '🖤 Garrafa Preta', emoji: true }, action_id: 'fac_brd_gpreta', value: 'Garrafa Preta' },
+            { type: 'button', text: { type: 'plain_text', text: '🥚 Copo Egg Branco', emoji: true }, action_id: 'fac_brd_cebranco', value: 'Copo Egg Branco' },
+            { type: 'button', text: { type: 'plain_text', text: '🥚 Copo Egg Preto', emoji: true }, action_id: 'fac_brd_cepreto', value: 'Copo Egg Preto' },
+            { type: 'button', text: { type: 'plain_text', text: '🛍️ Sacola Preta', emoji: true }, action_id: 'fac_brd_sacola', value: 'Sacola Preta' },
+          ]
+        },
+        {
+          type: 'actions',
+          elements: [
+            { type: 'button', text: { type: 'plain_text', text: '📷 Tapa Câmera', emoji: true }, action_id: 'fac_brd_tapa', value: 'Tapa Câmera' },
+            { type: 'button', text: { type: 'plain_text', text: '🖊️ Caneta', emoji: true }, action_id: 'fac_brd_caneta', value: 'Caneta' },
+          ]
+        },
+        { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+      ]);
+      return;
+    }
+
+    if (cat === 'brindes' && dados.item_brinde && !dados.quantidade) {
+      // Pessoa veio com texto após escolher item — tenta extrair número
+      const numMatch = texto.match(/\d+/);
+      if (numMatch) {
+        dados.quantidade = parseInt(numMatch[0]);
+      } else {
+        // ainda não veio número, pergunta
+        await log('brinde_pergunta_quantidade');
+        await setEstado(userId, { etapa: 'aguardando_quantidade', ...dados });
+        await enviarMensagem(channel, '📦 Quantos você precisa?', [
+          { type: 'header', text: { type: 'plain_text', text: '📦 Quantidade?', emoji: true } },
+          { type: 'section', text: { type: 'mrkdwn', text: `Você escolheu *${dados.item_brinde}*.\n\nQuantos você precisa? Pode digitar só o número (ex: 5) ou com mais detalhe (ex: "preciso de 10 pra um evento").` } },
+          { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+        ]);
+        return;
+      }
+    }
+
+    // ─── LOGÍSTICA: 1º transportadora, 2º destinatário ───
+    if (cat === 'logistica' && !dados.transportadora) {
+      await log('log_pergunta_transp');
+      await setEstado(userId, { etapa: 'aguardando_transportadora', ...dados });
       await enviarMensagem(channel, '📦 Qual transportadora?', [
         { type: 'header', text: { type: 'plain_text', text: '📦 Qual transportadora?', emoji: true } },
-        { type: 'section', text: { type: 'mrkdwn', text: 'Pra te ajudar melhor, me diz por onde você quer enviar:' } },
+        { type: 'section', text: { type: 'mrkdwn', text: 'Por onde você quer enviar?' } },
         {
           type: 'actions',
           elements: [
@@ -1045,11 +1117,78 @@ async function processarMensagemDM(evt) {
       return;
     }
 
-    // Preserva transportadora se já tiver no estado
-    if (estado?.transportadora) {
-      dados.transportadora = estado.transportadora;
+    if (cat === 'logistica' && dados.transportadora && !dados.destinatario_envio) {
+      // Se já tem transportadora mas vem texto, captura como destinatário
+      if (estado?.etapa === 'aguardando_destinatario' || texto.length > 20) {
+        dados.destinatario_envio = texto;
+      } else {
+        await log('log_pergunta_destinatario');
+        await setEstado(userId, { etapa: 'aguardando_destinatario', ...dados });
+        await enviarMensagem(channel, '📍 Pra quem e pra onde?', [
+          { type: 'header', text: { type: 'plain_text', text: '📍 Detalhes do envio', emoji: true } },
+          { type: 'section', text: { type: 'mrkdwn', text: `Via *${dados.transportadora}*.\n\nMe passa os dados completos do envio:\n\n• Nome completo do destinatário\n• Endereço (rua, número, bairro, cidade, estado, CEP)\n• Telefone\n• CPF (se for DHL)\n\nPode mandar tudo em uma mensagem só.` } },
+          { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+        ]);
+        return;
+      }
     }
 
+    // ─── ACESSOS: texto livre com detalhes ───
+    if (cat === 'acessos' && !dados.detalhes_extras) {
+      if (estado?.etapa === 'aguardando_detalhes_acessos') {
+        dados.detalhes_extras = texto;
+      } else if (texto.length > 60) {
+        // Se a primeira mensagem já é longa, considera que tem detalhes
+        dados.detalhes_extras = texto;
+      } else {
+        await log('acessos_pergunta_detalhes');
+        await setEstado(userId, { etapa: 'aguardando_detalhes_acessos', ...dados });
+        await enviarMensagem(channel, '🔑 Me dá mais detalhes', [
+          { type: 'header', text: { type: 'plain_text', text: '🔑 Qual acesso você precisa?', emoji: true } },
+          { type: 'section', text: { type: 'mrkdwn', text: 'Pra te ajudar melhor, me passa:\n\n• Qual *plataforma/sistema* (ex: Google, Slack, Pipefy, Sankhya, VPN, etc.)\n• Qual *ação* (criar, remover, alterar permissão, recuperar senha)\n• Se for pra outra pessoa, *nome e email completos*' } },
+          { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+        ]);
+        return;
+      }
+    }
+
+    // ─── SUPRIMENTOS: texto livre com detalhes do item ───
+    if (cat === 'suprimentos' && !dados.detalhes_extras) {
+      if (estado?.etapa === 'aguardando_detalhes_supr') {
+        dados.detalhes_extras = texto;
+      } else if (texto.length > 60) {
+        dados.detalhes_extras = texto;
+      } else {
+        await log('supr_pergunta_detalhes');
+        await setEstado(userId, { etapa: 'aguardando_detalhes_supr', ...dados });
+        await enviarMensagem(channel, '📎 Me dá mais detalhes', [
+          { type: 'header', text: { type: 'plain_text', text: '📎 Qual item exatamente?', emoji: true } },
+          { type: 'section', text: { type: 'mrkdwn', text: 'Pra agilizar a compra, me passa:\n\n• *Item específico* (ex: mouse sem fio, fone com microfone, caneta azul)\n• *Modelo/marca* preferida (se tiver)\n• *Quantidade* que precisa\n• *Link* do produto (opcional, mas ajuda muito)' } },
+          { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+        ]);
+        return;
+      }
+    }
+
+    // ─── MANUTENÇÃO: texto livre com local e descrição ───
+    if (cat === 'manutencao' && !dados.detalhes_extras) {
+      if (estado?.etapa === 'aguardando_detalhes_manut') {
+        dados.detalhes_extras = texto;
+      } else if (texto.length > 60) {
+        dados.detalhes_extras = texto;
+      } else {
+        await log('manut_pergunta_detalhes');
+        await setEstado(userId, { etapa: 'aguardando_detalhes_manut', ...dados });
+        await enviarMensagem(channel, '🔧 Me dá mais detalhes', [
+          { type: 'header', text: { type: 'plain_text', text: '🔧 Onde e o quê?', emoji: true } },
+          { type: 'section', text: { type: 'mrkdwn', text: 'Pra a equipe resolver mais rápido:\n\n• *Local exato* (sede, andar, sala, posição da mesa)\n• *O que está com problema* (ex: ar-condicionado, lâmpada, porta, fechadura)\n• *Descrição* do problema (não liga, vazando, com barulho, etc.)' } },
+          { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+        ]);
+        return;
+      }
+    }
+
+    // ─── Tudo coletado → mostra resumo final ───
     try {
       await setEstado(userId, { etapa: 'confirmar', ...dados });
     } catch (e) { console.warn('setEstado fail:', e.message); }
@@ -1075,18 +1214,45 @@ async function enviarResumoParaConfirmacao(channel, userId, dados) {
     { type: 'mrkdwn', text: `*Categoria:*\n${catLabel}` },
     { type: 'mrkdwn', text: `*Prioridade:*\n${prioEmoji}` },
   ];
+  // Sub-campos por categoria
+  if (dados.item_brinde) {
+    fields.push({ type: 'mrkdwn', text: `*Brinde:*\n🎁 ${dados.item_brinde}` });
+  }
+  if (dados.quantidade) {
+    fields.push({ type: 'mrkdwn', text: `*Quantidade:*\n${dados.quantidade}` });
+  }
   if (dados.transportadora) {
     fields.push({ type: 'mrkdwn', text: `*Transportadora:*\n📦 ${dados.transportadora}` });
   }
+
   fields.push({ type: 'mrkdwn', text: `*Solicitação:*\n${dados.titulo || '—'}` });
-  if (dados.descricao) {
-    fields.push({ type: 'mrkdwn', text: `*Detalhes:*\n${dados.descricao}` });
+
+  // Blocks adicionais pros campos longos (fora do "fields" que limita)
+  const extraBlocks = [];
+  if (dados.destinatario_envio) {
+    extraBlocks.push({
+      type: 'section',
+      text: { type: 'mrkdwn', text: `*📍 Dados do envio:*\n${dados.destinatario_envio}` }
+    });
+  }
+  if (dados.detalhes_extras) {
+    extraBlocks.push({
+      type: 'section',
+      text: { type: 'mrkdwn', text: `*📝 Detalhes:*\n${dados.detalhes_extras}` }
+    });
+  }
+  if (dados.descricao && !dados.detalhes_extras && !dados.destinatario_envio) {
+    extraBlocks.push({
+      type: 'section',
+      text: { type: 'mrkdwn', text: `*📝 Detalhes:*\n${dados.descricao}` }
+    });
   }
 
   await enviarMensagem(channel, '📋 Quase lá! Confira o resumo do seu chamado:', [
     { type: 'header', text: { type: 'plain_text', text: '📋 Resumo do chamado', emoji: true } },
     { type: 'section', text: { type: 'mrkdwn', text: `Confira se está tudo certo antes de eu abrir:` } },
     { type: 'section', fields },
+    ...extraBlocks,
     { type: 'divider' },
     {
       type: 'actions',
@@ -1169,14 +1335,42 @@ async function tratarBotaoFluxoConversacional(body, action) {
       await enviarMensagem(channel, '😕 Não consegui encontrar sua solicitação. Manda nova mensagem?');
       return;
     }
-    const dadosAtualizados = { ...estado, transportadora, etapa: 'confirmar' };
+    const dadosAtualizados = { ...estado, transportadora, etapa: 'aguardando_destinatario' };
     await setEstado(userId, dadosAtualizados);
     // Atualiza a mensagem dos botões pra mostrar escolha feita
     await atualizarMensagem(channel, body.message?.ts, `📦 ${transportadora} selecionada`, [
       { type: 'section', text: { type: 'mrkdwn', text: `✅ *Transportadora:* ${transportadora}` } }
     ]);
-    // Mostra o resumo final
-    await enviarResumoParaConfirmacao(channel, userId, dadosAtualizados);
+    // Pergunta os dados do destinatário
+    await enviarMensagem(channel, '📍 Pra quem e pra onde?', [
+      { type: 'header', text: { type: 'plain_text', text: '📍 Detalhes do envio', emoji: true } },
+      { type: 'section', text: { type: 'mrkdwn', text: `Via *${transportadora}*.\n\nMe passa os dados completos do envio:\n\n• Nome completo do destinatário\n• Endereço (rua, número, bairro, cidade, estado, CEP)\n• Telefone\n• CPF (se for DHL)\n\nPode mandar tudo em uma mensagem só.` } },
+      { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+    ]);
+    return;
+  }
+
+  // Botões de brindes (fac_brd_<item>) — sub-fluxo brindes
+  if (actionId.startsWith('fac_brd_')) {
+    await log('brinde_clicado');
+    const itemBrinde = action.value;
+    const estado = await getEstado(userId);
+    if (!estado) {
+      await enviarMensagem(channel, '😕 Não consegui encontrar sua solicitação. Manda nova mensagem?');
+      return;
+    }
+    const dadosAtualizados = { ...estado, item_brinde: itemBrinde, etapa: 'aguardando_quantidade' };
+    await setEstado(userId, dadosAtualizados);
+    // Atualiza a mensagem dos botões pra mostrar escolha feita
+    await atualizarMensagem(channel, body.message?.ts, `🎁 ${itemBrinde} selecionado`, [
+      { type: 'section', text: { type: 'mrkdwn', text: `✅ *Brinde:* ${itemBrinde}` } }
+    ]);
+    // Pergunta a quantidade
+    await enviarMensagem(channel, '📦 Quantos você precisa?', [
+      { type: 'header', text: { type: 'plain_text', text: '📦 Quantidade?', emoji: true } },
+      { type: 'section', text: { type: 'mrkdwn', text: `Você escolheu *${itemBrinde}*.\n\nQuantos você precisa? Pode digitar só o número (ex: 5) ou com mais detalhe (ex: "preciso de 10 pra um evento dia 20").` } },
+      { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+    ]);
     return;
   }
 
@@ -1193,11 +1387,30 @@ async function tratarBotaoFluxoConversacional(body, action) {
     try {
       const dadosExtras = {};
       if (dados.transportadora) dadosExtras.transportadora = dados.transportadora;
+      if (dados.item_brinde) {
+        dadosExtras.item_brinde = dados.item_brinde;
+        dadosExtras.subcategoria = dados.item_brinde;
+      }
+      if (dados.quantidade) dadosExtras.quantidade = dados.quantidade;
+      if (dados.destinatario_envio) dadosExtras.destinatario_envio = dados.destinatario_envio;
+      if (dados.detalhes_extras) dadosExtras.detalhes_extras = dados.detalhes_extras;
+
+      // Concatena tudo na descrição final pra ficar legível no admin
+      let descricaoFinal = dados.descricao || dados.texto_original || '';
+      if (dados.item_brinde) {
+        descricaoFinal = `Item: ${dados.item_brinde}\nQuantidade: ${dados.quantidade || 'não informada'}\n\n${descricaoFinal}`;
+      }
+      if (dados.transportadora) {
+        descricaoFinal = `Transportadora: ${dados.transportadora}\n\nDados do envio:\n${dados.destinatario_envio || dados.texto_original}\n\n${descricaoFinal}`.trim();
+      }
+      if (dados.detalhes_extras && !dados.item_brinde && !dados.transportadora) {
+        descricaoFinal = dados.detalhes_extras;
+      }
 
       const ticket = await criarTicketNoFirebase({
         categoria: dados.categoria,
         titulo: dados.titulo,
-        descricao: dados.descricao || dados.texto_original,
+        descricao: descricaoFinal,
         prioridade: dados.prioridade || 'media',
         slackUser: slackUser || { slackId: userId },
         dadosExtras,
