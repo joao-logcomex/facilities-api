@@ -79,8 +79,26 @@ body::before {
   padding: 64px 96px;
   opacity: 0; visibility: hidden;
   transition: opacity 600ms var(--ease-out), visibility 600ms;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 .slide.active { opacity: 1; visibility: visible; }
+
+/* Scrollbar custom (só aparece quando precisa) */
+.slide::-webkit-scrollbar {
+  width: 6px;
+}
+.slide::-webkit-scrollbar-track {
+  background: transparent;
+}
+.slide::-webkit-scrollbar-thumb {
+  background: rgba(226, 208, 250, 0.25);
+  border-radius: 999px;
+}
+.slide::-webkit-scrollbar-thumb:hover {
+  background: rgba(226, 208, 250, 0.5);
+}
 
 /* Header com logo oficial */
 .deck-header {
@@ -779,9 +797,44 @@ body::before {
 
   /* Slides genéricos */
   .slide {
-    padding: 64px 20px 80px;
+    padding: 80px 20px 180px; /* Mais espaço no rodapé pra controles não cobrirem conteúdo */
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start; /* Começa do topo no mobile */
+  }
+  /* Slides curtos (capa/CTA) continuam centralizados */
+  .slide-capa, .slide-cta {
+    justify-content: center !important;
+    padding-bottom: 120px !important;
+  }
+
+  /* Indicador "role pra baixo" — aparece só quando conteúdo é maior que tela */
+  .scroll-hint {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99;
+    background: rgba(45, 8, 93, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 208, 250, 0.3);
+    color: var(--lx-primary-lightest);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-family: var(--lx-font-body);
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    animation: scrollBounce 1.8s ease-in-out infinite;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 300ms;
+  }
+  .scroll-hint.show { opacity: 1; }
+  @keyframes scrollBounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-6px); }
   }
 
   /* Capa */
@@ -1223,6 +1276,10 @@ body::before {
 <div class="dots" id="dots"></div>
 
 <div class="controls-label">controles</div>
+<div class="scroll-hint" id="scrollHint">
+  <span>role pra baixo</span>
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
+</div>
 <div class="controls">
   <button onclick="prevSlide()" data-tip="Anterior (←)" title="Anterior">←</button>
   <button onclick="togglePause()" id="pauseBtn" data-tip="Pausar (P)" title="Pausar">⏸</button>
@@ -1515,7 +1572,26 @@ body::before {
       dots[i].classList.toggle('active', i === idx);
     });
     current = idx;
+    // Resetar scroll do slide ativo pro topo
+    slides[idx].scrollTop = 0;
+    // Verifica se o conteúdo tem overflow e mostra/esconde hint
+    checkScrollHint();
     startTimer();
+  }
+
+  function checkScrollHint() {
+    const hint = document.getElementById('scrollHint');
+    if (!hint) return;
+    const slide = slides[current];
+    // Tem overflow vertical? (conteúdo maior que altura visível)
+    const hasOverflow = slide.scrollHeight > slide.clientHeight + 10;
+    // Só mostra se ainda está no topo (não rolou ainda)
+    const isAtTop = slide.scrollTop < 20;
+    if (hasOverflow && isAtTop) {
+      hint.classList.add('show');
+    } else {
+      hint.classList.remove('show');
+    }
   }
 
   function startTimer() {
@@ -1533,6 +1609,26 @@ body::before {
     }, 50);
     timer = setTimeout(() => { next(); }, duration);
   }
+
+  // Listener de scroll: se rolar, esconde hint + pausa auto-avanço temporariamente
+  let scrollPauseTimeout = null;
+  let userIsScrolling = false;
+  slides.forEach(slide => {
+    slide.addEventListener('scroll', () => {
+      checkScrollHint();
+      // Pausa auto-avanço enquanto rola
+      if (!userIsScrolling) {
+        userIsScrolling = true;
+        clearTimeout(timer);
+        clearInterval(progressTimer);
+      }
+      clearTimeout(scrollPauseTimeout);
+      scrollPauseTimeout = setTimeout(() => {
+        userIsScrolling = false;
+        if (!isPaused) startTimer();
+      }, 2500); // 2.5s após parar de rolar, retoma
+    });
+  });
 
   function next() { show((current + 1) % slides.length); }
   function nextSlide() { next(); }
