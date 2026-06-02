@@ -1016,17 +1016,34 @@
     const user = auth.currentUser;
     if (!user) return;
     const CATLABELS = { manutencao:'🔧 Manutenção', reforma:'🏗️ Reforma & Melhoria', infraestrutura:'🪑 Infraestrutura', limpeza:'🧹 Limpeza', seguranca:'🔐 Segurança', brindes:'🎁 Brindes', suprimentos:'📦 Suprimentos', plataformas:'📱 Plataformas', logistica:'📦 Logística', acessos:'🔑 Acessos', outros:'📋 Outros' };
-    // Busca por email (cobre tanto chamados abertos pelo site quanto pelo Slack)
     const userEmail = user.email;
-    const q = query(collection(db, 'tickets'), where('email', '==', userEmail), orderBy('data_abertura', 'desc'));
-    unsubMeusChamados = onSnapshot(q, (snap) => {
-      const list = document.getElementById('mc-list');
-      if (snap.empty) { list.innerHTML = '<div class="mc-empty"><div>📭</div><p>Você ainda não abriu nenhum chamado.</p></div>'; return; }
-      list.innerHTML = snap.docs.map(d => {
-        const t = d.data();
+    const userUid = user.uid;
+    const list = document.getElementById('mc-list');
+
+    // Dedup por _docId — combina resultados das 2 queries
+    const docsById = new Map();
+    let receivedFromUid = false;
+    let receivedFromEmail = false;
+    let timeoutFired = false;
+
+    function render() {
+      if (timeoutFired) return; // já mostrou estado vazio por timeout
+      if (!receivedFromUid || !receivedFromEmail) return; // espera as 2
+
+      const all = Array.from(docsById.values()).sort((a, b) => {
+        const ta = a.data_abertura?.toDate ? a.data_abertura.toDate().getTime() : 0;
+        const tb = b.data_abertura?.toDate ? b.data_abertura.toDate().getTime() : 0;
+        return tb - ta;
+      });
+
+      if (all.length === 0) {
+        list.innerHTML = '<div class="mc-empty"><div>📭</div><p>Você ainda não abriu nenhum chamado.</p></div>';
+        return;
+      }
+
+      list.innerHTML = all.map(t => {
         const dt = t.data_abertura?.toDate ? t.data_abertura.toDate().toLocaleDateString('pt-BR') : '-';
         const statusClass = 'mc-' + (t.status||'').replace(' ','').replace(' ','');
-        // Info extra por tipo de chamado
         let extraInfo = '';
         if (t.categoria === 'logistica') {
           let rows = '';
@@ -1048,13 +1065,12 @@
           const desc = t.descricao.length > 120 ? t.descricao.substring(0,120) + '...' : t.descricao;
           extraInfo = '<div style="margin-top:8px;font-size:0.8rem;color:var(--ink2);background:var(--surface2);padding:8px 12px;border-radius:8px;line-height:1.5;border-left:3px solid var(--border);">' + desc + '</div>';
         }
-        // Indicador de origem (Slack vs Site)
         const origemBadge = t.origem === 'slack'
           ? '<span style="font-size:0.7rem;background:rgba(102,19,208,0.1);color:var(--purple);padding:2px 8px;border-radius:999px;font-weight:600;margin-left:6px;">via Slack</span>'
           : '';
         return `<div class="mc-card">
           <div class="mc-card-top">
-            <div><div class="mc-id">#${t.id}${origemBadge}</div><div class="mc-titulo">${t.titulo||''}</div></div>
+            <div><div class="mc-id">#${t.id||''}${origemBadge}</div><div class="mc-titulo">${t.titulo||''}</div></div>
             <span class="mc-status ${statusClass}">${t.status||''}</span>
           </div>
           <div class="mc-meta">
@@ -1067,11 +1083,77 @@
           ${t.historico?.length > 0 ? `<div style="margin-top:8px;font-size:0.78rem;color:var(--ink3);background:var(--surface2);padding:6px 10px;border-radius:6px;">Ultima atualizacao: ${t.historico[t.historico.length-1].acao}</div>` : ''}
           ${!['Cancelado','Concluído'].includes(t.status) ? `
           <div style="margin-top:10px;">
-            <button onclick="cancelarMeuChamado('${d.id}','${t.id}')" style="background:none;border:1.5px solid #e8e4f5;border-radius:6px;padding:5px 12px;font-family:'Poppins',sans-serif;font-size:0.78rem;font-weight:600;color:var(--ink3);cursor:pointer;">X Cancelar chamado</button>
+            <button onclick="cancelarMeuChamado('${t._docId}','${t.id||''}')" style="background:none;border:1.5px solid #e8e4f5;border-radius:6px;padding:5px 12px;font-family:'Poppins',sans-serif;font-size:0.78rem;font-weight:600;color:var(--ink3);cursor:pointer;">X Cancelar chamado</button>
           </div>` : ''}
         </div>`;
       }).join('');
-    });
+    }
+
+    // Timeout de segurança: se em 10s não veio nada, mostra estado vazio
+    const timeoutId = setTimeout(() => {
+      if (!receivedFromUid || !receivedFromEmail) {
+        console.warn('Timeout carregando chamados - mostrando vazio');
+        timeoutFired = true;
+        if (list.innerHTML.includes('Carregando')) {
+          list.innerHTML = '<div class="mc-empty"><div>📭</div><p>Você ainda não abriu nenhum chamado.</p></div>';
+        }
+      }
+    }, 10000);
+
+    // QUERY 1: por userId (chamados abertos pelo site logado)
+    try {
+      const q1 = query(collection(db, 'tickets'), where('userId', '==', userUid));
+      const unsub1 = onSnapshot(q1,
+        (snap) => {
+          snap.docs.forEach(d => {
+            docsById.set(d.id, { ...d.data(), _docId: d.id });
+          });
+          receivedFromUid = true;
+          clearTimeout(timeoutId);
+          render();
+        },
+        (err) => {
+          console.warn('Query por userId falhou:', err.message);
+          receivedFromUid = true;
+          render();
+        }
+      );
+      window._unsubMC1 = unsub1;
+    } catch (e) {
+      console.warn('Erro ao montar query userId:', e);
+      receivedFromUid = true;
+    }
+
+    // QUERY 2: por email (chamados abertos pelo Slack)
+    try {
+      const q2 = query(collection(db, 'tickets'), where('email', '==', userEmail));
+      const unsub2 = onSnapshot(q2,
+        (snap) => {
+          snap.docs.forEach(d => {
+            docsById.set(d.id, { ...d.data(), _docId: d.id });
+          });
+          receivedFromEmail = true;
+          clearTimeout(timeoutId);
+          render();
+        },
+        (err) => {
+          console.warn('Query por email falhou:', err.message);
+          receivedFromEmail = true;
+          render();
+        }
+      );
+      window._unsubMC2 = unsub2;
+    } catch (e) {
+      console.warn('Erro ao montar query email:', e);
+      receivedFromEmail = true;
+    }
+
+    // Para parar de escutar quando sair da tela
+    unsubMeusChamados = () => {
+      if (window._unsubMC1) { try { window._unsubMC1(); } catch(e){} }
+      if (window._unsubMC2) { try { window._unsubMC2(); } catch(e){} }
+      clearTimeout(timeoutId);
+    };
   }
 
   window.forgotPassword = async () => {
