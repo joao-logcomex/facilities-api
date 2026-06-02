@@ -674,9 +674,241 @@ body::before {
   box-shadow: 0 12px 40px rgba(102, 19, 208, 0.6) !important;
 }
 
-@media (max-width: 900px) {
-  .slide { padding: 32px 24px; }
-  .slide-mockup { grid-template-columns: 1fr; gap: 32px; }
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVO — Tablet e Mobile
+   ═══════════════════════════════════════════════════════════ */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .slide { padding: 48px 40px; }
+  .slide-mockup { gap: 32px; }
+  .slide-mockup .copy h2 { font-size: clamp(28px, 4vw, 44px); }
+}
+
+/* Mobile geral */
+@media (max-width: 768px) {
+  /* Header */
+  .deck-header {
+    top: 16px;
+    left: 16px;
+    gap: 10px;
+  }
+  .deck-header svg { height: 16px; }
+  .deck-header .divider { height: 14px; }
+  .deck-header .tagline { font-size: 10px; letter-spacing: 0.15em; }
+
+  /* Slides genéricos */
+  .slide {
+    padding: 64px 20px 80px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Capa */
+  .slide-capa h1 {
+    font-size: clamp(40px, 12vw, 56px);
+    line-height: 1;
+  }
+  .slide-capa .subtitle {
+    font-size: clamp(15px, 4vw, 20px);
+    padding: 0 8px;
+  }
+  .slide-capa .overline {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+  }
+  .sparkle-cluster { gap: 12px; margin-bottom: 24px; }
+  .sparkle { width: 24px !important; height: 24px !important; }
+  .sparkle:nth-child(2) { width: 36px !important; height: 36px !important; }
+
+  /* Slides com título */
+  .slide-title { max-width: 100%; padding: 0; }
+  .slide-title h2 {
+    font-size: clamp(28px, 8vw, 42px);
+    line-height: 1.05;
+    margin-bottom: 20px;
+  }
+  .slide-title .lead {
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 0 8px;
+  }
+  .slide-title .overline-pill {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    padding: 6px 12px;
+    margin-bottom: 20px;
+  }
+
+  /* Mockups: empilha colunas */
+  .slide-mockup {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    max-width: 100%;
+  }
+  .slide-mockup .copy h2 {
+    font-size: clamp(26px, 7vw, 36px);
+    margin-bottom: 16px;
+  }
+  .slide-mockup .copy .lead {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .slide-mockup .copy .step-num {
+    font-size: 10px;
+    padding: 6px 12px;
+    margin-bottom: 16px;
+  }
+
+  /* Mockup do navegador */
+  .mockup-browser { border-radius: 12px; }
+  .mockup-browser .browser-bar { padding: 8px 12px; }
+  .mockup-browser .url { font-size: 10px; padding: 3px 8px; }
+  .mockup-browser .browser-content {
+    padding: 16px;
+    min-height: 220px;
+  }
+  .form-mock { padding: 20px; }
+  .form-mock .form-title { font-size: 16px; }
+  .form-mock .form-header svg { width: 20px; height: 20px; }
+  .form-mock .form-field { margin-bottom: 12px; }
+  .form-mock .form-field .input {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .form-mock .form-field label { font-size: 10px; }
+  .form-mock .btn-mock { padding: 10px 18px; font-size: 12px; }
+
+  /* Mockup do Slack */
+  .slack-mock .slack-header { padding: 10px 14px; }
+  .slack-mock .slack-avatar { width: 26px; height: 26px; font-size: 10px; }
+  .slack-mock .slack-name { font-size: 12px; }
+  .slack-mock .slack-body { padding: 14px; }
+  .slack-mock .msg-user .bubble { font-size: 12px; padding: 8px 12px; }
+  .slack-mock .msg-bot { padding: 12px; font-size: 11px; }
+  .slack-mock .msg-bot .bot-title { font-size: 10px; }
+  .slack-mock .field-row { gap: 8px; }
+  .slack-mock .field-row .value { font-size: 11px; }
+  .slack-mock .field-row .label { font-size: 9px; }
+  .slack-mock .btn-slack {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+  .slack-mock .actions { gap: 6px; flex-wrap: wrap; }
+
+  /* Categorias */
+  .categories {
+    gap: 8px;
+    margin-top: 24px;
+    padding: 0 8px;
+  }
+  .cat-chip {
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+  .cat-chip svg { width: 14px; height: 14px; }
+
+  /* Features grid */
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 24px;
+    padding: 0 4px;
+  }
+  .feature-card {
+    padding: 20px;
+    border-radius: 12px;
+  }
+  .feature-card .icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+  }
+  .feature-card .icon svg { width: 20px; height: 20px; }
+  .feature-card h3 { font-size: 18px; margin-bottom: 6px; }
+  .feature-card p { font-size: 13px; }
+
+  /* Kanban */
+  .kanban-mock {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 12px;
+    gap: 8px;
+  }
+  .kanban-col { padding: 8px; min-height: 140px; }
+  .kanban-col h4 { font-size: 10px; margin-bottom: 8px; }
+  .kanban-card { padding: 8px; }
+  .kanban-card .id { font-size: 10px; }
+  .kanban-card .title { font-size: 9px; }
+
+  /* Stats */
+  .stats-row {
+    gap: 24px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+  .stat .num { font-size: 40px; }
+  .stat .label { font-size: 10px; letter-spacing: 0.1em; }
+
+  /* CTA */
+  .slide-cta h2 {
+    font-size: clamp(36px, 10vw, 56px);
+    line-height: 1.05;
+  }
+  .slide-cta .lead-final { font-size: 14px; }
+  .slide-cta .url-box {
+    font-size: clamp(14px, 4vw, 20px);
+    padding: 14px 24px;
+    margin-top: 28px;
+  }
+
+  /* Controles e dots */
+  .controls {
+    bottom: 16px;
+    right: 16px;
+    gap: 6px;
+  }
+  .controls button {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .dots {
+    bottom: 70px;
+    gap: 6px;
+  }
+  .dot { width: 6px; height: 6px; }
+  .dot.active { width: 24px; }
+
+  /* Overlay inicial */
+  #startOverlay > div {
+    padding: 32px 24px !important;
+  }
+  #startOverlay > div > div:nth-child(2) {
+    font-size: clamp(36px, 10vw, 48px) !important;
+    line-height: 1 !important;
+  }
+}
+
+/* Mobile pequeno (iPhone SE etc) */
+@media (max-width: 380px) {
+  .slide-capa h1 { font-size: 36px; }
+  .slide-capa .subtitle { font-size: 13px; }
+  .slide-title h2 { font-size: 26px; }
+  .slide-mockup .copy h2 { font-size: 22px; }
+  .stat .num { font-size: 32px; }
+  .cat-chip { font-size: 11px; padding: 6px 10px; }
+
+  /* Kanban — uma coluna só */
+  .kanban-mock { grid-template-columns: 1fr; }
+}
+
+/* Landscape em celular: ajusta pra não cortar conteúdo */
+@media (max-height: 500px) and (orientation: landscape) {
+  .slide { padding: 16px 32px; }
+  .slide-capa h1 { font-size: 36px; }
+  .slide-title h2 { font-size: 28px; }
+  .deck-header { top: 8px; left: 12px; }
 }
 </style>
 </head>
