@@ -36,11 +36,48 @@
   .sb-logo { display: flex; flex-direction: column; gap: 6px; padding: 20px 16px 18px; border-bottom: 1px solid rgba(226,208,250,0.08); margin-bottom: 1rem; }
   .sb-logo-text { font-weight: 800; font-size: 0.95rem; color: #fff; letter-spacing: -0.03em; }
   .sb-logo-sub { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 1px; }
-  .sb-nav { flex: 1; }
+  .sb-nav { flex: 1; display: flex; flex-direction: column; }
   .sb-section { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.22); padding: 0 0.5rem; margin: 1.2rem 0 0.5rem; }
-  .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: var(--radius-sm); color: rgba(255,255,255,0.45); font-size: 0.87rem; cursor: pointer; transition: all 0.15s; text-decoration: none; font-weight: 500; }
-  .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
-  .nav-item.active { background: rgba(102,19,208,0.25); color: var(--purple-mid); }
+
+  /* Label de seção (Painel, Chamados, Brindes, etc) */
+  .nav-section-label {
+    font-family: 'Funnel Display', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(226,208,250,0.35);
+    padding: 0 12px;
+    margin: 18px 0 6px;
+  }
+  .nav-section-label:first-of-type { margin-top: 0; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    color: rgba(255,255,255,0.55);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    font-weight: 500;
+    margin-bottom: 1px;
+  }
+  .nav-item:hover {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.95);
+  }
+  .nav-item.active {
+    background: rgba(102,19,208,0.18);
+    color: var(--purple-mid);
+    box-shadow: inset 2px 0 0 var(--purple);
+  }
+  .nav-item svg { flex-shrink: 0; }
+
+  /* Mantém compat com nav-group/nav-sub-item antigos (caso reste algum) */
   .nav-group { margin-bottom: 2px; }
   .nav-group-header { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:var(--radius-sm); color:rgba(255,255,255,0.55); font-size:0.87rem; cursor:pointer; transition:all .15s; font-weight:600; user-select:none; }
   .nav-group-header:hover { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.85); }
@@ -52,8 +89,82 @@
   .nav-sub-item { display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:var(--radius-sm); color:rgba(255,255,255,0.4); font-size:0.83rem; cursor:pointer; transition:all .15s; font-weight:500; border-left:2px solid rgba(255,255,255,0.06); margin-left:8px; }
   .nav-sub-item:hover { background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.75); border-left-color:rgba(102,19,208,0.4); }
   .nav-sub-item.active { background:rgba(102,19,208,0.2); color:var(--purple-mid); border-left-color:var(--purple); }
+
   .nav-badge { margin-left: auto; background: var(--orange); color: #fff; font-size: 0.68rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; min-width: 20px; text-align: center; }
-  .sb-footer { border-top: 1px solid rgba(255,255,255,0.07); padding: 1rem; background: var(--black); flex-shrink: 0; }
+
+  /* Rodapé da sidebar com perfil do usuário */
+  .sb-footer {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+  .sb-user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    transition: all 0.15s;
+  }
+  .sb-user-card:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .sb-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple) 0%, var(--purple-mid) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'Funnel Display', sans-serif;
+  }
+  .sb-user-info { flex: 1; min-width: 0; }
+  .sb-user-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'Funnel Display', sans-serif;
+  }
+  .sb-user-email {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sb-user-logout {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .sb-user-logout:hover {
+    background: rgba(255,71,71,0.15);
+    border-color: rgba(255,71,71,0.4);
+    color: rgba(255,150,150,0.95);
+  }
+
   .user-info { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
   .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(102,19,208,0.3); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; color: var(--purple-mid); border: 1px solid rgba(102,19,208,0.4); }
   .user-name { font-size: 0.83rem; font-weight: 600; color: rgba(255,255,255,0.7); }
@@ -354,8 +465,9 @@
 
 <aside class="sidebar" id="sidebar" style="display:none;">
 <div class="sidebar-inner">
-  <div class="sb-logo" style="display:flex;flex-direction:column;gap:6px;">
-    <svg width="128" height="20" viewBox="0 0 197 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <div class="sb-logo" style="display:flex;flex-direction:column;gap:6px;padding-bottom:8px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <svg width="92" height="14" viewBox="0 0 197 30" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M170.124 20.0846H167.091V23.1403H170.124V20.0846Z" fill="white"></path>
 <path d="M191.659 23.1386V7.58946H194.71V21.0058C194.71 22.1838 193.755 23.1386 192.577 23.1386H191.659Z" fill="white"></path>
 <path d="M193.263 0.0573844C193.429 1.63067 194.663 2.87879 196.224 3.04137C196.3 3.05094 196.3 3.16571 196.224 3.17049C194.663 3.33786 193.424 4.58119 193.263 6.15448C193.254 6.23099 193.14 6.23099 193.135 6.15448C192.969 4.58119 191.735 3.33308 190.174 3.17049C190.098 3.16093 190.098 3.04616 190.174 3.04137C191.735 2.874 192.974 1.63067 193.135 0.0573844C193.144 -0.0191281 193.258 -0.0191281 193.263 0.0573844Z" fill="white"></path>
@@ -373,77 +485,100 @@
 <path d="M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z" fill="white"></path>
 <path d="M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z" fill="white"></path>
 </svg>
-    <div class="sb-logo-sub" style="font-size:0.65rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(226,208,250,0.4);font-weight:500;">Facilities · Admin</div>
+      <div style="font-family:'Funnel Display',sans-serif;font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(226,208,250,0.4);font-weight:600;padding-left:8px;border-left:1px solid rgba(255,255,255,0.1);margin-left:4px;">facilities</div>
+    </div>
   </div>
-  <nav class="sb-nav">
 
-    <!-- ── PRINCIPAL (sempre visível) ── -->
-    <div class="nav-item active" onclick="nav('dashboard',this)"><span>📊</span> Dashboard</div>
+  <nav class="sb-nav" style="margin-top:18px;">
 
-    <!-- ── CHAMADOS (colapsável) ── -->
-    <div class="nav-group" id="grupo-chamados">
-      <div class="nav-group-header open" onclick="toggleGrupo('chamados')">
-        <span class="nav-group-icon">🎫</span>
-        <span>Chamados</span>
-        <span class="nav-group-arrow" id="arrow-chamados" style="transform:rotate(90deg)">›</span>
-      </div>
-      <div class="nav-group-items" id="items-chamados">
-        <div class="nav-sub-item" onclick="nav('kanban',this)"><span>🗂️</span> Kanban <span class="nav-badge" id="badge-n" style="margin-left:auto;">0</span></div>
-        <div class="nav-sub-item" onclick="nav('chamados',this)"><span>🎫</span> Todos os chamados</div>
-        <div class="nav-sub-item" onclick="nav('feedbacks',this)"><span>💡</span> Feedbacks <span class="nav-badge" id="badge-fb" style="margin-left:auto;background:var(--purple);">0</span></div>
-        <div class="nav-sub-item" onclick="nav('estoque',this)"><span>📦</span> Estoque Brindes <span class="nav-badge" id="badge-estoque" style="margin-left:auto;background:#b45309;display:none;">!</span></div>
-        <div class="nav-sub-item" onclick="nav('brindes-dash',this)"><span>🎁</span> Dashboard Brindes</div>
-        <div class="nav-sub-item" onclick="nav('relatorio',this)"><span>🤖</span> Relatório IA</div>
-      </div>
+    <!-- ── PRINCIPAL ── -->
+    <div class="nav-section-label">Painel</div>
+    <div class="nav-item active" onclick="nav('dashboard',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
     </div>
 
-    <!-- ── FILTROS RÁPIDOS (colapsável) ── -->
-    <div class="nav-group" id="grupo-filtros">
-      <div class="nav-group-header" onclick="toggleGrupo('filtros')">
-        <span class="nav-group-icon">⚡</span>
-        <span>Filtros Rápidos</span>
-        <span class="nav-group-arrow" id="arrow-filtros">›</span>
-      </div>
-      <div class="nav-group-items" id="items-filtros" style="display:none;">
-        <div class="nav-sub-item" onclick="nav('chamados',this);qs('Aberto')"><span>🔵</span> Abertos</div>
-        <div class="nav-sub-item" onclick="nav('chamados',this);qs('Em andamento')"><span>🟠</span> Em andamento</div>
-        <div class="nav-sub-item" onclick="nav('chamados',this);qs('Aguardando aprovação')"><span>🟡</span> Aguard. aprovação</div>
-        <div class="nav-sub-item" onclick="nav('chamados',this);qs('urgente')"><span>🔴</span> Urgentes</div>
-        <div class="nav-sub-item" onclick="nav('chamados',this);qs('Concluído')"><span>🟢</span> Concluídos</div>
-      </div>
+    <!-- ── CHAMADOS ── -->
+    <div class="nav-section-label">Chamados</div>
+    <div class="nav-item" onclick="nav('kanban',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="11" y="3" width="6" height="11" rx="1"/><rect x="19" y="3" width="2" height="7" rx="1"/></svg>
+      Kanban
+      <span class="nav-badge" id="badge-n">0</span>
+    </div>
+    <div class="nav-item" onclick="nav('chamados',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-9a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2V9.5L14.5 4z"/><polyline points="14 4 14 10 20 10"/><line x1="9" y1="14" x2="15" y2="14"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+      Todos os chamados
+    </div>
+    <div class="nav-item" onclick="nav('feedbacks',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      Feedbacks
+      <span class="nav-badge" id="badge-fb" style="background:var(--purple);">0</span>
+    </div>
+    <div class="nav-item" onclick="nav('relatorio',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+      Relatório IA
     </div>
 
-    <!-- ── LOGÍSTICA (colapsável) ── -->
-    <div class="nav-group" id="grupo-logistica">
-      <div class="nav-group-header" onclick="toggleGrupo('logistica')">
-        <span class="nav-group-icon">🚚</span>
-        <span>Logística</span>
-        <span class="nav-group-arrow" id="arrow-logistica">›</span>
-      </div>
-      <div class="nav-group-items" id="items-logistica" style="display:none;">
-        <div class="nav-sub-item" onclick="nav('logistica',this)"><span>🚚</span> Envios</div>
-        <div class="nav-sub-item" onclick="nav('historico',this)"><span>📈</span> Histórico Pipefy</div>
-      </div>
+    <!-- ── BRINDES ── -->
+    <div class="nav-section-label">Brindes</div>
+    <div class="nav-item" onclick="nav('estoque',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Estoque
+      <span class="nav-badge" id="badge-estoque" style="background:#b45309;display:none;">!</span>
+    </div>
+    <div class="nav-item" onclick="nav('brindes-dash',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+      Dashboard Brindes
     </div>
 
-    <!-- ── IMOBILIÁRIO (colapsável) ── -->
-    <div class="nav-group" id="grupo-imoveis">
-      <div class="nav-group-header" onclick="toggleGrupo('imoveis')">
-        <span class="nav-group-icon">🏢</span>
-        <span>Imobiliário</span>
-        <span class="nav-group-arrow" id="arrow-imoveis">›</span>
-      </div>
-      <div class="nav-group-items" id="items-imoveis" style="display:none;">
-        <div class="nav-sub-item" onclick="nav('imoveis',this)"><span>🏢</span> Espaços</div>
-        <div class="nav-sub-item" onclick="nav('patrimonio',this)"><span>💻</span> Patrimônio</div>
-        <div class="nav-sub-item" onclick="nav('contratos',this)"><span>📄</span> Contratos</div>
-      </div>
+    <!-- ── LOGÍSTICA ── -->
+    <div class="nav-section-label">Logística</div>
+    <div class="nav-item" onclick="nav('logistica',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      Envios
+    </div>
+    <div class="nav-item" onclick="nav('historico',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Histórico Pipefy
     </div>
 
-    <!-- ── RODAPÉ ── -->
-    <div style="margin-top:auto;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
-      <div class="nav-item" onclick="syncPipefy()" id="btn-sync-pipefy" style="cursor:pointer;border:1px solid rgba(254,143,28,0.3);border-radius:8px;color:rgba(254,143,28,0.8);margin-bottom:4px;"><span>🔄</span> Sincronizar Pipefy</div>
-      <a href="index.html" class="nav-item" style="color:rgba(255,255,255,0.35);font-size:0.8rem;"><span>↗</span> Formulário público</a>
+    <!-- ── IMOBILIÁRIO ── -->
+    <div class="nav-section-label">Imobiliário</div>
+    <div class="nav-item" onclick="nav('imoveis',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Espaços
+    </div>
+    <div class="nav-item" onclick="nav('patrimonio',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Patrimônio
+    </div>
+    <div class="nav-item" onclick="nav('contratos',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Contratos
+    </div>
+
+    <!-- ── RODAPÉ COM PERFIL ── -->
+    <div class="sb-footer">
+      <div class="nav-item" onclick="syncPipefy()" id="btn-sync-pipefy" style="border:1px solid rgba(254,143,28,0.25);background:rgba(254,143,28,0.05);color:rgba(254,143,28,0.85);margin-bottom:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Sincronizar Pipefy
+      </div>
+      <a href="index.html" class="nav-item" style="color:rgba(255,255,255,0.45);font-size:0.78rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Formulário público
+      </a>
+
+      <!-- Card de perfil do usuário -->
+      <div id="sb-user-card" class="sb-user-card">
+        <div class="sb-user-avatar" id="sb-user-avatar">?</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name" id="sb-user-name">—</div>
+          <div class="sb-user-email" id="sb-user-email">—</div>
+        </div>
+        <button class="sb-user-logout" onclick="logout()" title="Sair">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
     </div>
 
   </nav>
@@ -1034,6 +1169,13 @@ const isAdminOrViewer = (email) => {
     const name = user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
     document.getElementById('uname').textContent = name;
     document.getElementById('uav').textContent = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    // Setar também o card novo da sidebar
+    const sbName = document.getElementById('sb-user-name');
+    const sbEmail = document.getElementById('sb-user-email');
+    const sbAvatar = document.getElementById('sb-user-avatar');
+    if (sbName) sbName.textContent = name;
+    if (sbEmail) sbEmail.textContent = user.email;
+    if (sbAvatar) sbAvatar.textContent = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
     document.getElementById('dash-date').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
     // Viewer: redirecionar para brindes ao carregar
     if (isViewer(user.email)) {
