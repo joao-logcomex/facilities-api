@@ -1080,13 +1080,105 @@ async function processarMensagemDM(evt) {
     if (estado?.detalhes_extras) dados.detalhes_extras = estado.detalhes_extras;
 
     // Helper: pergunta livre por detalhes específicos da categoria
+    // Valida se o texto tem informação suficiente pra ser útil
+    // Retorna { valido: bool, motivo: string }
+    function validarQualidadeDetalhes(txt, categoria) {
+      const t = (txt || '').trim();
+      const tLow = t.toLowerCase();
+
+      // Muito curto?
+      if (t.length < 25) {
+        return { valido: false, motivo: 'curto' };
+      }
+
+      // Palavras muito vagas que indicam pedido ruim
+      const padroesVagos = [
+        /^(uma|um) coisa\b/i,
+        /^(uma|um) negocio\b/i,
+        /^(uma|um) negócio\b/i,
+        /^t[áa] quebrad[oa]\b/i,
+        /^n[aã]o (est[aá]|ta) funcionando\b/i,
+        /^problema\b/i,
+        /^d[aá] um jeito\b/i,
+        /^preciso de (uma|um|algo)\b/i,
+        /^queria (uma|um|algo)\b/i,
+      ];
+      const muitoVago = padroesVagos.some(rx => rx.test(t)) && t.length < 60;
+      if (muitoVago) {
+        return { valido: false, motivo: 'vago' };
+      }
+
+      // Validações específicas por categoria
+      if (categoria === 'manutencao') {
+        // Precisa mencionar algum local OU objeto
+        const temLocal = /\b(sala|andar|sede|piso|cozinha|banheiro|escrit[oó]rio|mesa|baia|recep[cç][aã]o|coworking|copa)\b/i.test(tLow);
+        const temObjeto = /\b(ar[\s-]?condicionado|l[aâ]mpada|porta|fechadura|tomada|janela|mesa|cadeira|bebedouro|telefone|computador|teto|piso|parede|torneira|pia|vazamento|chuveiro|geladeira|micro-?ondas|cafeteira|caixa|som|proj?etor)\b/i.test(tLow);
+        if (!temLocal && !temObjeto) {
+          return { valido: false, motivo: 'sem_local_ou_objeto' };
+        }
+      }
+
+      if (categoria === 'suprimentos') {
+        // Precisa mencionar algum item específico (não só "preciso de material")
+        const itensComuns = /\b(mouse|teclado|fone|headset|microfone|webcam|cabo|adaptador|caneta|papel|caderno|folha|grampeador|clipe|cl[ií]pe|cart[uú]lina|envelope|grampe|hub|usb|hdmi|monitor|carregador|bateria|pilha|tinta|cartucho|toner|pasta|fichario|capa|mochila|copo|x[íi]cara|caf[ée]|a[cç][uú]car|filtro)\b/i;
+        if (!itensComuns.test(tLow)) {
+          return { valido: false, motivo: 'sem_item_especifico' };
+        }
+      }
+
+      return { valido: true };
+    }
+
+    // Texto da mensagem quando o pedido é vago (por categoria)
+    function mensagemPedidoVago(categoria, motivo) {
+      const bases = {
+        manutencao: {
+          header: '⚠️ Preciso de mais detalhes',
+          intro: 'Pra a equipe resolver mais rápido, me passa:\n\n• *Local exato* (sede, andar, sala, posição)\n• *O que está com problema* (ex: ar-condicionado, lâmpada, porta, mesa)\n• *Descrição do problema* (não liga, vazando, com barulho, quebrado)',
+          exemplos: 'Exemplos do que eu aceito:\n• _"O ar-condicionado da sala 3 do 2º andar não está gelando"_\n• _"Lâmpada da copa queimada, está escuro"_\n• _"Tomada da minha mesa (baia 12) faiscou, não funciona"_'
+        },
+        suprimentos: {
+          header: '⚠️ Preciso de mais detalhes',
+          intro: 'Pra agilizar a compra, me passa:\n\n• *Item específico* (ex: mouse sem fio, fone com microfone)\n• *Modelo/marca* preferida (se tiver)\n• *Quantidade* que precisa\n• *Link* do produto (opcional)',
+          exemplos: 'Exemplos do que eu aceito:\n• _"Preciso de 1 mouse sem fio Logitech M170"_\n• _"2 fones de ouvido com microfone para call center"_\n• _"Carregador USB-C 65W, link: amzn.to/xxx"_'
+        }
+      };
+      const m = bases[categoria];
+      if (!m) return null;
+      return [
+        { type: 'header', text: { type: 'plain_text', text: m.header, emoji: true } },
+        { type: 'section', text: { type: 'mrkdwn', text: m.intro } },
+        { type: 'section', text: { type: 'mrkdwn', text: m.exemplos } },
+        { type: 'section', text: { type: 'mrkdwn', text: '_Me manda de novo com essas informações, por favor._ 🙏' } },
+        { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+      ];
+    }
+
     async function pedirDetalhes(etapaName, header, instrucao) {
-      // Se já está aguardando esses detalhes, captura o texto
+      // Se já está aguardando esses detalhes, valida a resposta
       if (estado?.etapa === etapaName) {
+        const validacao = validarQualidadeDetalhes(texto, cat);
+        if (!validacao.valido) {
+          // Resposta vaga — re-pergunta com aviso mais claro
+          await log(`${cat}_resposta_vaga`, { motivo: validacao.motivo });
+          await setEstado(userId, { etapa: etapaName, ...dados });
+          const blocosErro = mensagemPedidoVago(cat, validacao.motivo);
+          if (blocosErro) {
+            await enviarMensagem(channel, '⚠️ Preciso de mais detalhes', blocosErro);
+          } else {
+            // Fallback: re-pergunta original
+            await enviarMensagem(channel, header, [
+              { type: 'header', text: { type: 'plain_text', text: header, emoji: true } },
+              { type: 'section', text: { type: 'mrkdwn', text: '⚠️ Sua resposta ficou muito curta ou vaga. ' + instrucao } },
+              { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+            ]);
+          }
+          return true; // bloqueia, espera nova resposta
+        }
         dados.detalhes_extras = texto;
         return false; // segue para próximo passo / resumo
       }
-      // Senão, faz a pergunta
+      // Primeira pergunta: faz a pergunta normalmente
       await log(`${cat}_pergunta_detalhes`);
       await setEstado(userId, { etapa: etapaName, ...dados });
       await enviarMensagem(channel, header, [
