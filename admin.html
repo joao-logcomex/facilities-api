@@ -544,17 +544,13 @@
 
     <!-- ── IMOBILIÁRIO ── -->
     <div class="nav-section-label">Imobiliário</div>
-    <div class="nav-item" onclick="nav('imoveis',this)">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      Espaços
-    </div>
     <div class="nav-item" onclick="nav('patrimonio',this)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       Patrimônio
     </div>
-    <div class="nav-item" onclick="nav('contratos',this)">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      Contratos
+    <div class="nav-item" onclick="nav('patrim-categorias',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h.01"/><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>
+      Categorias
     </div>
 
     <!-- ── RODAPÉ COM PERFIL ── -->
@@ -930,24 +926,6 @@
       </div>
     </div>
 
-    <!-- ═══ ESPAÇOS ═══ -->
-    <div class="page" id="page-imoveis">
-      <div class="topbar"><div class="page-title">🏢 Espaços</div></div>
-      <div style="padding:0 0.5rem;">
-        <div class="imob-header">
-          <div><div class="imob-title">Espaços e Salas</div><div style="font-size:0.82rem;color:var(--ink2);margin-top:2px;">Gerencie os espaços físicos do escritório</div></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <button class="imob-btn-add" onclick="abrirModalImob('espaco')">+ Adicionar espaço</button>
-            <button class="imob-btn-add" onclick="importarCSV('espacos')" style="background:var(--surface);color:var(--purple);border:1.5px solid rgba(102,19,208,0.3);">⬆ Importar CSV</button>
-            <button class="imob-btn-add" onclick="exportarCSV('espacos')" style="background:var(--surface);color:var(--ink2);border:1.5px solid var(--border);">⬇ Exportar dados</button>
-            <button class="imob-btn-add" onclick="baixarTemplate('espacos')" style="background:none;color:var(--ink3);border:1.5px dashed var(--border);font-size:0.78rem;">📋 Baixar template</button>
-          </div>
-        </div>
-        <div class="imob-stats" id="stats-espacos"></div>
-        <div class="imob-grid" id="grid-espacos"></div>
-      </div>
-    </div>
-
     <!-- ═══ PATRIMÔNIO ═══ -->
     <div class="page" id="page-patrimonio">
       <div class="topbar"><div class="page-title">💻 Patrimônio</div></div>
@@ -965,6 +943,10 @@
           <input id="busca-patrim" type="text" placeholder="🔍 Buscar por nome, número ou responsável..."
             oninput="filtrarPatrimonio(this.value)"
             style="flex:1;min-width:200px;padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.83rem;color:var(--ink);outline:none;">
+          <select id="filtro-patrim-categoria" onchange="filtrarPatrimonio(document.getElementById('busca-patrim').value)"
+            style="padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.83rem;color:var(--ink);outline:none;">
+            <option value="">Todas as categorias</option>
+          </select>
           <select id="filtro-patrim-status" onchange="filtrarPatrimonio(document.getElementById('busca-patrim').value)"
             style="padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.83rem;color:var(--ink);outline:none;">
             <option value="">Todos os status</option>
@@ -979,22 +961,20 @@
       </div>
     </div>
 
-    <!-- ═══ CONTRATOS ═══ -->
-    <div class="page" id="page-contratos">
-      <div class="topbar"><div class="page-title">📄 Contratos</div></div>
+    <!-- ═══ CATEGORIAS DE PATRIMÔNIO ═══ -->
+    <div class="page" id="page-patrim-categorias">
+      <div class="topbar"><div class="page-title">🏷️ Categorias de Patrimônio</div></div>
       <div style="padding:0 0.5rem;">
         <div class="imob-header">
-          <div><div class="imob-title">Contratos de Locação</div><div style="font-size:0.82rem;color:var(--ink2);margin-top:2px;">Acompanhe contratos e vencimentos de imóveis</div></div>
+          <div>
+            <div class="imob-title">Categorias</div>
+            <div style="font-size:0.82rem;color:var(--ink2);margin-top:2px;">Adicione, edite ou remova categorias. São usadas pra classificar cada item do patrimônio.</div>
+          </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <button class="imob-btn-add" onclick="abrirModalImob('contrato')">+ Adicionar contrato</button>
-            <button class="imob-btn-add" onclick="importarCSV('contratos')" style="background:var(--surface);color:var(--purple);border:1.5px solid rgba(102,19,208,0.3);">⬆ Importar CSV</button>
-            <button class="imob-btn-add" onclick="exportarCSV('contratos')" style="background:var(--surface);color:var(--ink2);border:1.5px solid var(--border);">⬇ Exportar dados</button>
-            <button class="imob-btn-add" onclick="baixarTemplate('contratos')" style="background:none;color:var(--ink3);border:1.5px dashed var(--border);font-size:0.78rem;">📋 Baixar template</button>
+            <button class="imob-btn-add" onclick="abrirModalCategoria()">+ Nova categoria</button>
           </div>
         </div>
-        <div id="alertas-contratos"></div>
-        <div class="imob-stats" id="stats-contratos"></div>
-        <div class="imob-grid" id="grid-contratos"></div>
+        <div id="grid-categorias" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:1rem;"></div>
       </div>
     </div>
 
@@ -2483,27 +2463,32 @@ function renderHistorico() {
 window.renderHistorico = renderHistorico;
 
   // ══════════════════════════════════════════════════════════
-  //  MÓDULO IMOBILIÁRIO
+  //  MÓDULO IMOBILIÁRIO (simplificado - só patrimônio + categorias)
   // ══════════════════════════════════════════════════════════
-  let imobData = { espacos: [], patrimonio: [], contratos: [] };
+  let imobData = { patrimonio: [], categorias: [] };
   let imobTipo = null, imobEditId = null;
 
   // Carregar dados do Firebase
   async function carregarImob() {
     const { collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    ['espacos','patrimonio','contratos'].forEach(col => {
-      onSnapshot(collection(db, 'imob_' + col), snap => {
-        imobData[col] = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-        renderImob(col);
-      });
+    onSnapshot(collection(db, 'imob_patrimonio'), snap => {
+      imobData.patrimonio = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      renderImob('patrimonio');
+    });
+    onSnapshot(collection(db, 'imob_categorias'), snap => {
+      imobData.categorias = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
+      renderCategorias();
+      atualizarDropdownCategorias();
     });
   }
 
   function renderImob(col) {
-    if (col === 'espacos') renderEspacos();
-    else if (col === 'patrimonio') renderPatrimonio();
-    else if (col === 'contratos') renderContratos();
+    if (col === 'patrimonio') renderPatrimonio();
   }
+
+  // Mantém compatibilidade (funções antigas que ainda são chamadas em algum lugar)
+  function renderEspacos() {}
+  function renderContratos() {}
 
   // ── ESPAÇOS ──────────────────────────────────────────────
   function renderEspacos() {
@@ -2551,8 +2536,10 @@ window.renderHistorico = renderHistorico;
     let data = imobData.patrimonio;
     const busca = document.getElementById('busca-patrim')?.value?.toLowerCase() || filtro || '';
     const statusFiltro = document.getElementById('filtro-patrim-status')?.value || '';
+    const catFiltro = document.getElementById('filtro-patrim-categoria')?.value || '';
     if (busca) data = data.filter(x => (x.nome||'').toLowerCase().includes(busca) || (x.num_patrimonio||'').toLowerCase().includes(busca) || (x.responsavel||'').toLowerCase().includes(busca));
     if (statusFiltro) data = data.filter(x => x.status === statusFiltro);
+    if (catFiltro) data = data.filter(x => x.categoria === catFiltro);
 
     const stats = document.getElementById('stats-patrimonio');
     const grid = document.getElementById('grid-patrimonio');
@@ -2567,17 +2554,22 @@ window.renderHistorico = renderHistorico;
     ].map(s => `<div class="imob-stat"><div class="imob-stat-num" style="color:${s.c}">${s.n}</div><div class="imob-stat-label">${s.l}</div></div>`).join('');
 
     const statusClass = { 'Em uso':'imob-status-atencao', 'Disponível':'imob-status-ok', 'Em manutenção':'imob-status-manutencao', 'Descartado':'imob-status-critico' };
-    const catIcon = { 'Notebook':'💻', 'Monitor':'🖥️', 'Teclado':'⌨️', 'Mouse':'🖱️', 'Cadeira':'🪑', 'Mesa':'🪵', 'Telefone':'📱', 'Impressora':'🖨️', 'Outro':'📦' };
 
     if (!data.length) {
       grid.innerHTML = '<div class="imob-empty"><div class="imob-empty-icon">💻</div><div>Nenhum item encontrado</div></div>';
       return;
     }
 
+    // Pegar emoji da categoria cadastrada
+    function emojiCategoria(catNome) {
+      const c = imobData.categorias.find(x => x.nome === catNome);
+      return c?.emoji || '📦';
+    }
+
     grid.innerHTML = data.map(p => `
       <div class="imob-card" onclick="editarItemImob('patrimonio','${p._id}')">
         <div class="imob-card-top">
-          <div class="imob-card-icon" style="background:rgba(255,107,43,0.1);">${catIcon[p.categoria]||'📦'}</div>
+          <div class="imob-card-icon" style="background:rgba(255,107,43,0.1);">${emojiCategoria(p.categoria)}</div>
           <span class="imob-status ${statusClass[p.status]||'imob-status-ok'}">${p.status||'—'}</span>
         </div>
         <div class="imob-card-id">${p.num_patrimonio ? '#'+p.num_patrimonio : 'Sem nº'}</div>
@@ -2592,8 +2584,144 @@ window.renderHistorico = renderHistorico;
 
   window.filtrarPatrimonio = (v) => renderPatrimonio(v);
 
-  // ── CONTRATOS ─────────────────────────────────────────────
-  function renderContratos() {
+  // ── CATEGORIAS DE PATRIMÔNIO ──────────────────────────────
+  function renderCategorias() {
+    const grid = document.getElementById('grid-categorias');
+    if (!grid) return;
+    const data = imobData.categorias;
+    if (!data.length) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;padding:40px 20px;text-align:center;color:var(--ink3);">
+          <div style="font-size:2.5rem;margin-bottom:12px;">🏷️</div>
+          <div style="font-weight:600;color:var(--ink2);margin-bottom:8px;">Nenhuma categoria cadastrada</div>
+          <div style="font-size:0.83rem;">Clique em "+ Nova categoria" pra começar.</div>
+        </div>`;
+      return;
+    }
+
+    // Contar quantos itens cada categoria tem
+    const contagem = {};
+    imobData.patrimonio.forEach(p => {
+      const c = p.categoria || '—';
+      contagem[c] = (contagem[c] || 0) + 1;
+    });
+
+    grid.innerHTML = data.map(c => `
+      <div class="imob-card" style="cursor:pointer;" onclick="abrirModalCategoria('${c._id}')">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <div style="width:48px;height:48px;border-radius:12px;background:rgba(102,19,208,0.1);display:flex;align-items:center;justify-content:center;font-size:1.6rem;">
+            ${c.emoji || '📦'}
+          </div>
+          <div style="flex:1;">
+            <div style="font-family:'Funnel Display',sans-serif;font-weight:700;color:var(--ink);font-size:1rem;">${c.nome}</div>
+            <div style="font-size:0.75rem;color:var(--ink3);">${contagem[c.nome] || 0} ${(contagem[c.nome]||0) === 1 ? 'item' : 'itens'}</div>
+          </div>
+        </div>
+        ${c.descricao ? `<div style="font-size:0.78rem;color:var(--ink2);line-height:1.5;">${c.descricao}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function atualizarDropdownCategorias() {
+    // Filtro no patrimônio
+    const sel = document.getElementById('filtro-patrim-categoria');
+    if (sel) {
+      const atual = sel.value;
+      sel.innerHTML = '<option value="">Todas as categorias</option>' +
+        imobData.categorias.map(c => `<option value="${c.nome}" ${atual === c.nome ? 'selected' : ''}>${c.emoji || ''} ${c.nome}</option>`).join('');
+    }
+  }
+
+  // Modal pra adicionar/editar categoria
+  window.abrirModalCategoria = function(id) {
+    const cat = id ? imobData.categorias.find(c => c._id === id) : null;
+    const modal = document.getElementById('imob-modal');
+    document.getElementById('imob-modal-title').textContent = cat ? 'Editar categoria' : 'Nova categoria';
+
+    document.getElementById('imob-modal-form').innerHTML = `
+      <div style="display:grid;gap:14px;">
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Nome da categoria *</label>
+          <input type="text" id="cat-nome" value="${cat?.nome || ''}" placeholder="Ex: Monitor, Cadeira, TV..."
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Emoji</label>
+          <input type="text" id="cat-emoji" value="${cat?.emoji || ''}" placeholder="Ex: 🖥️ 🪑 📺 (1 emoji só)" maxlength="4"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:1.1rem;">
+          <div style="font-size:0.72rem;color:var(--ink3);margin-top:4px;">Sugestões: 🖥️ 💻 ⌨️ 🖱️ 📺 🪑 🛋️ 🪵 📱 🎮 🔌 🖨️ 📷 ❄️</div>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Descrição (opcional)</label>
+          <textarea id="cat-descricao" rows="2" placeholder="Detalhes sobre essa categoria"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;resize:vertical;">${cat?.descricao || ''}</textarea>
+        </div>
+      </div>
+    `;
+
+    // Botão deletar só aparece se for edição
+    const btnDel = document.getElementById('imob-btn-del');
+    if (btnDel) {
+      btnDel.style.display = cat ? '' : 'none';
+      btnDel.onclick = () => deletarCategoria(cat._id, cat.nome);
+    }
+
+    // Configura o save
+    document.querySelector('#imob-modal .imob-btn-save').onclick = () => salvarCategoria(cat?._id);
+
+    modal.classList.add('active');
+  };
+
+  async function salvarCategoria(id) {
+    const nome = document.getElementById('cat-nome').value.trim();
+    const emoji = document.getElementById('cat-emoji').value.trim();
+    const descricao = document.getElementById('cat-descricao').value.trim();
+
+    if (!nome) { alert('Nome é obrigatório'); return; }
+
+    // Checa duplicada
+    const ja = imobData.categorias.find(c => c.nome.toLowerCase() === nome.toLowerCase() && c._id !== id);
+    if (ja) { alert(`Já existe uma categoria com o nome "${nome}".`); return; }
+
+    try {
+      const { collection, doc, setDoc, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const dados = {
+        nome,
+        emoji: emoji || '📦',
+        descricao: descricao || null,
+        updatedAt: serverTimestamp(),
+      };
+      if (id) {
+        await setDoc(doc(db, 'imob_categorias', id), dados, { merge: true });
+      } else {
+        dados.createdAt = serverTimestamp();
+        await addDoc(collection(db, 'imob_categorias'), dados);
+      }
+      document.getElementById('imob-modal').classList.remove('active');
+    } catch (e) {
+      alert('Erro ao salvar: ' + e.message);
+    }
+  }
+
+  async function deletarCategoria(id, nome) {
+    // Checa se tem item usando essa categoria
+    const emUso = imobData.patrimonio.filter(p => p.categoria === nome).length;
+    let msg = `Tem certeza que deseja excluir a categoria "${nome}"?`;
+    if (emUso > 0) {
+      msg += `\n\n⚠️ Atenção: ${emUso} ${emUso === 1 ? 'item está' : 'itens estão'} usando essa categoria. Esses itens ficarão sem categoria.`;
+    }
+    if (!confirm(msg)) return;
+    try {
+      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await deleteDoc(doc(db, 'imob_categorias', id));
+      document.getElementById('imob-modal').classList.remove('active');
+    } catch (e) {
+      alert('Erro ao excluir: ' + e.message);
+    }
+  }
+
+  // ── CONTRATOS (removido) ──────────────────────────────────
+  function renderContratos_removed() {
     const data = imobData.contratos;
     const stats = document.getElementById('stats-contratos');
     const grid = document.getElementById('grid-contratos');
@@ -2661,13 +2789,15 @@ window.renderHistorico = renderHistorico;
     patrimonio: [
       { id:'nome', label:'Nome do item', type:'text', full:true, placeholder:'Ex: Notebook Dell Latitude' },
       { id:'num_patrimonio', label:'Número de patrimônio', type:'text', placeholder:'Ex: 001234' },
-      { id:'categoria', label:'Categoria', type:'select', opts:['Notebook','Monitor','Teclado','Mouse','Cadeira','Mesa','Telefone','Impressora','Outro'] },
+      { id:'categoria', label:'Categoria', type:'select', optsDynamic: () => imobData.categorias.map(c => c.nome) },
       { id:'status', label:'Status', type:'select', opts:['Em uso','Disponível','Em manutenção','Descartado'] },
       { id:'responsavel', label:'Responsável', type:'text', placeholder:'Nome do colaborador' },
       { id:'localizacao', label:'Localização', type:'text', placeholder:'Ex: Mesa 14, 3º andar' },
       { id:'num_serie', label:'Número de série', type:'text', placeholder:'Opcional' },
       { id:'data_aquisicao', label:'Data de aquisição', type:'date', placeholder:'' },
       { id:'valor', label:'Valor (R$)', type:'text', placeholder:'Ex: 3500,00' },
+      { id:'fornecedor', label:'Fornecedor', type:'text', placeholder:'De onde veio?' },
+      { id:'responsavel_compra', label:'Quem comprou', type:'text', placeholder:'Pessoa responsável pela compra' },
       { id:'observacoes', label:'Observações', type:'textarea', full:true, placeholder:'Estado, histórico, etc...' },
     ],
     contrato: [
@@ -2694,16 +2824,22 @@ window.renderHistorico = renderHistorico;
     document.getElementById('imob-btn-del').style.display = imobEditId ? 'flex' : 'none';
     document.getElementById('imob-modal-form').innerHTML = `
       <div class="imob-form-grid">
-        ${campos.map(c => `
+        ${campos.map(c => {
+          const opts = c.optsDynamic ? c.optsDynamic() : (c.opts || []);
+          return `
           <div class="imob-field ${c.full ? 'full' : ''}">
             <label>${c.label}</label>
             ${c.type === 'select'
-              ? `<select id="imob-f-${c.id}">${(c.opts||[]).map(o => `<option value="${o}" ${dadosExistentes?.[c.id]===o?'selected':''}>${o}</option>`).join('')}</select>`
+              ? `<select id="imob-f-${c.id}">
+                   <option value="">— Selecione —</option>
+                   ${opts.map(o => `<option value="${o}" ${dadosExistentes?.[c.id]===o?'selected':''}>${o}</option>`).join('')}
+                 </select>`
               : c.type === 'textarea'
               ? `<textarea id="imob-f-${c.id}" placeholder="${c.placeholder||''}">${dadosExistentes?.[c.id]||''}</textarea>`
               : `<input id="imob-f-${c.id}" type="${c.type||'text'}" placeholder="${c.placeholder||''}" value="${dadosExistentes?.[c.id]||''}">`
             }
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>`;
     document.getElementById('imob-modal').classList.add('open');
   };
