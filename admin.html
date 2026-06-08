@@ -2669,7 +2669,7 @@ window.renderHistorico = renderHistorico;
     // Configura o save
     document.querySelector('#imob-modal .imob-btn-save').onclick = () => salvarCategoria(cat?._id);
 
-    modal.classList.add('active');
+    modal.classList.add('open');
   };
 
   async function salvarCategoria(id) {
@@ -2697,7 +2697,7 @@ window.renderHistorico = renderHistorico;
         dados.createdAt = serverTimestamp();
         await addDoc(collection(db, 'imob_categorias'), dados);
       }
-      document.getElementById('imob-modal').classList.remove('active');
+      document.getElementById('imob-modal').classList.remove('open');
     } catch (e) {
       alert('Erro ao salvar: ' + e.message);
     }
@@ -2714,7 +2714,7 @@ window.renderHistorico = renderHistorico;
     try {
       const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
       await deleteDoc(doc(db, 'imob_categorias', id));
-      document.getElementById('imob-modal').classList.remove('active');
+      document.getElementById('imob-modal').classList.remove('open');
     } catch (e) {
       alert('Erro ao excluir: ' + e.message);
     }
