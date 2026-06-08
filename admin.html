@@ -552,6 +552,10 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h.01"/><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>
       Categorias
     </div>
+    <div class="nav-item" onclick="nav('patrim-locais',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Localizações
+    </div>
 
     <!-- ── RODAPÉ COM PERFIL ── -->
     <div class="sb-footer">
@@ -947,6 +951,10 @@
             style="padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.83rem;color:var(--ink);outline:none;">
             <option value="">Todas as categorias</option>
           </select>
+          <select id="filtro-patrim-localizacao" onchange="filtrarPatrimonio(document.getElementById('busca-patrim').value)"
+            style="padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.83rem;color:var(--ink);outline:none;">
+            <option value="">Todas as localizações</option>
+          </select>
           <select id="filtro-patrim-status" onchange="filtrarPatrimonio(document.getElementById('busca-patrim').value)"
             style="padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.83rem;color:var(--ink);outline:none;">
             <option value="">Todos os status</option>
@@ -975,6 +983,23 @@
           </div>
         </div>
         <div id="grid-categorias" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:1rem;"></div>
+      </div>
+    </div>
+
+    <!-- ═══ LOCALIZAÇÕES DE PATRIMÔNIO ═══ -->
+    <div class="page" id="page-patrim-locais">
+      <div class="topbar"><div class="page-title">📍 Localizações</div></div>
+      <div style="padding:0 0.5rem;">
+        <div class="imob-header">
+          <div>
+            <div class="imob-title">Localizações</div>
+            <div style="font-size:0.82rem;color:var(--ink2);margin-top:2px;">Adicione, edite ou remova localizações. São usadas pra indicar onde cada item do patrimônio está.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button class="imob-btn-add" onclick="abrirModalLocalizacao()">+ Nova localização</button>
+          </div>
+        </div>
+        <div id="grid-localizacoes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:1rem;"></div>
       </div>
     </div>
 
@@ -2463,9 +2488,9 @@ function renderHistorico() {
 window.renderHistorico = renderHistorico;
 
   // ══════════════════════════════════════════════════════════
-  //  MÓDULO IMOBILIÁRIO (simplificado - só patrimônio + categorias)
+  //  MÓDULO IMOBILIÁRIO (simplificado - só patrimônio + categorias + localizações)
   // ══════════════════════════════════════════════════════════
-  let imobData = { patrimonio: [], categorias: [] };
+  let imobData = { patrimonio: [], categorias: [], localizacoes: [] };
   let imobTipo = null, imobEditId = null;
 
   // Carregar dados do Firebase
@@ -2479,6 +2504,11 @@ window.renderHistorico = renderHistorico;
       imobData.categorias = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
       renderCategorias();
       atualizarDropdownCategorias();
+    });
+    onSnapshot(collection(db, 'imob_localizacoes'), snap => {
+      imobData.localizacoes = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
+      renderLocalizacoes();
+      atualizarDropdownLocalizacoes();
     });
   }
 
@@ -2496,9 +2526,11 @@ window.renderHistorico = renderHistorico;
     const busca = document.getElementById('busca-patrim')?.value?.toLowerCase() || filtro || '';
     const statusFiltro = document.getElementById('filtro-patrim-status')?.value || '';
     const catFiltro = document.getElementById('filtro-patrim-categoria')?.value || '';
+    const locFiltro = document.getElementById('filtro-patrim-localizacao')?.value || '';
     if (busca) data = data.filter(x => (x.nome||'').toLowerCase().includes(busca) || (x.num_patrimonio||'').toLowerCase().includes(busca) || (x.responsavel||'').toLowerCase().includes(busca));
     if (statusFiltro) data = data.filter(x => x.status === statusFiltro);
     if (catFiltro) data = data.filter(x => x.categoria === catFiltro);
+    if (locFiltro) data = data.filter(x => x.localizacao === locFiltro);
 
     const stats = document.getElementById('stats-patrimonio');
     const grid = document.getElementById('grid-patrimonio');
@@ -2739,6 +2771,180 @@ window.renderHistorico = renderHistorico;
     }
   }
 
+  // ── LOCALIZAÇÕES DE PATRIMÔNIO ────────────────────────────
+  function renderLocalizacoes() {
+    const grid = document.getElementById('grid-localizacoes');
+    if (!grid) return;
+    const data = imobData.localizacoes;
+    if (!data.length) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;padding:40px 20px;text-align:center;color:var(--ink3);">
+          <div style="font-size:2.5rem;margin-bottom:12px;">📍</div>
+          <div style="font-weight:600;color:var(--ink2);margin-bottom:8px;">Nenhuma localização cadastrada</div>
+          <div style="font-size:0.83rem;">Clique em "+ Nova localização" pra começar.</div>
+        </div>`;
+      return;
+    }
+
+    // Contar quantos itens cada localização tem
+    const contagem = {};
+    imobData.patrimonio.forEach(p => {
+      const l = p.localizacao || '—';
+      contagem[l] = (contagem[l] || 0) + 1;
+    });
+
+    grid.innerHTML = data.map(l => `
+      <div class="imob-card" style="cursor:pointer;" onclick="abrirModalLocalizacao('${l._id}')">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <div style="width:48px;height:48px;border-radius:12px;background:rgba(254,143,28,0.1);display:flex;align-items:center;justify-content:center;font-size:1.6rem;">
+            ${l.emoji || '📍'}
+          </div>
+          <div style="flex:1;">
+            <div style="font-family:'Funnel Display',sans-serif;font-weight:700;color:var(--ink);font-size:1rem;">${l.nome}</div>
+            <div style="font-size:0.75rem;color:var(--ink3);">${contagem[l.nome] || 0} ${(contagem[l.nome]||0) === 1 ? 'item' : 'itens'}</div>
+          </div>
+        </div>
+        ${l.descricao ? `<div style="font-size:0.78rem;color:var(--ink2);line-height:1.5;">${l.descricao}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function atualizarDropdownLocalizacoes() {
+    // Filtro na página de patrimônio
+    const sel = document.getElementById('filtro-patrim-localizacao');
+    if (sel) {
+      const atual = sel.value;
+      sel.innerHTML = '<option value="">Todas as localizações</option>' +
+        imobData.localizacoes.map(l => `<option value="${l.nome}" ${atual === l.nome ? 'selected' : ''}>${l.emoji || '📍'} ${l.nome}</option>`).join('');
+    }
+  }
+
+  // Modal pra adicionar/editar localização
+  window.abrirModalLocalizacao = function(id) {
+    const loc = id ? imobData.localizacoes.find(l => l._id === id) : null;
+    const modal = document.getElementById('imob-modal');
+    document.getElementById('imob-modal-title').textContent = loc ? 'Editar localização' : 'Nova localização';
+
+    document.getElementById('imob-modal-form').innerHTML = `
+      <div style="display:grid;gap:14px;">
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Nome da localização *</label>
+          <input type="text" id="loc-nome" value="${loc?.nome || ''}" placeholder="Ex: Sala da Liderança, Recepção, Copa..."
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Ícone (opcional)</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="loc-emoji" value="${loc?.emoji || ''}" placeholder="Ex: 🏢 ☕ 📞 (deixe vazio pra IA escolher)"
+              style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:1.1rem;">
+            <button type="button" id="btn-ia-emoji-loc" onclick="sugerirEmojiLocIA()" style="padding:9px 14px;background:linear-gradient(135deg,#6613D0 0%,#7215E9 100%);color:#fff;border:none;border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;">✨ Sugerir com IA</button>
+          </div>
+          <div style="font-size:0.72rem;color:var(--ink3);margin-top:4px;">Deixe vazio que a IA escolhe o ícone automaticamente ao salvar</div>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Descrição (opcional)</label>
+          <textarea id="loc-descricao" rows="2" placeholder="Ex: 3º andar, próximo à recepção"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;resize:vertical;">${loc?.descricao || ''}</textarea>
+        </div>
+      </div>
+    `;
+
+    // Botão deletar só aparece se for edição
+    const btnDel = document.getElementById('imob-btn-del');
+    if (btnDel) {
+      btnDel.style.display = loc ? '' : 'none';
+      btnDel.onclick = () => deletarLocalizacao(loc._id, loc.nome);
+    }
+
+    // Configura o save
+    document.querySelector('#imob-modal .imob-btn-save').onclick = () => salvarLocalizacao(loc?._id);
+
+    modal.classList.add('open');
+  };
+
+  // Botão "Sugerir com IA" no modal de localização
+  window.sugerirEmojiLocIA = async function() {
+    const nome = document.getElementById('loc-nome').value.trim();
+    if (!nome) { alert('Digite o nome da localização primeiro'); return; }
+    const btn = document.getElementById('btn-ia-emoji-loc');
+    const emojiInput = document.getElementById('loc-emoji');
+    btn.disabled = true;
+    btn.textContent = '⏳ Pensando...';
+    try {
+      const r = await fetch('/api/classificar-patrimonio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: 'categoria', nome: 'Localização: ' + nome }),
+      });
+      const data = await r.json();
+      if (data.ok && data.emoji) {
+        emojiInput.value = data.emoji;
+        btn.textContent = '✅ Sugerido!';
+        setTimeout(() => { btn.textContent = '✨ Sugerir com IA'; btn.disabled = false; }, 1500);
+      } else {
+        throw new Error(data.error || 'Sem resposta');
+      }
+    } catch (e) {
+      btn.textContent = '✨ Sugerir com IA';
+      btn.disabled = false;
+      alert('Erro ao sugerir: ' + e.message);
+    }
+  };
+
+  async function salvarLocalizacao(id) {
+    const nome = document.getElementById('loc-nome').value.trim();
+    let emoji = document.getElementById('loc-emoji').value.trim();
+    const descricao = document.getElementById('loc-descricao').value.trim();
+
+    if (!nome) { alert('Nome é obrigatório'); return; }
+
+    const ja = imobData.localizacoes.find(l => l.nome.toLowerCase() === nome.toLowerCase() && l._id !== id);
+    if (ja) { alert(`Já existe uma localização com o nome "${nome}".`); return; }
+
+    if (!emoji) {
+      try {
+        const r = await fetch('/api/classificar-patrimonio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo: 'categoria', nome: 'Localização: ' + nome }),
+        });
+        const data = await r.json();
+        if (data.ok && data.emoji) emoji = data.emoji;
+      } catch (e) { console.warn('IA falhou:', e); }
+      if (!emoji) emoji = '📍';
+    }
+
+    try {
+      const { collection, doc, setDoc, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const dados = { nome, emoji, descricao: descricao || null, updatedAt: serverTimestamp() };
+      if (id) {
+        await setDoc(doc(db, 'imob_localizacoes', id), dados, { merge: true });
+      } else {
+        dados.createdAt = serverTimestamp();
+        await addDoc(collection(db, 'imob_localizacoes'), dados);
+      }
+      document.getElementById('imob-modal').classList.remove('open');
+    } catch (e) {
+      alert('Erro ao salvar: ' + e.message);
+    }
+  }
+
+  async function deletarLocalizacao(id, nome) {
+    const emUso = imobData.patrimonio.filter(p => p.localizacao === nome).length;
+    let msg = `Tem certeza que deseja excluir "${nome}"?`;
+    if (emUso > 0) {
+      msg += `\n\n⚠️ ${emUso} ${emUso === 1 ? 'item está' : 'itens estão'} usando essa localização. Esses itens ficarão sem localização.`;
+    }
+    if (!confirm(msg)) return;
+    try {
+      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await deleteDoc(doc(db, 'imob_localizacoes', id));
+      document.getElementById('imob-modal').classList.remove('open');
+    } catch (e) {
+      alert('Erro ao excluir: ' + e.message);
+    }
+  }
+
   // ── CONTRATOS (removido) ──────────────────────────────────
   function renderContratos_removed() {
     const data = imobData.contratos;
@@ -2811,7 +3017,7 @@ window.renderHistorico = renderHistorico;
       { id:'categoria', label:'Categoria', type:'select', optsDynamic: () => imobData.categorias.map(c => c.nome) },
       { id:'status', label:'Status', type:'select', opts:['Em uso','Disponível','Em manutenção','Descartado'] },
       { id:'responsavel', label:'Responsável', type:'text', placeholder:'Nome do colaborador' },
-      { id:'localizacao', label:'Localização', type:'text', placeholder:'Ex: Mesa 14, 3º andar' },
+      { id:'localizacao', label:'Localização', type:'select', optsDynamic: () => imobData.localizacoes.map(l => l.nome) },
       { id:'num_serie', label:'Número de série', type:'text', placeholder:'Opcional' },
       { id:'data_aquisicao', label:'Data de aquisição', type:'date', placeholder:'' },
       { id:'valor', label:'Valor (R$)', type:'text', placeholder:'Ex: 3500,00' },
@@ -3015,13 +3221,15 @@ window.renderHistorico = renderHistorico;
       if (selAnoY) selAnoY.value = agora.getFullYear();
       setTimeout(() => renderBrindesDash(), 300);
     }
-    if (['imoveis','patrimonio','contratos','patrim-categorias'].includes(page)) {
-      if (!imobData.patrimonio.length && !imobData.categorias.length) {
+    if (['imoveis','patrimonio','contratos','patrim-categorias','patrim-locais'].includes(page)) {
+      if (!imobData.patrimonio.length && !imobData.categorias.length && !imobData.localizacoes.length) {
         carregarImob();
       }
       // Se já carregou mas o usuário entrou nessa página agora, força re-render
       if (page === 'patrim-categorias') {
         setTimeout(() => renderCategorias(), 100);
+      } else if (page === 'patrim-locais') {
+        setTimeout(() => renderLocalizacoes(), 100);
       } else if (page === 'patrimonio') {
         setTimeout(() => renderPatrimonio(), 100);
       }
