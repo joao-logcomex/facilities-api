@@ -3035,7 +3035,7 @@ window.renderHistorico = renderHistorico;
   // Colunas por tipo
   const CSV_COLS = {
     espacos:    ['nome','tipo','andar','capacidade','status','responsavel','observacoes'],
-    patrimonio: ['nome','num_patrimonio','categoria','status','responsavel','localizacao','num_serie','data_aquisicao','valor','observacoes'],
+    patrimonio: ['nome','num_patrimonio','categoria','status','responsavel','localizacao','num_serie','data_aquisicao','valor','fornecedor','responsavel_compra','observacoes'],
     contratos:  ['nome','imovel','endereco','status','valor','data_inicio','data_vencimento','locador','contato_locador','observacoes'],
   };
 
@@ -3046,10 +3046,12 @@ window.renderHistorico = renderHistorico;
       responsavel:'Responsável', observacoes:'Observações'
     },
     patrimonio: {
-      nome:'Nome do Item', num_patrimonio:'Número de Patrimônio', categoria:'Categoria',
+      nome:'Nome do Item', num_patrimonio:'Número de Patrimônio', categoria:'Categoria (deixe vazio para a IA classificar)',
       status:'Status (Em uso/Disponível/Em manutenção/Descartado)',
       responsavel:'Responsável', localizacao:'Localização', num_serie:'Número de Série',
-      data_aquisicao:'Data de Aquisição (AAAA-MM-DD)', valor:'Valor (R$)', observacoes:'Observações'
+      data_aquisicao:'Data de Aquisição (AAAA-MM-DD)', valor:'Valor (R$)',
+      fornecedor:'Fornecedor', responsavel_compra:'Quem comprou',
+      observacoes:'Observações'
     },
     contratos: {
       nome:'Nome/Identificação', imovel:'Imóvel', endereco:'Endereço Completo',
@@ -3067,9 +3069,9 @@ window.renderHistorico = renderHistorico;
       ['Almoxarifado','Almoxarifado','Térreo','','Disponível','Henrique Silva',''],
     ],
     patrimonio: [
-      ['Notebook Dell Latitude','001234','Notebook','Em uso','Ana Silva','Mesa 14 - 3º andar','SN123456','2024-01-15','3500,00','Carregador incluso'],
-      ['Monitor LG 24"','001235','Monitor','Em uso','Ana Silva','Mesa 14 - 3º andar','','2024-01-15','800,00',''],
-      ['Cadeira Escritório','001236','Cadeira','Disponível','','Estoque','','2023-06-10','450,00',''],
+      ['Notebook Dell Latitude','001234','Notebook','Em uso','Ana Silva','Mesa 14 - 3º andar','SN123456','2024-01-15','3500,00','Dell Brasil','Compras TI','Carregador incluso'],
+      ['Monitor LG 24"','001235','','Em uso','Ana Silva','Mesa 14 - 3º andar','','2024-01-15','800,00','LG','Compras TI',''],
+      ['Cadeira Escritório Frisokar','001236','','Disponível','','Estoque','','2023-06-10','450,00','Frisokar','Facilities',''],
     ],
     contratos: [
       ['Sede Curitiba','Edifício Alpha - Sala 301','Rua XV de Novembro, 300, Centro, Curitiba/PR, 80020-310','Ativo','8500,00','2023-01-01','2025-12-31','Imóveis Alpha Ltda','(41) 99999-9999','Reajuste anual pelo IGPM'],
@@ -3159,7 +3161,6 @@ window.renderHistorico = renderHistorico;
     }
 
     const cols = CSV_COLS[csvTipoAtual] || [];
-    const headerLinha = parseCSVLine(linhas[0]);
 
     // Mapear colunas do CSV para campos do sistema (por posição)
     const itens = [];
@@ -3171,7 +3172,6 @@ window.renderHistorico = renderHistorico;
       cols.forEach((col, idx) => {
         item[col] = (vals[idx] || '').trim();
       });
-      // Validar: nome obrigatório
       if (!item.nome) continue;
       itens.push(item);
     }
@@ -3179,24 +3179,61 @@ window.renderHistorico = renderHistorico;
     if (!itens.length) { showToast('❌ Nenhum item válido encontrado no CSV.'); return; }
 
     const colName = 'imob_' + csvTipoAtual;
-    const { collection, addDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    let ok = 0, err = 0;
+    const { collection, addDoc, doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    let ok = 0, err = 0, classificadosIA = 0;
 
     showToast(`⏳ Importando ${itens.length} itens...`);
 
+    // Categorias disponíveis pra IA escolher (só pra patrimonio)
+    const categoriasDisp = csvTipoAtual === 'patrimonio'
+      ? imobData.categorias.map(c => c.nome)
+      : [];
+
     for (const item of itens) {
       try {
-        await addDoc(collection(db, colName), {
+        // Pra patrimônio: se categoria vazia, IA classifica
+        if (csvTipoAtual === 'patrimonio' && !item.categoria && item.nome) {
+          try {
+            const r = await fetch('/api/classificar-patrimonio', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tipo: 'item', nome: item.nome, categorias_disponiveis: categoriasDisp }),
+            });
+            const data = await r.json();
+            if (data.ok && data.categoria) {
+              item.categoria = data.categoria;
+              classificadosIA++;
+            }
+          } catch (e) { console.warn('IA falhou pra:', item.nome, e); }
+        }
+
+        // Status default
+        if (csvTipoAtual === 'patrimonio' && !item.status) {
+          item.status = item.responsavel ? 'Em uso' : 'Disponível';
+        }
+
+        const dadosDoc = {
           ...item,
           criadoEm: new Date(),
           criadoPor: auth.currentUser?.email || 'importação CSV',
           updatedAt: new Date(),
-        });
+        };
+
+        // Pra patrimônio: usar num_patrimonio como doc ID (evita duplicatas)
+        if (csvTipoAtual === 'patrimonio' && item.num_patrimonio) {
+          const docId = item.num_patrimonio.replace(/[\/\\]/g, '_').trim();
+          await setDoc(doc(db, colName, docId), dadosDoc, { merge: true });
+        } else {
+          await addDoc(collection(db, colName), dadosDoc);
+        }
         ok++;
-      } catch(e) { err++; console.error(e); }
+      } catch(e) { err++; console.error('Erro importando item:', e); }
     }
 
-    showToast(`✅ ${ok} itens importados!${err ? ' ⚠️ ' + err + ' erros.' : ''}`);
+    let msg = `✅ ${ok} itens importados!`;
+    if (classificadosIA > 0) msg += ` 🤖 ${classificadosIA} classificados pela IA.`;
+    if (err > 0) msg += ` ⚠️ ${err} erros.`;
+    showToast(msg);
   };
 
   // ══════════════════════════════════════════════════════════
