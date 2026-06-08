@@ -691,8 +691,19 @@
   <div class="page" id="page-relatorio">
     <div class="topbar"><div><div class="page-title">Relatório IA</div><div style="font-size:0.82rem;color:var(--ink3);margin-top:2px;">Gerado automaticamente com inteligência artificial</div></div></div>
     <div class="relatorio-shell">
-      <div class="relatorio-header"><div class="relatorio-icon">🤖</div><div><div class="relatorio-title">Relatório Mensal de SLA</div><div class="relatorio-sub">Selecione o mês e clique em Gerar. A IA analisa todos os chamados e cria um relatório executivo completo com análise de SLA, tendências e recomendações.</div></div></div>
-      <div class="relatorio-controls">
+      <!-- TOGGLE: Chamados vs Imobiliário -->
+      <div style="display:flex;gap:0;background:rgba(102,19,208,0.08);border:1.5px solid rgba(102,19,208,0.2);border-radius:12px;padding:4px;margin-bottom:1.5rem;width:fit-content;">
+        <button id="rel-tipo-chamados" onclick="setRelatorioTipo('chamados')" style="padding:8px 18px;border:none;background:var(--purple);color:#fff;border-radius:8px;font-family:'Funnel Display',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.15s;">📋 Chamados</button>
+        <button id="rel-tipo-imobiliario" onclick="setRelatorioTipo('imobiliario')" style="padding:8px 18px;border:none;background:transparent;color:var(--ink2);border-radius:8px;font-family:'Funnel Display',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.15s;">🏢 Imobiliário</button>
+      </div>
+
+      <!-- HEADER DINÂMICO -->
+      <div class="relatorio-header" id="rel-header-chamados"><div class="relatorio-icon">🤖</div><div><div class="relatorio-title">Relatório Mensal de SLA</div><div class="relatorio-sub">Selecione o mês e clique em Gerar. A IA analisa todos os chamados e cria um relatório executivo completo com análise de SLA, tendências e recomendações.</div></div></div>
+
+      <div class="relatorio-header" id="rel-header-imobiliario" style="display:none;"><div class="relatorio-icon">🏢</div><div><div class="relatorio-title">Relatório do Patrimônio</div><div class="relatorio-sub">A IA analisa todos os itens cadastrados, qualidade dos dados, contratos e gera recomendações de ação. Clique em Gerar pra rodar agora.</div></div></div>
+
+      <!-- CONTROLES DE CHAMADOS (mês/ano/todos) -->
+      <div class="relatorio-controls" id="rel-controls-chamados">
         <div class="rel-toggle">
           <button class="rel-toggle-btn active" id="rel-btn-mes" onclick="setRelTipo('mes')">📅 Mês</button>
           <button class="rel-toggle-btn" id="rel-btn-ano" onclick="setRelTipo('ano')">📆 Ano</button>
@@ -708,6 +719,13 @@
         <button class="btn-gerar" id="btn-gerar" onclick="gerarRelatorio()">✨ Gerar relatório</button>
         <button class="btn-exportar" id="btn-exportar" onclick="exportarRelatorio()">⬇ Exportar PDF</button>
       </div>
+
+      <!-- CONTROLES DE IMOBILIÁRIO (botão único) -->
+      <div id="rel-controls-imobiliario" style="display:none;gap:12px;margin-bottom:1.5rem;align-items:center;flex-wrap:wrap;">
+        <button class="btn-gerar" id="btn-gerar-imob" onclick="gerarRelatorioImobiliario()">✨ Gerar relatório agora</button>
+        <span style="font-size:0.78rem;color:var(--ink3);">Roda a análise sob demanda, usando todos os ${827} itens cadastrados</span>
+      </div>
+
       <div class="relatorio-stats" id="relatorio-stats" style="display:none;">
         <div class="rstat"><div class="rstat-value" id="rs-total">0</div><div class="rstat-label">Total</div></div>
         <div class="rstat"><div class="rstat-value" id="rs-concluidos">0</div><div class="rstat-label">Concluídos</div></div>
@@ -715,7 +733,7 @@
         <div class="rstat"><div class="rstat-value" id="rs-urgentes">0</div><div class="rstat-label">Urgentes</div></div>
         <div class="rstat"><div class="rstat-value" id="rs-sla" style="color:var(--purple-mid);">0%</div><div class="rstat-label">SLA</div></div>
       </div>
-      <div class="relatorio-loading" id="relatorio-loading"><div class="spinner"></div><p>Analisando dados<span class="dots"></span></p><p style="font-size:0.78rem;margin-top:4px;opacity:0.6;">A IA está processando os chamados do mês selecionado</p></div>
+      <div class="relatorio-loading" id="relatorio-loading"><div class="spinner"></div><p>Analisando dados<span class="dots"></span></p><p style="font-size:0.78rem;margin-top:4px;opacity:0.6;">A IA está processando os dados</p></div>
       <div class="relatorio-output" id="relatorio-output"></div>
     </div>
   </div>
@@ -1968,6 +1986,90 @@ function setRelTipo(tipo) {
   document.getElementById('rel-selects-mes').style.display = tipo==='mes' ? 'flex' : 'none';
   document.getElementById('rel-selects-ano').style.display = tipo==='ano' ? 'flex' : 'none';
 }
+
+// ── TOGGLE: tipo de relatório (chamados ou imobiliário) ──────────
+window.setRelatorioTipo = function(tipo) {
+  const bChamados = document.getElementById('rel-tipo-chamados');
+  const bImob = document.getElementById('rel-tipo-imobiliario');
+  const hChamados = document.getElementById('rel-header-chamados');
+  const hImob = document.getElementById('rel-header-imobiliario');
+  const cChamados = document.getElementById('rel-controls-chamados');
+  const cImob = document.getElementById('rel-controls-imobiliario');
+  const stats = document.getElementById('relatorio-stats');
+  const output = document.getElementById('relatorio-output');
+
+  if (tipo === 'imobiliario') {
+    bChamados.style.background = 'transparent';
+    bChamados.style.color = 'var(--ink2)';
+    bImob.style.background = 'var(--purple)';
+    bImob.style.color = '#fff';
+    hChamados.style.display = 'none';
+    hImob.style.display = '';
+    cChamados.style.display = 'none';
+    cImob.style.display = 'flex';
+    stats.style.display = 'none';
+  } else {
+    bChamados.style.background = 'var(--purple)';
+    bChamados.style.color = '#fff';
+    bImob.style.background = 'transparent';
+    bImob.style.color = 'var(--ink2)';
+    hChamados.style.display = '';
+    hImob.style.display = 'none';
+    cChamados.style.display = '';
+    cImob.style.display = 'none';
+  }
+  output.innerHTML = '';
+};
+
+// ── Gerar relatório de imobiliário (sob demanda) ──────────────────
+window.gerarRelatorioImobiliario = async function() {
+  const output = document.getElementById('relatorio-output');
+  const loading = document.getElementById('relatorio-loading');
+  const btn = document.getElementById('btn-gerar-imob');
+
+  output.innerHTML = '';
+  loading.style.display = 'flex';
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+
+  try {
+    const r = await fetch('/api/relatorio-imobiliario', { method: 'GET' });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || 'Erro desconhecido');
+
+    // Renderizar markdown simples
+    const md = (data.relatorio_markdown || '').trim();
+    const html = md
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+
+    // Stats em destaque
+    const s = data.stats.patrimonio;
+    const statsHtml = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:1.5rem;">
+        <div class="rstat"><div class="rstat-value">${s.total}</div><div class="rstat-label">Total itens</div></div>
+        <div class="rstat"><div class="rstat-value" style="color:#16a34a;">${s.validados}</div><div class="rstat-label">Validados</div></div>
+        <div class="rstat"><div class="rstat-value" style="color:#b45309;">${s.pendentes}</div><div class="rstat-label">Pendentes</div></div>
+        <div class="rstat"><div class="rstat-value" style="color:#dc2626;">${s.sem_responsavel}</div><div class="rstat-label">Sem responsável</div></div>
+        <div class="rstat"><div class="rstat-value" style="color:#dc2626;">${s.sem_contrato}</div><div class="rstat-label">Sem contrato</div></div>
+      </div>
+    `;
+
+    output.innerHTML = statsHtml + `<div class="relatorio-md"><p>${html}</p></div>`;
+  } catch (e) {
+    output.innerHTML = `<div style="padding:20px;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:8px;color:#dc2626;"><strong>Erro ao gerar relatório:</strong> ${e.message}</div>`;
+  } finally {
+    loading.style.display = 'none';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+};
 
 async function gerarRelatorio() {
   const tipo = _relTipo || 'mes';
