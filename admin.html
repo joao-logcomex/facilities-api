@@ -2557,7 +2557,17 @@ window.renderHistorico = renderHistorico;
       return c?.emoji || '📦';
     }
 
-    grid.innerHTML = data.map(p => `
+    // Formatar valor em BRL
+    function formatarValor(v) {
+      if (!v) return null;
+      const num = typeof v === 'number' ? v : parseFloat(String(v).replace(/\./g,'').replace(',','.'));
+      if (isNaN(num) || num === 0) return null;
+      return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
+    }
+
+    grid.innerHTML = data.map(p => {
+      const valorFmt = formatarValor(p.valor);
+      return `
       <div class="imob-card" onclick="editarItemImob('patrimonio','${p._id}')">
         <div class="imob-card-top">
           <div class="imob-card-icon" style="background:rgba(255,107,43,0.1);">${emojiCategoria(p.categoria)}</div>
@@ -2569,8 +2579,10 @@ window.renderHistorico = renderHistorico;
           ${p.categoria ? `<span>${p.categoria}</span>` : ''}
           ${p.localizacao ? `<span>📍 ${p.localizacao}</span>` : ''}
         </div>
-        ${p.responsavel ? `<div style="font-size:0.75rem;color:var(--ink3);margin-top:8px;">Resp: ${p.responsavel}</div>` : ''}
-      </div>`).join('');
+        ${valorFmt ? `<div style="font-size:0.85rem;color:var(--purple);font-weight:700;margin-top:8px;font-family:'Funnel Display',sans-serif;">💰 ${valorFmt}</div>` : ''}
+        ${p.responsavel ? `<div style="font-size:0.75rem;color:var(--ink3);margin-top:6px;">Resp: ${p.responsavel}</div>` : ''}
+      </div>`;
+    }).join('');
   }
 
   window.filtrarPatrimonio = (v) => renderPatrimonio(v);
