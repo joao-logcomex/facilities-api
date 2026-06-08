@@ -18,10 +18,51 @@ service cloud.firestore {
       ];
     }
 
-    // Leitura pública para o Facilities.IA
-    match /{document=**} {
-      allow read: if true;
+    // Tickets: ler se for dono ou admin/viewer, criar autenticado, editar só admin
+    match /tickets/{ticketId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.token.email == resource.data.email ||
+        request.auth.token.email == resource.data.userEmail ||
+        isAdmin() || isViewer()
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    // Feedbacks
+    match /feedbacks/{feedbackId} {
+      allow create: if request.auth != null;
+      allow read, delete: if isAdmin();
+    }
+
+    // Admin flags por usuário
+    match /admin_flags/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Colaboradores: qualquer logado pode ler/escrever
+    match /colaboradores/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Estoque de brindes: todos leem, só admin escreve
+    match /estoque_brindes/{docId} {
+      allow read: if request.auth != null;
       allow write: if isAdmin();
     }
+
+    // Imobiliário (todas as coleções: patrimonio, categorias, localizacoes, etc)
+    match /imob_patrimonio/{docId} { allow read, write: if isAdmin(); }
+    match /imob_categorias/{docId} { allow read, write: if isAdmin(); }
+    match /imob_localizacoes/{docId} { allow read, write: if isAdmin(); }
+    match /imob_espacos/{docId} { allow read, write: if isAdmin(); }
+    match /imob_contratos/{docId} { allow read, write: if isAdmin(); }
+    match /imob_reconciliacoes/{docId} { allow read, write: if isAdmin(); }
+
+    // Slack (controle interno)
+    match /slack_conversas/{docId} { allow read, write: if isAdmin(); }
+    match /slack_eventos_processados/{docId} { allow read, write: if isAdmin(); }
+    match /slack_debug_logs/{docId} { allow read, write: if isAdmin(); }
   }
 }
