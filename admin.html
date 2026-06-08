@@ -2490,47 +2490,6 @@ window.renderHistorico = renderHistorico;
   function renderEspacos() {}
   function renderContratos() {}
 
-  // ── ESPAÇOS ──────────────────────────────────────────────
-  function renderEspacos() {
-    const data = imobData.espacos;
-    const stats = document.getElementById('stats-espacos');
-    const grid = document.getElementById('grid-espacos');
-    if (!stats || !grid) return;
-
-    const total = data.length;
-    const disponiveis = data.filter(x => x.status === 'Disponível').length;
-    const ocupados = data.filter(x => x.status === 'Ocupado').length;
-    const manutencao = data.filter(x => x.status === 'Em manutenção').length;
-
-    stats.innerHTML = [
-      {n: total, l: 'Total de espaços', c: '#6613D0'},
-      {n: disponiveis, l: 'Disponíveis', c: '#16a34a'},
-      {n: ocupados, l: 'Ocupados', c: '#FF6B2B'},
-      {n: manutencao, l: 'Em manutenção', c: '#b45309'},
-    ].map(s => `<div class="imob-stat"><div class="imob-stat-num" style="color:${s.c}">${s.n}</div><div class="imob-stat-label">${s.l}</div></div>`).join('');
-
-    if (!data.length) {
-      grid.innerHTML = '<div class="imob-empty"><div class="imob-empty-icon">🏢</div><div>Nenhum espaço cadastrado ainda</div><div style="font-size:0.8rem;margin-top:4px;opacity:.6">Clique em + Adicionar espaço para começar</div></div>';
-      return;
-    }
-
-    const statusClass = { 'Disponível':'imob-status-ok', 'Ocupado':'imob-status-atencao', 'Em manutenção':'imob-status-manutencao', 'Inativo':'imob-status-critico' };
-    grid.innerHTML = data.map(e => `
-      <div class="imob-card" onclick="editarItemImob('espaco','${e._id}')">
-        <div class="imob-card-top">
-          <div class="imob-card-icon" style="background:rgba(102,19,208,0.1);">🏢</div>
-          <span class="imob-status ${statusClass[e.status]||'imob-status-ok'}">${e.status||'—'}</span>
-        </div>
-        <div class="imob-card-name">${e.nome||'—'}</div>
-        <div class="imob-card-meta">
-          ${e.andar ? `<span>📍 ${e.andar}</span>` : ''}
-          ${e.capacidade ? `<span>👥 ${e.capacidade} pessoas</span>` : ''}
-          ${e.tipo ? `<span>${e.tipo}</span>` : ''}
-        </div>
-        ${e.responsavel ? `<div style="font-size:0.75rem;color:var(--ink3);margin-top:8px;">Resp: ${e.responsavel}</div>` : ''}
-      </div>`).join('');
-  }
-
   // ── PATRIMÔNIO ────────────────────────────────────────────
   function renderPatrimonio(filtro) {
     let data = imobData.patrimonio;
@@ -2924,15 +2883,15 @@ window.renderHistorico = renderHistorico;
       if (selAnoY) selAnoY.value = agora.getFullYear();
       setTimeout(() => renderBrindesDash(), 300);
     }
-    if (['imoveis','patrimonio','contratos'].includes(page)) {
-      const items = document.getElementById('items-imoveis');
-      const header = items?.previousElementSibling;
-      if (items && items.style.display === 'none') {
-        items.style.display = 'block';
-        header?.classList.add('open');
-      }
-      if (!imobData.espacos.length && !imobData.patrimonio.length && !imobData.contratos.length) {
+    if (['imoveis','patrimonio','contratos','patrim-categorias'].includes(page)) {
+      if (!imobData.patrimonio.length && !imobData.categorias.length) {
         carregarImob();
+      }
+      // Se já carregou mas o usuário entrou nessa página agora, força re-render
+      if (page === 'patrim-categorias') {
+        setTimeout(() => renderCategorias(), 100);
+      } else if (page === 'patrimonio') {
+        setTimeout(() => renderPatrimonio(), 100);
       }
     }
   };
