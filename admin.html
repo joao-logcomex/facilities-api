@@ -2504,11 +2504,14 @@ window.renderHistorico = renderHistorico;
       imobData.categorias = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
       renderCategorias();
       atualizarDropdownCategorias();
+      // Re-renderiza patrimônio pra atualizar os emojis dos cards
+      if (imobData.patrimonio.length) renderPatrimonio();
     });
     onSnapshot(collection(db, 'imob_localizacoes'), snap => {
       imobData.localizacoes = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
       renderLocalizacoes();
       atualizarDropdownLocalizacoes();
+      if (imobData.patrimonio.length) renderPatrimonio();
     });
   }
 
