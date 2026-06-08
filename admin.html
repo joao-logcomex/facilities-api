@@ -3310,16 +3310,22 @@ window.renderHistorico = renderHistorico;
     input.click();
   };
 
+  // Detecta se o usuário está em ambiente BR (Excel usa ; como separador)
+  // Usar ; sempre pra Excel BR abrir certinho
+  const CSV_SEP = ';';
+
   window.baixarTemplate = (tipo) => {
     const cols = CSV_COLS[tipo] || [];
     const labels = CSV_LABELS[tipo] || {};
     const exemplos = CSV_EXEMPLOS[tipo] || [];
     const header = cols.map(c => labels[c] || c);
-    const linhas = exemplos.map(ex => ex.map(v => {
+    function escape(v) {
       const s = (v||'').toString().replace(/"/g,'""');
-      return s.includes(',') || s.includes('"') ? `"${s}"` : s;
-    }).join(','));
-    const csv = [header.join(','), ...linhas].join('\n');
+      return s.includes(CSV_SEP) || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
+    }
+    const linhas = exemplos.map(ex => ex.map(escape).join(CSV_SEP));
+    // Linha "sep=;" diz pro Excel qual separador usar
+    const csv = ['sep=' + CSV_SEP, header.map(escape).join(CSV_SEP), ...linhas].join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -3327,7 +3333,7 @@ window.renderHistorico = renderHistorico;
     a.download = `template_${tipo}_facilities.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('📋 Template baixado! Preencha no Excel e importe.');
+    showToast('📋 Template baixado! Abre no Excel e preenche.');
   };
 
   window.exportarCSV = (tipo) => {
@@ -3336,29 +3342,25 @@ window.renderHistorico = renderHistorico;
     const dados = imobData[tipo] || [];
     const exemplos = CSV_EXEMPLOS[tipo] || [];
 
-    // Header com labels descritivos
     const header = cols.map(c => labels[c] || c);
+    function escape(v) {
+      const s = (v||'').toString().replace(/"/g,'""');
+      return s.includes(CSV_SEP) || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
+    }
 
-    // Se não tem dados ainda, colocar exemplos comentados
     const linhas = dados.length
-      ? dados.map(item => cols.map(c => {
-          const v = (item[c] || '').toString().replace(/"/g,'""');
-          return v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v}"` : v;
-        }).join(','))
-      : exemplos.map(ex => ex.map(v => {
-          const s = (v||'').toString().replace(/"/g,'""');
-          return s.includes(',') || s.includes('"') ? `"${s}"` : s;
-        }).join(','));
+      ? dados.map(item => cols.map(c => escape(item[c] || '')).join(CSV_SEP))
+      : exemplos.map(ex => ex.map(escape).join(CSV_SEP));
 
-    const csv = [header.join(','), ...linhas].join('\n');
+    const csv = ['sep=' + CSV_SEP, header.map(escape).join(CSV_SEP), ...linhas].join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `template_${tipo}_facilities.csv`;
+    a.download = `${tipo}_facilities_${new Date().toISOString().substring(0,10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast(dados.length ? `✅ ${dados.length} itens exportados!` : '✅ Template CSV baixado! Preencha e importe.');
+    showToast(dados.length ? `✅ ${dados.length} itens exportados!` : '✅ Template baixado!');
   };
 
   window.processarCSV = async (event) => {
@@ -3366,8 +3368,19 @@ window.renderHistorico = renderHistorico;
     if (!file || !csvTipoAtual) return;
 
     const texto = await file.text();
-    const linhas = texto.trim().split(/\r?\n/);
+    let linhas = texto.trim().split(/\r?\n/);
+
+    // Ignora primeira linha se for "sep=;" (hint pro Excel)
+    if (linhas[0] && /^sep=/i.test(linhas[0].trim())) {
+      linhas = linhas.slice(1);
+    }
     if (linhas.length < 2) { showToast('❌ CSV vazio ou inválido.'); return; }
+
+    // Detectar separador: testa a primeira linha (header), o que aparecer mais ganha
+    const firstLine = linhas[0];
+    const countSemi = (firstLine.match(/;/g) || []).length;
+    const countComma = (firstLine.match(/,/g) || []).length;
+    const SEP = countSemi >= countComma ? ';' : ',';
 
     // Parsear CSV respeitando aspas
     function parseCSVLine(line) {
@@ -3376,7 +3389,7 @@ window.renderHistorico = renderHistorico;
       for (let i = 0; i < line.length; i++) {
         const ch = line[i];
         if (ch === '"') { inQuote = !inQuote; }
-        else if (ch === ',' && !inQuote) { result.push(cur.trim()); cur = ''; }
+        else if (ch === SEP && !inQuote) { result.push(cur.trim()); cur = ''; }
         else { cur += ch; }
       }
       result.push(cur.trim());
