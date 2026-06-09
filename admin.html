@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -2634,7 +2634,7 @@ window.renderHistorico = renderHistorico;
         <div class="imob-card-name">${p.nome||'—'}</div>
         <div class="imob-card-meta">
           ${p.categoria ? `<span>${p.categoria}</span>` : ''}
-          ${p.localizacao ? `<span>📍 ${p.localizacao}</span>` : ''}
+          ${p.localizacao ? `<span>📍 ${p.localizacao}${p.sublocalizacao ? ` › ${p.sublocalizacao}` : ''}</span>` : ''}
         </div>
         ${valorFmt ? `<div style="font-size:0.85rem;color:var(--purple);font-weight:700;margin-top:8px;font-family:'Funnel Display',sans-serif;">💰 ${valorFmt}</div>` : ''}
         ${p.responsavel ? `<div style="font-size:0.75rem;color:var(--ink3);margin-top:6px;">Resp: ${p.responsavel}</div>` : ''}
@@ -3151,6 +3151,23 @@ window.renderHistorico = renderHistorico;
         }).join('')}
       </div>`;
     document.getElementById('imob-modal').classList.add('open');
+    if (tipo === 'patrimonio') {
+      const locSel = document.getElementById('imob-f-localizacao');
+      const subSel = document.getElementById('imob-f-sublocalizacao');
+      if (locSel && subSel) {
+        const atualizarSub = () => {
+          const loc = locSel.value;
+          const subs = loc ? (imobData.sublocalizacoes || []).filter(s => s.parente === loc).map(s => s.nome) : [];
+          const valorAtual = (dadosExistentes && dadosExistentes.sublocalizacao) || '';
+          subSel.innerHTML = '<option value="">— Selecione —</option>' +
+            subs.map(s => '<option value="' + s + '"' + (s === valorAtual ? ' selected' : '') + '>' + s + '</option>').join('');
+          subSel.disabled = subs.length === 0;
+          subSel.style.opacity = subs.length === 0 ? '0.5' : '1';
+        };
+        locSel.addEventListener('change', atualizarSub);
+        atualizarSub();
+      }
+    }
   };
 
   // Sugerir categoria pelo nome do item (modal de patrimônio)
@@ -3234,6 +3251,11 @@ window.renderHistorico = renderHistorico;
       const el = document.getElementById('imob-f-' + c.id);
       if (el) dados[c.id] = el.value;
     });
+    if (imobTipo === 'patrimonio' && dados.sublocalizacao) {
+      dados.localizacao_completa = dados.localizacao + ' › ' + dados.sublocalizacao;
+    } else if (imobTipo === 'patrimonio') {
+      dados.localizacao_completa = dados.localizacao || '';
+    }
     const colName = 'imob_' + (imobTipo === 'espaco' ? 'espacos' : imobTipo === 'patrimonio' ? 'patrimonio' : 'contratos');
     try {
       if (imobEditId) {
