@@ -1,4 +1,4 @@
-// api/brinde-aprovacao.js
+﻿// api/brinde-aprovacao.js
 // Recebe o clique do botão de Aprovar/Recusar do Slack (Slack Interactivity)
 // e atualiza o Firebase + notifica o colaborador
 
@@ -142,9 +142,39 @@ export default async function handler(req, res) {
       });
     }
 
+    // 4. Notificar o Joao (admin) via DM direta
+    try {
+      const JOAO_DM = 'D0B0NEKTYLA';
+      const itensTxt = Array.isArray(itens) && itens.length
+        ? itens.map(i => `• ${i.quantidade || ''} ${i.nome || i}`).join('\n')
+        : (typeof itens === 'string' ? itens : '(sem detalhes)');
+
+      const textoJoao = isAprovado
+        ? `✅ *Brinde APROVADO* por Leandro\n*Chamado:* ${ticketId}\n*Solicitante:* ${nomeColaborador || emailColaborador || '—'}\n*Itens:*\n${itensTxt}`
+        : `❌ *Brinde REJEITADO* por Leandro\n*Chamado:* ${ticketId}\n*Solicitante:* ${nomeColaborador || emailColaborador || '—'}\n*Itens:*\n${itensTxt}${motivo ? '\n*Motivo:* ' + motivo : ''}`;
+
+      await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`
+        },
+        body: JSON.stringify({
+          channel: JOAO_DM,
+          text: textoJoao,
+          blocks: [
+            { type: 'section', text: { type: 'mrkdwn', text: textoJoao } }
+          ]
+        })
+      });
+    } catch (e) {
+      console.error('Erro notificar Joao:', e.message);
+    }
+
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('Erro aprovacao brinde:', err);
     return res.status(500).json({ error: err.message });
   }
 }
+
