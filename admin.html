@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -556,6 +556,10 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
       Localizações
     </div>
+    <div class="nav-item" onclick="nav('patrim-sublocais',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Sublocalizações
+    </div>
 
     <!-- ── RODAPÉ COM PERFIL ── -->
     <div class="sb-footer">
@@ -1000,6 +1004,23 @@
           </div>
         </div>
         <div id="grid-localizacoes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:1rem;"></div>
+      </div>
+    </div>
+
+    <!-- ═══ SUBLOCALIZAÇÕES DE PATRIMÔNIO ═══ -->
+    <div class="page" id="page-patrim-sublocais">
+      <div class="topbar"><div class="page-title">🪧 Sublocalizações</div></div>
+      <div style="padding:0 0.5rem;">
+        <div class="imob-header">
+          <div>
+            <div class="imob-title">Sublocalizações</div>
+            <div style="font-size:0.82rem;color:var(--ink2);margin-top:2px;">Salas específicas dentro de cada localização. Exemplo: "Sala de Reunião > 2º andar - War Room".</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button class="imob-btn-add" onclick="abrirModalSublocalizacao()">+ Nova sublocalização</button>
+          </div>
+        </div>
+        <div id="grid-sublocalizacoes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:1rem;"></div>
       </div>
     </div>
 
@@ -2490,7 +2511,7 @@ window.renderHistorico = renderHistorico;
   // ══════════════════════════════════════════════════════════
   //  MÓDULO IMOBILIÁRIO (simplificado - só patrimônio + categorias + localizações)
   // ══════════════════════════════════════════════════════════
-  let imobData = { patrimonio: [], categorias: [], localizacoes: [] };
+  let imobData = { patrimonio: [], categorias: [], localizacoes: [], sublocalizacoes: [] };
   let imobTipo = null, imobEditId = null;
 
   // Carregar dados do Firebase
@@ -2512,6 +2533,10 @@ window.renderHistorico = renderHistorico;
       renderLocalizacoes();
       atualizarDropdownLocalizacoes();
       if (imobData.patrimonio.length) renderPatrimonio();
+    });
+    onSnapshot(collection(db, 'imob_sublocalizacoes'), snap => {
+      imobData.sublocalizacoes = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
+      if (typeof renderSublocalizacoes === 'function') renderSublocalizacoes();
     });
   }
 
@@ -3062,6 +3087,12 @@ window.renderHistorico = renderHistorico;
       { id:'status', label:'Status', type:'select', opts:['Em uso','Disponível','Em manutenção','Descartado'] },
       { id:'responsavel', label:'Responsável', type:'text', placeholder:'Nome do colaborador' },
       { id:'localizacao', label:'Localização', type:'select', optsDynamic: () => imobData.localizacoes.map(l => l.nome) },
+      { id:'sublocalizacao', label:'Sublocalização (sala específica)', type:'select', optsDynamic: () => {
+          const loc = document.getElementById('imob-f-localizacao')?.value || '';
+          if (!loc) return [];
+          return (imobData.sublocalizacoes || []).filter(s => s.parente === loc).map(s => s.nome);
+        }
+      },
       { id:'num_serie', label:'Número de série', type:'text', placeholder:'Opcional' },
       { id:'data_aquisicao', label:'Data de aquisição', type:'date', placeholder:'' },
       { id:'valor', label:'Valor (R$)', type:'text', placeholder:'Ex: 3500,00' },
@@ -3274,6 +3305,8 @@ window.renderHistorico = renderHistorico;
         setTimeout(() => renderCategorias(), 100);
       } else if (page === 'patrim-locais') {
         setTimeout(() => renderLocalizacoes(), 100);
+      } else if (page === 'patrim-sublocais') {
+        setTimeout(() => renderSublocalizacoes(), 100);
       } else if (page === 'patrimonio') {
         setTimeout(() => renderPatrimonio(), 100);
       }
@@ -4044,6 +4077,114 @@ window.renderHistorico = renderHistorico;
 
   // Carregar dashboard de brindes ao navegar
 
+
+  // ══════════════════════════════════════════════════════════
+  //  SUBLOCALIZAÇÕES (salas específicas dentro de uma localização)
+  // ══════════════════════════════════════════════════════════
+  function renderSublocalizacoes() {
+    const grid = document.getElementById('grid-sublocalizacoes');
+    if (!grid) return;
+    const data = imobData.sublocalizacoes || [];
+    if (!data.length) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;padding:40px 20px;text-align:center;color:var(--ink3);">
+          <div style="font-size:2.5rem;margin-bottom:12px;">🪧</div>
+          <div style="font-weight:600;color:var(--ink2);margin-bottom:8px;">Nenhuma sublocalização cadastrada</div>
+          <div style="font-size:0.83rem;">Clique em "+ Nova sublocalização" pra começar.</div>
+        </div>`;
+      return;
+    }
+    // Agrupar por parente
+    const grupos = {};
+    data.forEach(s => {
+      const p = s.parente || '(sem)';
+      (grupos[p] = grupos[p] || []).push(s);
+    });
+    let html = '';
+    Object.keys(grupos).sort().forEach(parente => {
+      html += `<div style="grid-column:1/-1;margin-top:1rem;font-family:'Funnel Display',sans-serif;font-weight:700;color:var(--ink2);font-size:0.9rem;text-transform:uppercase;letter-spacing:0.06em;">📍 ${parente}</div>`;
+      grupos[parente].forEach(s => {
+        html += `
+          <div class="imob-card" style="cursor:pointer;" onclick="abrirModalSublocalizacao('${s._id}')">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:44px;height:44px;border-radius:10px;background:rgba(254,143,28,0.1);display:flex;align-items:center;justify-content:center;font-size:1.4rem;">${s.emoji || '🪧'}</div>
+              <div style="flex:1;">
+                <div style="font-family:'Funnel Display',sans-serif;font-weight:700;color:var(--ink);font-size:0.95rem;">${s.nome}</div>
+                <div style="font-size:0.72rem;color:var(--ink3);">de ${s.parente}</div>
+              </div>
+            </div>
+          </div>`;
+      });
+    });
+    grid.innerHTML = html;
+  }
+
+  window.abrirModalSublocalizacao = function(id) {
+    const item = id ? imobData.sublocalizacoes.find(s => s._id === id) : null;
+    const modal = document.getElementById('imob-modal');
+    document.getElementById('imob-modal-title').textContent = item ? 'Editar sublocalização' : 'Nova sublocalização';
+
+    const opcoesLoc = imobData.localizacoes.map(l => `<option value="${l.nome}" ${item?.parente === l.nome ? 'selected' : ''}>${l.emoji || '📍'} ${l.nome}</option>`).join('');
+
+    document.getElementById('imob-modal-form').innerHTML = `
+      <div style="display:grid;gap:14px;">
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Localização principal *</label>
+          <select id="subloc-parente" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;">
+            <option value="">— Selecione —</option>
+            ${opcoesLoc}
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Nome da sublocalização *</label>
+          <input type="text" id="subloc-nome" value="${item?.nome || ''}" placeholder="Ex: 2º andar - War Room"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Ícone (opcional)</label>
+          <input type="text" id="subloc-emoji" value="${item?.emoji || ''}" placeholder="Ex: 🪖 ☁️ 🐍"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:1.1rem;">
+        </div>
+      </div>
+    `;
+
+    const btnDel = document.getElementById('imob-btn-del');
+    if (btnDel) {
+      btnDel.style.display = item ? '' : 'none';
+      btnDel.onclick = () => deletarSublocalizacao(item._id, item.nome);
+    }
+    document.querySelector('#imob-modal .imob-btn-save').onclick = () => salvarSublocalizacao(item?._id);
+    modal.classList.add('open');
+  };
+
+  async function salvarSublocalizacao(id) {
+    const nome = document.getElementById('subloc-nome').value.trim();
+    const parente = document.getElementById('subloc-parente').value.trim();
+    const emoji = document.getElementById('subloc-emoji').value.trim() || '🪧';
+    if (!nome || !parente) { alert('Nome e localização principal são obrigatórios'); return; }
+    const ja = (imobData.sublocalizacoes || []).find(s => s.nome.toLowerCase() === nome.toLowerCase() && s.parente === parente && s._id !== id);
+    if (ja) { alert(`Já existe sublocalização "${nome}" em "${parente}".`); return; }
+    try {
+      const { collection, doc, setDoc, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const dados = { nome, parente, emoji, updatedAt: serverTimestamp() };
+      if (id) {
+        await setDoc(doc(db, 'imob_sublocalizacoes', id), dados, { merge: true });
+      } else {
+        dados.createdAt = serverTimestamp();
+        await addDoc(collection(db, 'imob_sublocalizacoes'), dados);
+      }
+      document.getElementById('imob-modal').classList.remove('open');
+    } catch (e) { alert('Erro: ' + e.message); }
+  }
+
+  async function deletarSublocalizacao(id, nome) {
+    if (!confirm(`Excluir "${nome}"?`)) return;
+    try {
+      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await deleteDoc(doc(db, 'imob_sublocalizacoes', id));
+      document.getElementById('imob-modal').classList.remove('open');
+    } catch (e) { alert('Erro: ' + e.message); }
+  }
 </script>
 </body>
 </html>
