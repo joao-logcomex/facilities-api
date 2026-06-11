@@ -1,4 +1,4 @@
-﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -2099,6 +2099,7 @@ window.gerarRelatorioImobiliario = async function() {
     `;
 
     output.innerHTML = statsHtml + `<div class="relatorio-md"><p>${html}</p></div>`;
+    setTimeout(() => output.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   } catch (e) {
     output.innerHTML = `<div style="padding:20px;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:8px;color:#dc2626;"><strong>Erro ao gerar relatório:</strong> ${e.message}</div>`;
   } finally {
