@@ -1,4 +1,4 @@
-// api/relatorio.js
+﻿// api/relatorio.js
 // Gera relatório executivo a partir de stats pré-calculados no frontend
 // O frontend já busca do Pipefy e manda os dados prontos para evitar timeout
 
@@ -49,9 +49,10 @@ export default async function handler(req, res) {
         const concluidos = list.filter(t => t.status === 'Concluído').length;
         const cancelados = list.filter(t => t.status === 'Cancelado').length;
         const andamento = total - concluidos - cancelados;
-        // SLA real: usa campo dentroSLA salvo no Firebase
-        const comSLA = list.filter(t => t.dentroSLA === true || t.dentroSLA === false);
-        const dentroDeSLA = comSLA.filter(t => t.dentroSLA === true).length;
+        // SLA real: inclui concluidos, cancelados e recusados
+        const statusFechado = ['Concluido', 'Cancelado', 'Recusado'];
+        const comSLA = list.filter(t => t.dentroSLA === true || t.dentroSLA === false || statusFechado.includes(t.status));
+        const dentroDeSLA = comSLA.filter(t => t.dentroSLA === true || (t.dentroSLA == null && statusFechado.includes(t.status))).length;
         const sla = comSLA.length > 0 ? Math.round((dentroDeSLA / comSLA.length) * 100) : 0;
         const porTipo = {};
         list.forEach(t => {
