@@ -1861,6 +1861,20 @@ function updateBadge() {
           })
         });
       }
+      // Notificar Joao via DM Slack
+      fetch('/api/notify-slack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'notificar_joao_aprovacao',
+          ticket: t.id,
+          titulo: t.titulo,
+          nome: t.nome,
+          itens: t.itens_brinde || '',
+          aprovado: true,
+          aprovadoPor: auth.currentUser?.email || 'Gestor'
+        })
+      });
       document.getElementById('aprovacao-box').style.display = 'none';
       showToast('✅ Brinde aprovado! Colaborador notificado no Slack.');
       closeModal();
