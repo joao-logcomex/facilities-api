@@ -1,4 +1,4 @@
-// api/notify-slack.js
+﻿// api/notify-slack.js
 // Notificações: conclusão, rastreio DHL, aprovação/recusa de brindes
 
 const GESTOR_EMAIL = 'leandro.oliveira@logcomex.com'; // Gestor principal de aprovação
@@ -645,6 +645,19 @@ export default async function handler(req, res) {
     }
 
     // ── Rastreio DHL ─────────────────────────────────────────
+    else if (tipo === 'notificar_joao_aprovacao') {
+      const JOAO_DM = 'D0B0NEKTYLA';
+      const aprovadoPor = req.body.aprovadoPor || 'Gestor';
+      const acao = aprovado ? 'APROVADO' : 'REJEITADO';
+      const textoJoao = acao + ' Brinde via painel | Chamado: ' + ticketNum + ' | Solicitante: ' + (nomeAlvo || nome || '-') + ' | Itens: ' + (itens || '-') + ' | Por: ' + aprovadoPor;
+      await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SLACK_BOT_TOKEN },
+        body: JSON.stringify({ channel: JOAO_DM, text: textoJoao })
+      });
+      return res.status(200).json({ ok: true });
+    }
+
     else if (tipo === 'rastreio') {
       const transp = transportadora || 'DHL';
       const trackUrl = transp === 'DHL'
