@@ -2,8 +2,7 @@
   "version": 2,
   "functions": {
     "api/relatorio.js": { "maxDuration": 30 },
-    "api/slack-comando.js": { "maxDuration": 30 },
-    "api/sync-pipefy-periodo.js": { "maxDuration": 60 }
+    "api/slack-comando.js": { "maxDuration": 30 }
   },
   "rewrites": [
     { "source": "/sobre", "destination": "/sobre.html" }
