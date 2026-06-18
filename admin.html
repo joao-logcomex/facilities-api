@@ -2056,8 +2056,10 @@ function nav(page, el) {
   const pageEl = document.getElementById('page-'+page);
   if (!pageEl) return; // página inválida
   pageEl.classList.add('active');
-  if (page === 'controle-ti') { if (window._estoqueTI) renderEstoqueTI(); }
-  if (page === 'controle-onboarding') { if (window._estoqueOnboarding) renderOnboarding(); }
+  if (page === 'controle-ti' || page === 'controle-onboarding') {
+    if (!window._estoqueTI) { carregarImob(); }
+    else { if (page === 'controle-ti') renderEstoqueTI(); else renderOnboarding(); }
+  }
   document.querySelectorAll('.nav-item, .nav-sub-item').forEach(i=>i.classList.remove('active'));
   if(el) el.classList.add('active');
   else {
