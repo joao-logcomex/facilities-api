@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -2621,6 +2621,14 @@ window.renderHistorico = renderHistorico;
       atualizarDropdownLocalizacoes();
       if (imobData.patrimonio.length) renderPatrimonio();
     });
+    onSnapshot(collection(db, 'estoque_ti'), snap => {
+      window._estoqueTI = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      if (document.getElementById('grid-estoque-ti')) renderEstoqueTI();
+    });
+    onSnapshot(collection(db, 'estoque_onboarding'), snap => {
+      window._estoqueOnboarding = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      if (document.getElementById('grid-onboarding')) renderOnboarding();
+    });
     onSnapshot(collection(db, 'imob_sublocalizacoes'), snap => {
       imobData.sublocalizacoes = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
       if (typeof renderSublocalizacoes === 'function') renderSublocalizacoes();
@@ -2788,6 +2796,105 @@ window.renderHistorico = renderHistorico;
     }).join('');
   }
 
+﻿  // ESTOQUE TI
+  function renderEstoqueTI() {
+    const grid = document.getElementById('grid-estoque-ti');
+    const stats = document.getElementById('stats-estoque-ti');
+    if (!grid) return;
+    const data = (window._estoqueTI || []).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
+    const fmt = (n) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
+    const totalQtd = data.reduce((s,i) => s + (i.quantidade||0), 0);
+    const alertas = data.filter(i => (i.quantidade||0) < (i.minimo||0)).length;
+    const valorTotal = data.reduce((s,i) => s + ((i.quantidade||0) * (i.valor||0)), 0);
+    const sc = [
+      {l:'Tipos de item', v:data.length, c:'var(--purple)', sub:'cadastrados'},
+      {l:'Total em estoque', v:totalQtd, c:'#16A34A', sub:'unidades'},
+      {l:'Alertas', v:alertas, c:alertas>0?'#DC2626':'#16A34A', sub:'abaixo do minimo'},
+      {l:'Valor estimado', v:fmt(valorTotal), c:'var(--ink)', sub:'em estoque', big:true},
+    ];
+    if (stats) stats.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem">' + sc.map(s => '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem"><div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">'+s.l+'</div><div style="font-size:'+(s.big?'16px':'22px')+';font-weight:700;font-family:\'Funnel Display\',sans-serif;color:'+s.c+';line-height:1">'+s.v+'</div><div style="font-size:11px;color:var(--ink3);margin-top:4px">'+s.sub+'</div></div>').join('') + '</div>';
+    if (!data.length) { grid.innerHTML = '<div class="imob-empty"><div class="imob-empty-icon">🖥️</div><div>Nenhum item cadastrado</div></div>'; return; }
+    grid.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">' + data.map(item => {
+      const al = (item.quantidade||0) < (item.minimo||0);
+      return '<div style="background:var(--surface);border:1px solid '+(al?'rgba(220,38,38,0.3)':'var(--border)')+';border-radius:14px;padding:1.1rem;cursor:pointer" onclick="abrirMovTI(\''+item._id+'\')"><div style="font-size:1.8rem;margin-bottom:8px">'+(item.emoji||'📦')+'</div><div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px">'+(item.nome||'—')+'</div><div style="font-size:28px;font-weight:700;font-family:\'Funnel Display\',sans-serif;color:'+(al?'#DC2626':'#6613D0')+';line-height:1">'+(item.quantidade||0)+'</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">unidades · min: '+(item.minimo||0)+'</div>'+(al?'<div style="font-size:11px;color:#DC2626;font-weight:600;margin-top:6px">Abaixo do minimo</div>':'')+(item.valor?'<div style="font-size:11px;color:var(--ink3);margin-top:4px">R$ '+Number(item.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})+' cada</div>':'')+'</div>';
+    }).join('') + '</div>';
+  }
+  // ONBOARDING
+  function renderOnboarding() {
+    const grid = document.getElementById('grid-onboarding');
+    const stats = document.getElementById('stats-onboarding');
+    if (!grid) return;
+    const data = window._estoqueOnboarding || [];
+    const camisetas = data.filter(i => i.nome && i.nome.startsWith('Camiseta')).sort((a,b) => {
+      const ord = ['PP','P','M','G','GG','XG','XXG'];
+      return ord.indexOf(a.nome.replace('Camiseta ','')) - ord.indexOf(b.nome.replace('Camiseta ',''));
+    });
+    const outros = data.filter(i => !i.nome || !i.nome.startsWith('Camiseta'));
+    const totalQtd = data.reduce((s,i) => s + (i.quantidade||0), 0);
+    const alertas = data.filter(i => (i.quantidade||0) === 0).length;
+    const minKit = outros.length ? Math.min(...outros.map(i => i.quantidade||0)) : 0;
+    const sc2 = [
+      {l:'Kits possiveis', v:minKit, c:'var(--purple)', sub:'estimativa'},
+      {l:'Total itens', v:totalQtd, c:'#16A34A', sub:'unidades'},
+      {l:'Itens zerados', v:alertas, c:alertas>0?'#DC2626':'#16A34A', sub:'precisam reposicao'},
+      {l:'Tipos', v:data.length, c:'var(--ink)', sub:'cadastrados'},
+    ];
+    if (stats) stats.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem">' + sc2.map(s => '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem"><div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">'+s.l+'</div><div style="font-size:22px;font-weight:700;font-family:\'Funnel Display\',sans-serif;color:'+s.c+';line-height:1">'+s.v+'</div><div style="font-size:11px;color:var(--ink3);margin-top:4px">'+s.sub+'</div></div>').join('') + '</div>';
+    let html = '';
+    if (camisetas.length) {
+      html += '<div style="margin-bottom:1.25rem"><div style="font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Camisetas por tamanho</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">' + camisetas.map(item => { const tam = item.nome.replace('Camiseta ',''); const al = (item.quantidade||0)===0; return '<div style="background:var(--surface);border:1px solid '+(al?'rgba(220,38,38,0.3)':'var(--border)')+';border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer" onclick="abrirMovOnb(\''+item._id+'\')"><div style="font-size:11px;font-weight:600;color:var(--ink3)">'+tam+'</div><div style="font-size:22px;font-weight:700;font-family:\'Funnel Display\',sans-serif;color:'+(al?'#DC2626':'#6613D0')+'">'+( item.quantidade||0)+'</div></div>'; }).join('') + '</div></div>';
+    }
+    html += '<div style="font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Demais itens</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">' + outros.map(item => { const al = (item.quantidade||0)===0; return '<div style="background:var(--surface);border:1px solid '+(al?'rgba(220,38,38,0.3)':'var(--border)')+';border-radius:14px;padding:1rem;cursor:pointer" onclick="abrirMovOnb(\''+item._id+'\')"><div style="font-size:1.6rem;margin-bottom:8px">'+(item.emoji||'📦')+'</div><div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px">'+(item.nome||'—')+'</div><div style="font-size:26px;font-weight:700;font-family:\'Funnel Display\',sans-serif;color:'+(al?'#DC2626':'#6613D0')+'">'+( item.quantidade||0)+'</div><div style="font-size:11px;color:var(--ink3)">unidades</div></div>'; }).join('') + '</div>';
+    grid.innerHTML = html;
+  }
+  window.abrirMovTI = function(id) {
+    const item = (window._estoqueTI||[]).find(i => i._id === id);
+    if (!item) return;
+    const qtd = prompt('Movimentacao: "' + item.nome + '"\nAtual: ' + (item.quantidade||0) + '\n\n+ positivo = ENTRADA\n- negativo = SAIDA');
+    if (qtd === null || qtd === '') return;
+    const n = parseInt(qtd);
+    if (isNaN(n) || n === 0) { alert('Valor invalido'); return; }
+    const nova = Math.max(0, (item.quantidade||0) + n);
+    updateDoc(doc(db, 'estoque_ti', id), { quantidade: nova, updatedAt: new Date() })
+      .then(() => alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + nova))
+      .catch(e => alert('Erro: ' + e.message));
+  };
+
+  window.abrirMovOnb = function(id) {
+    const item = (window._estoqueOnboarding||[]).find(i => i._id === id);
+    if (!item) return;
+    const qtd = prompt('Movimentacao: "' + item.nome + '"\nAtual: ' + (item.quantidade||0) + '\n\n+ positivo = ENTRADA\n- negativo = SAIDA');
+    if (qtd === null || qtd === '') return;
+    const n = parseInt(qtd);
+    if (isNaN(n) || n === 0) { alert('Valor invalido'); return; }
+    const nova = Math.max(0, (item.quantidade||0) + n);
+    updateDoc(doc(db, 'estoque_onboarding', id), { quantidade: nova, updatedAt: new Date() })
+      .then(() => alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + nova))
+      .catch(e => alert('Erro: ' + e.message));
+  };
+
+  window.abrirModalEntregaKit = function() {
+    const dados = window._estoqueOnboarding || [];
+    if (!dados.length) { alert('Estoque nao carregado'); return; }
+    const colaborador = prompt('Nome do colaborador:');
+    if (!colaborador || !colaborador.trim()) return;
+    const tamRaw = prompt('Tamanho da camiseta (PP, P, M, G, GG, XG, XXG):');
+    if (!tamRaw) return;
+    const tam = tamRaw.toUpperCase().trim();
+    const itemCamisa = dados.find(i => i.nome === 'Camiseta ' + tam);
+    if (!itemCamisa) { alert('Tamanho ' + tam + ' nao encontrado'); return; }
+    if ((itemCamisa.quantidade||0) < 1) { alert('Sem estoque de Camiseta ' + tam); return; }
+    const outros = dados.filter(i => !i.nome.startsWith('Camiseta'));
+    const semEst = outros.filter(i => (i.quantidade||0) < 1);
+    if (semEst.length) { alert('Sem estoque de: ' + semEst.map(i=>i.nome).join(', ')); return; }
+    if (!confirm('Entregar kit para ' + colaborador + '?\nCamiseta ' + tam + ' + ' + outros.map(i=>i.nome).join(', '))) return;
+    const updates = [updateDoc(doc(db, 'estoque_onboarding', itemCamisa._id), { quantidade: (itemCamisa.quantidade||0)-1, updatedAt: new Date() })];
+    outros.forEach(i => updates.push(updateDoc(doc(db, 'estoque_onboarding', i._id), { quantidade: (i.quantidade||0)-1, updatedAt: new Date() })));
+    updates.push(addDoc(collection(db, 'estoque_saidas'), { tipo:'kit_onboarding', colaborador, tamanhoCamiseta:tam, itens:['Camiseta '+tam,...outros.map(i=>i.nome)], data:new Date(), criadoPor:window._auth?.currentUser?.email||'' }));
+    Promise.all(updates).then(() => alert('Kit entregue para ' + colaborador + '!')).catch(e => alert('Erro: ' + e.message));
+  };
+
+  window.abrirModalReporEstoque = function() { alert('Clique em qualquer item para registrar entrada ou saida.'); };
   window.filtrarPatrimonio = (v) => renderPatrimonio(v);
 
   // ── CATEGORIAS DE PATRIMÔNIO ──────────────────────────────
