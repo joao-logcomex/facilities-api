@@ -1183,13 +1183,6 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   window._auth = auth;
-  window._db = db;
-  window._collection = collection;
-  window._onSnapshot = onSnapshot;
-  window._doc = doc;
-  window._addDoc = addDoc;
-  window._updateDoc = updateDoc;
-  window._getDocs = getDocs;
   const db = getFirestore(app);
   window.db = db;
   window.auth = auth;
