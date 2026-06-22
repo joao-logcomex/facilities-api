@@ -86,14 +86,14 @@ export default async function handler(req, res) {
 
           if (estoqueDoc) {
             const dados = estoqueDoc.data();
-            const novoTotal = Math.max(0, (dados.estoque_total || 0) - qty);
-            const novoSede = Math.max(0, (dados.estoque_sede || 0) - qty);
+            const sedeAtual = typeof dados.sede === 'number' ? dados.sede : 0;
+            const novaSede = Math.max(0, sedeAtual - qty);
             await db.collection('estoque_brindes').doc(estoqueDoc.id).update({
-              estoque_total: novoTotal,
-              estoque_sede: novoSede,
-              updatedAt: new Date()
+              sede: novaSede,
+              ultimaAtualizacao: new Date(),
+              ultimaBaixaPor: 'aprovacao_gestor',
             });
-            console.log(`Estoque ${nomeItem}: -${qty} unidades → total: ${novoTotal}`);
+            console.log(`Estoque ${nomeItem}: -${qty} unidades → sede: ${novaSede}`);
           }
         }
       } catch(estoqueErr) {
