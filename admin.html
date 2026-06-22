@@ -1665,37 +1665,47 @@ function updateBadge() {
       const PRIO_COLOR = {Urgente:'#ef4444',Alta:'#FF6B2B',Média:'#f59e0b',Baixa:'#12b76a'};
       const PRIO_BG = {Urgente:'rgba(239,68,68,0.1)',Alta:'rgba(255,107,43,0.1)',Média:'rgba(245,158,11,0.1)',Baixa:'rgba(18,183,106,0.1)'};
       const CAT_COLOR_K = {'Manutenção':'#7215E9','Logística':'#0ea5e9','Brindes':'#FF6B2B','Suprimentos':'#f59e0b','Segurança':'#ef4444','Infraestrutura':'#8b5cf6','Plataformas':'#06b6d4','Acessos':'#10b981','Outros':'#94a3b8','Reforma':'#6613D0'};
-      container.innerHTML = tickets.map(t => {
-        const nome = t.nome || t.email || '';
-        const initials = nome.split(' ').filter(Boolean).slice(0,2).map(p=>p[0].toUpperCase()).join('') || '?';
-        const catLabel = CATLABELS[t.categoria] || t.categoria || '';
-        const catColor = CAT_COLOR_K[catLabel] || '#6613D0';
-        const prioColor = PRIO_COLOR[t.prioridade] || '#94a3b8';
-        const prioBg = PRIO_BG[t.prioridade] || 'rgba(148,163,184,0.1)';
-        const borderLeft = t.origem==='pipefy' ? 'border-left:3px solid #FF6B2B;' : t.prioridade==='Urgente' ? 'border-left:3px solid #ef4444;' : '';
-        const pipefyBadge = t.origem==='pipefy' ? '<span style="background:rgba(254,143,28,0.15);color:#FF6B2B;font-size:0.6rem;padding:1px 5px;border-radius:4px;font-weight:700;margin-left:4px;">Pipefy</span>' : '';
-        const prioBadge = t.prioridade ? '<span style="font-size:0.65rem;background:'+prioBg+';color:'+prioColor+';padding:1px 7px;border-radius:20px;font-weight:600;">'+t.prioridade+'</span>' : '';
-        // SLA bar
-        let slaHtml = '';
-        const slaAtivo = t.status !== 'Concluído' && t.status !== 'Cancelado';
+      const SLA_DIAS_K = {brindes:5,suprimentos:7,manutencao:60,reforma:60,seguranca:2,logistica:3,outros:7,infraestrutura:7,limpeza:7,plataformas:3,gestao:7};
+      const PRIO_COLOR = {Urgente:'#ef4444',Alta:'#FF6B2B','Média':'#f59e0b',Baixa:'#12b76a'};
+      const PRIO_BG = {Urgente:'rgba(239,68,68,0.1)',Alta:'rgba(255,107,43,0.1)','Média':'rgba(245,158,11,0.1)',Baixa:'rgba(18,183,106,0.1)'};
+      const CAT_COLOR_K = {'Manutenção':'#7215E9','Logística':'#0ea5e9','Brindes':'#FF6B2B','Suprimentos':'#f59e0b','Segurança':'#ef4444','Infraestrutura':'#8b5cf6','Plataformas':'#06b6d4','Acessos':'#10b981','Outros':'#94a3b8','Reforma':'#6613D0'};
+      container.innerHTML = tickets.map(function(t) {
+        var nome = t.nome || t.email || '';
+        var initials = nome.split(' ').filter(Boolean).slice(0,2).map(function(p){return p[0].toUpperCase();}).join('') || '?';
+        var catLabel = CATLABELS[t.categoria] || t.categoria || '';
+        var catColor = CAT_COLOR_K[catLabel] || '#6613D0';
+        var prioColor = PRIO_COLOR[t.prioridade] || '#94a3b8';
+        var prioBg = PRIO_BG[t.prioridade] || 'rgba(148,163,184,0.1)';
+        var borderLeft = t.origem==='pipefy' ? 'border-left:3px solid #FF6B2B;' : t.prioridade==='Urgente' ? 'border-left:3px solid #ef4444;' : '';
+        var pipefyBadge = t.origem==='pipefy' ? '<span style="background:rgba(254,143,28,0.15);color:#FF6B2B;font-size:0.6rem;padding:1px 5px;border-radius:4px;font-weight:700;margin-left:4px;">Pipefy</span>' : '';
+        var prioBadge = t.prioridade ? '<span style="font-size:0.65rem;background:'+prioBg+';color:'+prioColor+';padding:1px 7px;border-radius:20px;font-weight:600;">'+t.prioridade+'</span>' : '';
+        var slaHtml = '';
+        var slaAtivo = t.status !== 'Concluído' && t.status !== 'Cancelado';
         if (slaAtivo && t.data_abertura) {
-          const abertura = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura);
-          const diasSLA = SLA_DIAS_K[t.categoria] || 7;
-          const diasPassados = Math.floor((Date.now() - abertura.getTime()) / 86400000);
-          const pct = Math.min(100, Math.round((diasPassados / diasSLA) * 100));
-          const restantes = diasSLA - diasPassados;
-          const slaColor = pct >= 100 ? '#ef4444' : pct >= 75 ? '#f59e0b' : '#12b76a';
-          const slaLabel = pct >= 100 ? 'Vencido' : restantes === 1 ? '1 dia' : restantes > 0 ? restantes + ' dias' : 'Vencido';
+          var abertura = t.data_abertura && t.data_abertura.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura);
+          var diasSLA = SLA_DIAS_K[t.categoria] || 7;
+          var diasPassados = Math.floor((Date.now() - abertura.getTime()) / 86400000);
+          var pct = Math.min(100, Math.round((diasPassados / diasSLA) * 100));
+          var restantes = diasSLA - diasPassados;
+          var slaColor = pct >= 100 ? '#ef4444' : pct >= 75 ? '#f59e0b' : '#12b76a';
+          var slaLabel = pct >= 100 ? 'Vencido' : restantes === 1 ? '1 dia' : restantes > 0 ? restantes + ' dias' : 'Vencido';
           slaHtml = '<div style="margin-top:6px;"><div class="kanban-sla-bar"><div class="kanban-sla-fill" style="width:'+pct+'%;background:'+slaColor+';"></div></div><div style="font-size:0.62rem;color:'+slaColor+';font-weight:600;text-align:right;margin-top:1px;">'+slaLabel+'</div></div>';
         }
+        var footer = '<div class="kanban-card-footer"><div style="display:flex;align-items:center;gap:5px;"><div class="kanban-avatar">'+initials+'</div><span style="font-size:0.68rem;color:var(--ink3);">'+nome.split(' ')[0]+'</span></div><span style="font-size:0.68rem;background:rgba(102,19,208,0.07);color:'+catColor+';padding:1px 8px;border-radius:20px;font-weight:600;">'+catLabel+'</span></div>';
         if (t.categoria === 'logistica') {
-          const transBg = t.transportadora==='DHL'?'#fff3cd':t.transportadora==='Uber Flash'?'#e8f8ef':'#d1e7dd';
-          const transFg = t.transportadora==='DHL'?'#856404':t.transportadora==='Uber Flash'?'#12b76a':'#0a3622';
-          const tipoIcon = t.tipo_envio==='brinde'?'Brinde':t.tipo_envio==='kit'?'Kit':t.tipo_envio==='outro'?'Outro':'Equip.';
-          return '<div class="kanban-card" onclick="openT(\'+t._docId+\')" style="'+borderLeft+'"><div class="kanban-card-id"><span>#'+t.id+pipefyBadge+'</span>'+prioBadge+'</div><div class="kanban-card-title">'+(t.titulo||'')+'</div>'+(t.transportadora?'<div style="margin:4px 0;font-size:0.72rem;"><span style="background:'+transBg+';color:'+transFg+';padding:1px 7px;border-radius:10px;font-weight:700;font-size:0.68rem;">'+t.transportadora+'</span> <span style="color:var(--ink3);">'+tipoIcon+'</span></div>':'')+'<div class="kanban-card-footer"><div style="display:flex;align-items:center;gap:5px;"><div class="kanban-avatar">'+initials+'</div><span style="font-size:0.68rem;color:var(--ink3);">'+(t.destinatario||nome).split(' ')[0]+'</span></div><span style="font-size:0.68rem;background:rgba(14,165,233,0.1);color:#0ea5e9;padding:1px 8px;border-radius:20px;font-weight:600;">Logística</span></div>'+slaHtml+'</div>';
+          var transBg = t.transportadora==='DHL'?'#fff3cd':t.transportadora==='Uber Flash'?'#e8f8ef':'#d1e7dd';
+          var transFg = t.transportadora==='DHL'?'#856404':t.transportadora==='Uber Flash'?'#12b76a':'#0a3622';
+          var tipoIcon = t.tipo_envio==='brinde'?'Brinde':t.tipo_envio==='kit'?'Kit':t.tipo_envio==='outro'?'Outro':'Equip.';
+          var transHtml = t.transportadora ? '<div style="margin:4px 0;font-size:0.72rem;"><span style="background:'+transBg+';color:'+transFg+';padding:1px 7px;border-radius:10px;font-weight:700;font-size:0.68rem;">'+t.transportadora+'</span> <span style="color:var(--ink3);">'+tipoIcon+'</span></div>' : '';
+          var destNome = t.destinatario ? t.destinatario.split(' ')[0] : nome.split(' ')[0];
+          footer = '<div class="kanban-card-footer"><div style="display:flex;align-items:center;gap:5px;"><div class="kanban-avatar">'+initials+'</div><span style="font-size:0.68rem;color:var(--ink3);">'+destNome+'</span></div><span style="font-size:0.68rem;background:rgba(14,165,233,0.1);color:#0ea5e9;padding:1px 8px;border-radius:20px;font-weight:600;">Logística</span></div>';
+          return '<div class="kanban-card" data-id="'+t._docId+'" style="'+borderLeft+'"><div class="kanban-card-id"><span>#'+t.id+pipefyBadge+'</span>'+prioBadge+'</div><div class="kanban-card-title">'+(t.titulo||'')+'</div>'+transHtml+footer+slaHtml+'</div>';
         }
-        return '<div class="kanban-card" onclick="openT(\'+t._docId+\')" style="'+borderLeft+'"><div class="kanban-card-id"><span>#'+t.id+pipefyBadge+'</span>'+prioBadge+'</div><div class="kanban-card-title">'+(t.titulo||'')+'</div><div class="kanban-card-footer"><div style="display:flex;align-items:center;gap:5px;"><div class="kanban-avatar">'+initials+'</div><span style="font-size:0.68rem;color:var(--ink3);">'+nome.split(' ')[0]+'</span></div><span style="font-size:0.68rem;background:rgba(102,19,208,0.07);color:'+catColor+';padding:1px 8px;border-radius:20px;font-weight:600;">'+catLabel+'</span></div>'+slaHtml+'</div>';
+        return '<div class="kanban-card" data-id="'+t._docId+'" style="'+borderLeft+'"><div class="kanban-card-id"><span>#'+t.id+pipefyBadge+'</span>'+prioBadge+'</div><div class="kanban-card-title">'+(t.titulo||'')+'</div>'+footer+slaHtml+'</div>';
       }).join('');
+      container.querySelectorAll('.kanban-card[data-id]').forEach(function(el) {
+        el.addEventListener('click', function() { openT(el.dataset.id); });
+      });
     setupKanbanScrollbar();
   }
 
