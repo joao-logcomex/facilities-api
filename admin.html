@@ -1169,7 +1169,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, collection, doc, updateDoc, deleteDoc, orderBy, query, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, doc, updateDoc, deleteDoc, addDoc, orderBy, query, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCczKnSawfHiAPuMjY2L80ww_wtBMJJY30",
@@ -1185,6 +1185,9 @@
   window._auth = auth;
   const db = getFirestore(app);
   window.db = db;
+  window._doc = doc;
+  window._updateDoc = updateDoc;
+  window._addDoc = addDoc;
   window.auth = auth;
   const ADMINS = ['christian.bertolino@logcomex.com','joao.faria@logcomex.com','henrique.silva@logcomex.com','adriano.martins@logcomex.com','daniel.alle@logcomex.com'];
 const VIEWERS = ['leandro.oliveira@logcomex.com']; // Acesso somente leitura
@@ -2859,7 +2862,7 @@ window.renderHistorico = renderHistorico;
     const n = parseInt(qtd);
     if (isNaN(n) || n === 0) { alert('Valor invalido'); return; }
     const nova = Math.max(0, (item.quantidade||0) + n);
-    updateDoc(doc(db, 'estoque_ti', id), { quantidade: nova, updatedAt: new Date() })
+    window._updateDoc(window._doc(window.db, 'estoque_ti', id), { quantidade: nova, updatedAt: new Date() })
       .then(() => alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + nova))
       .catch(e => alert('Erro: ' + e.message));
   };
@@ -2872,7 +2875,7 @@ window.renderHistorico = renderHistorico;
     const n = parseInt(qtd);
     if (isNaN(n) || n === 0) { alert('Valor invalido'); return; }
     const nova = Math.max(0, (item.quantidade||0) + n);
-    updateDoc(doc(db, 'estoque_onboarding', id), { quantidade: nova, updatedAt: new Date() })
+    window._updateDoc(window._doc(window.db, 'estoque_onboarding', id), { quantidade: nova, updatedAt: new Date() })
       .then(() => alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + nova))
       .catch(e => alert('Erro: ' + e.message));
   };
@@ -2892,9 +2895,9 @@ window.renderHistorico = renderHistorico;
     const semEst = outros.filter(i => (i.quantidade||0) < 1);
     if (semEst.length) { alert('Sem estoque de: ' + semEst.map(i=>i.nome).join(', ')); return; }
     if (!confirm('Entregar kit para ' + colaborador + '?\nCamiseta ' + tam + ' + ' + outros.map(i=>i.nome).join(', '))) return;
-    const updates = [updateDoc(doc(db, 'estoque_onboarding', itemCamisa._id), { quantidade: (itemCamisa.quantidade||0)-1, updatedAt: new Date() })];
-    outros.forEach(i => updates.push(updateDoc(doc(db, 'estoque_onboarding', i._id), { quantidade: (i.quantidade||0)-1, updatedAt: new Date() })));
-    updates.push(addDoc(collection(db, 'estoque_saidas'), { tipo:'kit_onboarding', colaborador, tamanhoCamiseta:tam, itens:['Camiseta '+tam,...outros.map(i=>i.nome)], data:new Date(), criadoPor:window._auth?.currentUser?.email||'' }));
+    const updates = [window._updateDoc(window._doc(window.db, 'estoque_onboarding', itemCamisa._id), { quantidade: (itemCamisa.quantidade||0)-1, updatedAt: new Date() })];
+    outros.forEach(i => updates.push(window._updateDoc(window._doc(window.db, 'estoque_onboarding', i._id), { quantidade: (i.quantidade||0)-1, updatedAt: new Date() })));
+    updates.push(window._addDoc(collection(db, 'estoque_saidas'), { tipo:'kit_onboarding', colaborador, tamanhoCamiseta:tam, itens:['Camiseta '+tam,...outros.map(i=>i.nome)], data:new Date(), criadoPor:window._auth?.currentUser?.email||'' }));
     Promise.all(updates).then(() => alert('Kit entregue para ' + colaborador + '!')).catch(e => alert('Erro: ' + e.message));
   };
 
