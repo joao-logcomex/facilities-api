@@ -1107,6 +1107,44 @@
     <div id="historico-container"><div style="text-align:center;padding:3rem;color:var(--ink3);">Clique em Atualizar para carregar...</div></div>
   </div>
 
+
+<!-- ═══ MODAL ESTOQUE TI ═══ -->
+<div class="imob-modal" id="modal-estoque-ti" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:none;align-items:center;justify-content:center;">
+  <div class="imob-modal-box" style="width:100%;max-width:420px;padding:1.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+      <div style="font-size:1.05rem;font-weight:700;color:var(--ink)" id="mti-title">Entrada de estoque</div>
+      <button onclick="fecharModalTI()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--ink3);line-height:1;">✕</button>
+    </div>
+    <!-- Abas -->
+    <div style="display:flex;gap:6px;margin-bottom:1.25rem;background:var(--bg2);border-radius:10px;padding:4px;">
+      <button id="mti-tab-entrada" onclick="trocarAbaTI('entrada')" style="flex:1;padding:7px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#6613D0;color:#fff;">+ Entrada</button>
+      <button id="mti-tab-saida" onclick="trocarAbaTI('saida')" style="flex:1;padding:7px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--ink2);">↑ Saída</button>
+    </div>
+    <!-- Item -->
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:12px;font-weight:600;color:var(--ink3);display:block;margin-bottom:6px;">ITEM</label>
+      <select id="mti-item" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--ink);font-size:14px;"></select>
+    </div>
+    <!-- Quantidade -->
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:12px;font-weight:600;color:var(--ink3);display:block;margin-bottom:6px;">QUANTIDADE</label>
+      <input id="mti-qtd" type="number" min="1" value="1" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--ink);font-size:14px;box-sizing:border-box;" />
+    </div>
+    <!-- Observação -->
+    <div style="margin-bottom:1.5rem;">
+      <label style="font-size:12px;font-weight:600;color:var(--ink3);display:block;margin-bottom:6px;">OBSERVAÇÃO <span style="font-weight:400;color:var(--ink3)">(opcional)</span></label>
+      <input id="mti-obs" type="text" placeholder="Ex: NF 12345, devolução, etc." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--ink);font-size:14px;box-sizing:border-box;" />
+    </div>
+    <!-- Estoque atual -->
+    <div id="mti-preview" style="background:var(--bg2);border-radius:10px;padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--ink2);display:none;"></div>
+    <!-- Botões -->
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="fecharModalTI()" style="padding:9px 20px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--ink2);font-size:14px;font-weight:600;cursor:pointer;">Cancelar</button>
+      <button id="mti-btn-salvar" onclick="salvarMovTI()" style="padding:9px 20px;border:none;border-radius:10px;background:#6613D0;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Confirmar entrada</button>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <div class="modal-overlay" id="modal-ov" onclick="closeM(event)">
@@ -2854,6 +2892,100 @@ window.renderHistorico = renderHistorico;
     html += '<div style="font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Demais itens</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">' + outros.map(item => { const al = (item.quantidade||0)===0; return '<div style="background:var(--surface);border:1px solid '+(al?'rgba(220,38,38,0.3)':'var(--border)')+';border-radius:14px;padding:1rem;cursor:pointer" onclick="abrirMovOnb(\''+item._id+'\')"><div style="font-size:1.6rem;margin-bottom:8px">'+(item.emoji||'📦')+'</div><div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px">'+(item.nome||'—')+'</div><div style="font-size:26px;font-weight:700;font-family:\'Funnel Display\',sans-serif;color:'+(al?'#DC2626':'#6613D0')+'">'+( item.quantidade||0)+'</div><div style="font-size:11px;color:var(--ink3)">unidades</div></div>'; }).join('') + '</div>';
     grid.innerHTML = html;
   }
+  // ═══ MODAL ESTOQUE TI ═══
+  let _mtiAba = 'entrada';
+
+  window.abrirModalEstoqueTI = function(aba) {
+    const modal = document.getElementById('modal-estoque-ti');
+    if (!modal) return;
+    _mtiAba = aba || 'entrada';
+    // Popular select de itens
+    const items = (window._estoqueTI || []).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
+    const sel = document.getElementById('mti-item');
+    sel.innerHTML = items.map(i => `<option value="${i._id}">${i.emoji||'📦'} ${i.nome} (atual: ${i.quantidade||0})</option>`).join('');
+    document.getElementById('mti-qtd').value = 1;
+    document.getElementById('mti-obs').value = '';
+    trocarAbaTI(_mtiAba);
+    atualizarPreviewTI();
+    sel.onchange = atualizarPreviewTI;
+    document.getElementById('mti-qtd').oninput = atualizarPreviewTI;
+    modal.style.display = 'flex';
+  };
+
+  window.fecharModalTI = function() {
+    const modal = document.getElementById('modal-estoque-ti');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.trocarAbaTI = function(aba) {
+    _mtiAba = aba;
+    const tabE = document.getElementById('mti-tab-entrada');
+    const tabS = document.getElementById('mti-tab-saida');
+    const btn = document.getElementById('mti-btn-salvar');
+    const title = document.getElementById('mti-title');
+    if (aba === 'entrada') {
+      tabE.style.background = '#6613D0'; tabE.style.color = '#fff';
+      tabS.style.background = 'transparent'; tabS.style.color = 'var(--ink2)';
+      btn.textContent = 'Confirmar entrada';
+      btn.style.background = '#6613D0';
+      title.textContent = 'Entrada de estoque';
+    } else {
+      tabS.style.background = '#6613D0'; tabS.style.color = '#fff';
+      tabE.style.background = 'transparent'; tabE.style.color = 'var(--ink2)';
+      btn.textContent = 'Confirmar saída';
+      btn.style.background = '#DC2626';
+      title.textContent = 'Saída de estoque';
+    }
+    atualizarPreviewTI();
+  };
+
+  window.atualizarPreviewTI = function() {
+    const sel = document.getElementById('mti-item');
+    const qtdEl = document.getElementById('mti-qtd');
+    const preview = document.getElementById('mti-preview');
+    if (!sel || !preview) return;
+    const id = sel.value;
+    const item = (window._estoqueTI||[]).find(i => i._id === id);
+    if (!item) { preview.style.display = 'none'; return; }
+    const qtd = parseInt(qtdEl?.value) || 0;
+    const atual = item.quantidade || 0;
+    const nova = _mtiAba === 'entrada' ? atual + qtd : Math.max(0, atual - qtd);
+    const cor = nova < (item.minimo||0) ? '#DC2626' : '#16A34A';
+    preview.style.display = 'block';
+    preview.innerHTML = `Estoque atual: <b>${atual}</b> → após movimentação: <b style="color:${cor}">${nova}</b> unidades`;
+  };
+
+  window.salvarMovTI = function() {
+    const sel = document.getElementById('mti-item');
+    const qtdEl = document.getElementById('mti-qtd');
+    const obsEl = document.getElementById('mti-obs');
+    const id = sel?.value;
+    const item = (window._estoqueTI||[]).find(i => i._id === id);
+    if (!item) { alert('Selecione um item'); return; }
+    const qtd = parseInt(qtdEl?.value);
+    if (!qtd || qtd < 1) { alert('Quantidade inválida'); return; }
+    const atual = item.quantidade || 0;
+    const nova = _mtiAba === 'entrada' ? atual + qtd : Math.max(0, atual - qtd);
+    if (_mtiAba === 'saida' && qtd > atual) {
+      alert('Quantidade maior que o estoque atual (' + atual + ')'); return;
+    }
+    const btn = document.getElementById('mti-btn-salvar');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    window._updateDoc(window._doc(window.db, 'estoque_ti', id), { quantidade: nova, updatedAt: new Date() })
+      .then(() => {
+        if (_mtiAba === 'saida') {
+          window._addDoc(collection(window.db, 'estoque_saidas'), {
+            tipo: 'saida_ti', item: item.nome, quantidade: qtd,
+            observacao: obsEl?.value || '', data: new Date(),
+            criadoPor: window._auth?.currentUser?.email || ''
+          }).catch(()=>{});
+        }
+        fecharModalTI();
+        alert((_mtiAba==='entrada'?'Entrada':'Saída') + ' registrada! Novo estoque: ' + nova);
+      })
+      .catch(e => { alert('Erro: ' + e.message); btn.disabled = false; btn.textContent = _mtiAba==='entrada'?'Confirmar entrada':'Confirmar saída'; });
+  };
+
   window.abrirMovTI = function(id) {
     const item = (window._estoqueTI||[]).find(i => i._id === id);
     if (!item) return;
