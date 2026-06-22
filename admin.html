@@ -875,6 +875,13 @@
     <!-- ═══ DASHBOARD BRINDES ═══ -->
     <div class="page" id="page-brindes-dash">
       <div class="topbar"><div class="page-title">🎁 Dashboard de Brindes</div></div>
+      <div id="brindes-welcome" style="background:linear-gradient(135deg,#FF6B2B 0%,#e45c10 50%,#b03a00 100%);border-radius:var(--radius);padding:1.5rem 1.75rem;margin-bottom:1.5rem;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+        <div>
+          <div style="font-size:1.25rem;font-weight:700;font-family:'Funnel Display',sans-serif;margin-bottom:4px;" id="brindes-welcome-title">🎁 Controle de Brindes</div>
+          <div style="font-size:0.82rem;opacity:0.8;" id="brindes-welcome-sub">Carregando dados...</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="brindes-welcome-pills"></div>
+      </div>
       <div style="padding:0 0.5rem;">
 
         <!-- Filtros de período -->
@@ -4369,13 +4376,32 @@ window.renderHistorico = renderHistorico;
 
     const kpisEl = document.getElementById('brindes-kpis');
     if (kpisEl) {
-      kpisEl.innerHTML = [
-        { n: total,      l: 'Total de solicitações', c: '#6613D0' },
-        { n: aguardando, l: 'Aguardando aprovação',  c: '#b45309' },
-        { n: aprovados,  l: 'Aprovados',             c: '#16a34a' },
-        { n: cancelados, l: 'Recusados',             c: '#dc2626' },
-        { n: taxaAprov + '%', l: 'Taxa de aprovação', c: '#6613D0' },
-      ].map(s => `<div class="imob-stat"><div class="imob-stat-num" style="color:${s.c};font-size:1.4rem;">${s.n}</div><div class="imob-stat-label">${s.l}</div></div>`).join('');
+      const kpiData = [
+        { n: total,           l: 'Solicitações',   c: '#6613D0', bg: 'rgba(102,19,208,0.08)', icon: '🎁' },
+        { n: aguardando,      l: 'Aguardando',     c: '#b45309', bg: 'rgba(217,119,6,0.08)',  icon: '⏳' },
+        { n: aprovados,       l: 'Aprovados',      c: '#16a34a', bg: 'rgba(22,163,74,0.08)',  icon: '✅' },
+        { n: cancelados,      l: 'Recusados',      c: '#dc2626', bg: 'rgba(220,38,38,0.08)',  icon: '❌' },
+        { n: taxaAprov + '%', l: 'Taxa aprovação', c: '#FF6B2B', bg: 'rgba(255,107,43,0.08)', icon: '📈' },
+      ];
+      kpisEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.5rem">' +
+        kpiData.map(s => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.2rem;position:relative;overflow:hidden;transition:transform .15s;cursor:default;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+          <div style="width:36px;height:36px;border-radius:10px;background:${s.bg};display:flex;align-items:center;justify-content:center;font-size:1rem;margin-bottom:0.75rem;">${s.icon}</div>
+          <div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">${s.l}</div>
+          <div style="font-size:1.7rem;font-weight:700;font-family:'Funnel Display',sans-serif;color:${s.c};line-height:1;">${s.n}</div>
+          <div style="position:absolute;bottom:-14px;right:-14px;width:60px;height:60px;border-radius:50%;background:${s.c};opacity:0.06;"></div>
+        </div>`).join('') + '</div>';
+      // Atualizar welcome card
+      const wTitle = document.getElementById('brindes-welcome-title');
+      const wSub = document.getElementById('brindes-welcome-sub');
+      const wPills = document.getElementById('brindes-welcome-pills');
+      if (wTitle) wTitle.textContent = periodo === 'mes' ? '🎁 ' + mesesNomes[mesSel] + ' ' + anoMesSel : periodo === 'ano' ? '🎁 Brindes ' + anoSel : '🎁 Todos os períodos';
+      if (wSub) wSub.textContent = total + ' solicitações · ' + aprovados + ' aprovadas · ' + cancelados + ' recusadas';
+      if (wPills) {
+        const pills = [];
+        pills.push('<span style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:5px 12px;font-size:0.78rem;font-weight:600;">🎯 ' + taxaAprov + '% aprovação</span>');
+        if (aguardando > 0) pills.push('<span style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.35);border-radius:20px;padding:5px 12px;font-size:0.78rem;font-weight:600;">⏳ ' + aguardando + ' pendente' + (aguardando>1?'s':'') + '</span>');
+        wPills.innerHTML = pills.join('');
+      }
     }
 
     // ── Ranking duplo: itens (sistema) + pessoas (Pipefy + sistema) ──
@@ -4457,13 +4483,15 @@ window.renderHistorico = renderHistorico;
     const chartEl = document.getElementById('brindes-chart-mes');
     if (chartEl && window.Chart) {
       if (chartEl._chartInstance) chartEl._chartInstance.destroy();
+      const FONT = { family: 'Poppins', size: 11 };
+      const TOOLTIP = { backgroundColor: '#1e1b4b', titleFont: { family: 'Poppins', size: 12, weight: '600' }, bodyFont: { family: 'Poppins', size: 11 }, padding: 10, cornerRadius: 8, displayColors: false };
       chartEl._chartInstance = new Chart(chartEl.getContext('2d'), {
         type: 'bar',
         data: {
           labels: ultimos6.map(([k]) => mesesLabels[k.split('-')[1]] + '/' + k.split('-')[0].slice(2)),
-          datasets: [{ label: 'Solicitações', data: ultimos6.map(([,v]) => v), backgroundColor: 'rgba(102,19,208,0.7)', borderRadius: 6 }]
+          datasets: [{ label: 'Solicitações', data: ultimos6.map(([,v]) => v), backgroundColor: ultimos6.map((_,i,a) => i===a.length-1 ? '#FF6B2B' : 'rgba(255,107,43,0.5)'), borderRadius: 8, borderSkipped: false, hoverBackgroundColor: '#FF6B2B' }]
         },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        options: { responsive: true, plugins: { legend: { display: false }, tooltip: { ...TOOLTIP, callbacks: { label: ctx => ' ' + ctx.raw + ' solicitações' } } }, scales: { y: { beginAtZero: true, ticks: { font: FONT, stepSize: 1 }, grid: { color: 'rgba(255,107,43,0.06)' } }, x: { ticks: { font: FONT }, grid: { display: false } } } }
       });
     }
 
