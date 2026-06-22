@@ -1662,10 +1662,6 @@ function updateBadge() {
       cntEl.textContent = tickets.length;
       if (!tickets.length) { container.innerHTML = '<div class="kanban-empty">Nenhum chamado</div>'; return; }
       const SLA_DIAS_K = {brindes:5,suprimentos:7,manutencao:60,reforma:60,seguranca:2,logistica:3,outros:7,infraestrutura:7,limpeza:7,plataformas:3,gestao:7};
-      const PRIO_COLOR = {Urgente:'#ef4444',Alta:'#FF6B2B',Média:'#f59e0b',Baixa:'#12b76a'};
-      const PRIO_BG = {Urgente:'rgba(239,68,68,0.1)',Alta:'rgba(255,107,43,0.1)',Média:'rgba(245,158,11,0.1)',Baixa:'rgba(18,183,106,0.1)'};
-      const CAT_COLOR_K = {'Manutenção':'#7215E9','Logística':'#0ea5e9','Brindes':'#FF6B2B','Suprimentos':'#f59e0b','Segurança':'#ef4444','Infraestrutura':'#8b5cf6','Plataformas':'#06b6d4','Acessos':'#10b981','Outros':'#94a3b8','Reforma':'#6613D0'};
-      const SLA_DIAS_K = {brindes:5,suprimentos:7,manutencao:60,reforma:60,seguranca:2,logistica:3,outros:7,infraestrutura:7,limpeza:7,plataformas:3,gestao:7};
       const PRIO_COLOR = {Urgente:'#ef4444',Alta:'#FF6B2B','Média':'#f59e0b',Baixa:'#12b76a'};
       const PRIO_BG = {Urgente:'rgba(239,68,68,0.1)',Alta:'rgba(255,107,43,0.1)','Média':'rgba(245,158,11,0.1)',Baixa:'rgba(18,183,106,0.1)'};
       const CAT_COLOR_K = {'Manutenção':'#7215E9','Logística':'#0ea5e9','Brindes':'#FF6B2B','Suprimentos':'#f59e0b','Segurança':'#ef4444','Infraestrutura':'#8b5cf6','Plataformas':'#06b6d4','Acessos':'#10b981','Outros':'#94a3b8','Reforma':'#6613D0'};
