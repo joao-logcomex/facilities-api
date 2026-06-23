@@ -237,7 +237,9 @@
   .kanban-board::-webkit-scrollbar-thumb:hover { background: #5B11BA; }
   @media (max-width: 1400px) { .kanban-board { grid-template-columns: repeat(5, 280px); } }
   @media (max-width: 1000px) { .kanban-board { grid-template-columns: repeat(5, 280px); } }
-  .kanban-col { background: var(--surface2); border-radius: var(--radius); padding: 1rem; min-height: 400px; min-width: 0; }
+  .kanban-col { background: var(--surface2); border-radius: var(--radius); overflow: hidden; min-height: 400px; min-width: 0; }
+  .kanban-col-top { padding: 0.7rem 1rem; display: flex; align-items: center; justify-content: space-between; }
+  .kanban-col-body { padding: 0.75rem; }
 
   /* ── Barra de scroll customizada do Kanban (slider) ── */
   .kanban-scrollbar-wrap { background: var(--surface2); border-radius: 100px; height: 14px; position: relative; cursor: pointer; margin-bottom: 1rem; user-select: none; }
@@ -254,7 +256,11 @@
   .kanban-col-dot { width: 8px; height: 8px; border-radius: 50%; }
   .kanban-col-count { background: var(--surface3); color: var(--ink3); font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 100px; }
   .kanban-cards { display: flex; flex-direction: column; gap: 8px; }
-  .kanban-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem; cursor: pointer; transition: all 0.15s; position: relative; }
+  .kanban-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 0.9rem; cursor: pointer; transition: all 0.15s; position: relative; }
+  .kanban-avatar { width: 24px; height: 24px; border-radius: 50%; background: rgba(102,19,208,0.1); color: var(--purple); font-size: 0.6rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .kanban-sla-bar { height: 3px; border-radius: 2px; margin-top: 6px; background: var(--surface3); overflow: hidden; }
+  .kanban-sla-fill { height: 100%; border-radius: 2px; }
+  .kanban-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--border); }
   .kanban-card:hover { box-shadow: 0 4px 16px rgba(102,19,208,0.12); transform: translateY(-1px); border-color: rgba(102,19,208,0.2); }
   .kanban-card-id { font-size: 0.7rem; font-weight: 700; color: var(--purple); margin-bottom: 4px; }
   .kanban-card-title { font-size: 0.83rem; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 6px; }
@@ -704,11 +710,11 @@
       </div>
     </div>
     <div class="kanban-board" id="kanban-board">
-      <div class="kanban-col" id="col-solicitacoes"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--info)"></span>Solicitações</div><span class="kanban-col-count" id="cnt-solicitacoes">0</span></div><div class="kanban-cards" id="cards-solicitacoes"></div></div>
-      <div class="kanban-col" id="col-aprovacao-cs"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:#f59e0b"></span>Aprovação Gestor CS</div><span class="kanban-col-count" id="cnt-aprovacao-cs">0</span></div><div class="kanban-cards" id="cards-aprovacao-cs"></div></div>
-      <div class="kanban-col" id="col-andamento"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--warning)"></span>Em andamento</div><span class="kanban-col-count" id="cnt-andamento">0</span></div><div class="kanban-cards" id="cards-andamento"></div></div>
-      <div class="kanban-col" id="col-concluido"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--success)"></span>Concluído</div><span class="kanban-col-count" id="cnt-concluido">0</span></div><div class="kanban-cards" id="cards-concluido"></div></div>
-      <div class="kanban-col" id="col-cancelado"><div class="kanban-col-header"><div class="kanban-col-title"><span class="kanban-col-dot" style="background:var(--ink3)"></span>Cancelado</div><span class="kanban-col-count" id="cnt-cancelado">0</span></div><div class="kanban-cards" id="cards-cancelado"></div></div>
+      <div class="kanban-col" id="col-solicitacoes"><div class="kanban-col-top" style="background:#6613D0"><span style="font-size:0.82rem;font-weight:700;color:#fff;">📬 Solicitações</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-solicitacoes">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-solicitacoes"></div></div></div>
+      <div class="kanban-col" id="col-aprovacao-cs"><div class="kanban-col-top" style="background:#8b5cf6"><span style="font-size:0.82rem;font-weight:700;color:#fff;">⏳ Aprovação CS</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-aprovacao-cs">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-aprovacao-cs"></div></div></div>
+      <div class="kanban-col" id="col-andamento"><div class="kanban-col-top" style="background:#FF6B2B"><span style="font-size:0.82rem;font-weight:700;color:#fff;">⚙️ Em andamento</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-andamento">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-andamento"></div></div></div>
+      <div class="kanban-col" id="col-concluido"><div class="kanban-col-top" style="background:#12b76a"><span style="font-size:0.82rem;font-weight:700;color:#fff;">✅ Concluído</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-concluido">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-concluido"></div></div></div>
+      <div class="kanban-col" id="col-cancelado"><div class="kanban-col-top" style="background:#94a3b8"><span style="font-size:0.82rem;font-weight:700;color:#fff;">🚫 Cancelado</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-cancelado">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-cancelado"></div></div></div>
     </div>
   </div>
 
@@ -1655,22 +1661,37 @@ function updateBadge() {
       if (!cntEl || !container) return;
       cntEl.textContent = tickets.length;
       if (!tickets.length) { container.innerHTML = '<div class="kanban-empty">Nenhum chamado</div>'; return; }
-      container.innerHTML = tickets.map(t => `
-        <div class="kanban-card" onclick="openT('${t._docId}')" style="${t.origem==='pipefy'?'border-left:3px solid #FF6B2B;':t.categoria==='logistica'?'border-left:3px solid #6613D0;':''}">
-          <div class="kanban-card-id">#${t.id} ${t.origem==='pipefy'?'<span style="background:rgba(254,143,28,0.15);color:#FF6B2B;font-size:0.65rem;padding:1px 5px;border-radius:4px;font-weight:700;">📌 Pipefy</span>':''}</div>
-          <div class="kanban-card-title">${t.titulo||''}</div>
-          ${t.categoria==='logistica' ? `
-          <div style="margin:5px 0;font-size:0.72rem;display:flex;flex-direction:column;gap:3px;">
-            ${t.transportadora ? `<span style="display:flex;align-items:center;gap:4px;"><span style="background:${t.transportadora==='DHL'?'#fff3cd':t.transportadora==='Uber Flash'?'#e8f8ef':'#d1e7dd'};color:${t.transportadora==='DHL'?'#856404':t.transportadora==='Uber Flash'?'#12b76a':'#0a3622'};padding:1px 7px;border-radius:10px;font-weight:700;font-size:0.68rem;">${t.transportadora}</span> <span style="color:var(--ink3);">${t.tipo_envio==='brinde'?'🎁 Brinde':t.tipo_envio==='kit'?'📦 Kit':t.tipo_envio==='outro'?'📋 Outro':'💻 Equip.'}</span></span>` : ''}
-            ${t.destinatario ? `<span style="color:var(--ink2);font-weight:500;">👤 ${t.destinatario.split(' ').slice(0,2).join(' ')}</span>` : ''}
-            ${t.item_enviado ? `<span style="color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">📦 ${t.item_enviado}</span>` : ''}
-          </div>` : `
-          <div class="kanban-card-meta">
-            <span class="kanban-prio kp-${t.prioridade}">${t.prioridade}</span>
-            <span>${t.fase_pipefy||(CATLABELS[t.categoria]||t.tipo_pipefy||t.categoria||'').trim()}</span>
-            ${t.nome ? `<span>· ${t.nome.split(' ')[0]}</span>` : ''}
-          </div>`}
-        </div>`).join('');
+      const SLA_DIAS_K = {brindes:5,suprimentos:7,manutencao:60,reforma:60,seguranca:2,logistica:3,outros:7,infraestrutura:7,limpeza:7,plataformas:3,gestao:7};
+      const PRIO_COR = {Urgente:'#ef4444',Alta:'#FF6B2B'};
+      container.innerHTML = tickets.map(t => {
+        const _nome = t.nome || t.email || '';
+        const _ini = _nome.split(' ').filter(Boolean).slice(0,2).map(p=>p[0].toUpperCase()).join('') || '?';
+        const _cat = CATLABELS[t.categoria] || t.categoria || '';
+        const _pBg = t.prioridade==='Urgente'?'rgba(239,68,68,0.1)':t.prioridade==='Alta'?'rgba(255,107,43,0.1)':t.prioridade==='Média'?'rgba(245,158,11,0.1)':'rgba(18,183,106,0.1)';
+        const _pCor = PRIO_COR[t.prioridade] || (t.prioridade==='Média'?'#f59e0b':'#12b76a');
+        const _bl = t.origem==='pipefy'?'border-left:3px solid #FF6B2B;':t.prioridade==='Urgente'?'border-left:3px solid #ef4444;':t.categoria==='logistica'?'border-left:3px solid #0ea5e9;':'';
+        const _pipefy = t.origem==='pipefy'?'<span style="background:rgba(254,143,28,0.15);color:#FF6B2B;font-size:0.65rem;padding:1px 5px;border-radius:4px;font-weight:700;">Pipefy</span>':'';
+        const _prio = t.prioridade?'<span style="font-size:0.65rem;background:'+_pBg+';color:'+_pCor+';padding:1px 7px;border-radius:20px;font-weight:600;">'+t.prioridade+'</span>':'';
+        let _sla = '';
+        if (t.status!=='Concluído' && t.status!=='Cancelado' && t.data_abertura) {
+          const _ab = t.data_abertura.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura);
+          const _dias = SLA_DIAS_K[t.categoria]||7;
+          const _pass = Math.floor((Date.now()-_ab.getTime())/86400000);
+          const _pct = Math.min(100,Math.round((_pass/_dias)*100));
+          const _rest = _dias-_pass;
+          const _sc = _pct>=100?'#ef4444':_pct>=75?'#f59e0b':'#12b76a';
+          const _sl = _pct>=100?'Vencido':_rest===1?'1 dia':_rest>0?_rest+' dias':'Vencido';
+          _sla = '<div class="kanban-sla-bar"><div class="kanban-sla-fill" style="width:'+_pct+'%;background:'+_sc+';"></div></div><div style="font-size:0.62rem;color:'+_sc+';font-weight:600;text-align:right;margin-top:1px;">'+_sl+'</div>';
+        }
+        const _footer = '<div class="kanban-card-footer"><div style="display:flex;align-items:center;gap:5px;"><div class="kanban-avatar">'+_ini+'</div><span style="font-size:0.68rem;color:var(--ink3);">'+_nome.split(' ')[0]+'</span></div><span style="font-size:0.68rem;background:rgba(102,19,208,0.07);color:#6613D0;padding:1px 8px;border-radius:20px;font-weight:600;">'+_cat+'</span></div>';
+        if (t.categoria==='logistica') {
+          const _tBg = t.transportadora==='DHL'?'#fff3cd':t.transportadora==='Uber Flash'?'#e8f8ef':'#d1e7dd';
+          const _tFg = t.transportadora==='DHL'?'#856404':t.transportadora==='Uber Flash'?'#12b76a':'#0a3622';
+          const _tInfo = t.transportadora?'<div style="margin:4px 0;font-size:0.72rem;"><span style="background:'+_tBg+';color:'+_tFg+';padding:1px 7px;border-radius:10px;font-weight:700;font-size:0.68rem;">'+t.transportadora+'</span></div>':'';
+          return '<div class="kanban-card" onclick="openT(''+t._docId+'')" style="'+_bl+'"><div class="kanban-card-id" style="display:flex;justify-content:space-between;">#'+t.id+' '+_pipefy+_prio+'</div><div class="kanban-card-title">'+(t.titulo||'')+'</div>'+_tInfo+_footer+(_sla?'<div>'+_sla+'</div>':'')+'</div>';
+        }
+        return '<div class="kanban-card" onclick="openT(''+t._docId+'')" style="'+_bl+'"><div class="kanban-card-id" style="display:flex;justify-content:space-between;">#'+t.id+' '+_pipefy+_prio+'</div><div class="kanban-card-title">'+(t.titulo||'')+'</div>'+_footer+(_sla?'<div>'+_sla+'</div>':'')+'</div>';
+      }).join('');
     });
 
     // ── Setup da barra de scroll customizada do Kanban (uma vez só) ──
