@@ -1688,10 +1688,13 @@ function updateBadge() {
           const _tBg = t.transportadora==='DHL'?'#fff3cd':t.transportadora==='Uber Flash'?'#e8f8ef':'#d1e7dd';
           const _tFg = t.transportadora==='DHL'?'#856404':t.transportadora==='Uber Flash'?'#12b76a':'#0a3622';
           const _tInfo = t.transportadora?'<div style="margin:4px 0;font-size:0.72rem;"><span style="background:'+_tBg+';color:'+_tFg+';padding:1px 7px;border-radius:10px;font-weight:700;font-size:0.68rem;">'+t.transportadora+'</span></div>':'';
-          return '<div class="kanban-card" onclick="openT(''+t._docId+'')" style="'+_bl+'"><div class="kanban-card-id" style="display:flex;justify-content:space-between;">#'+t.id+' '+_pipefy+_prio+'</div><div class="kanban-card-title">'+(t.titulo||'')+'</div>'+_tInfo+_footer+(_sla?'<div>'+_sla+'</div>':'')+'</div>';
+          return '<div class="kanban-card" data-id="'+t._docId+'" style="'+_bl+'"><div class="kanban-card-id" style="display:flex;justify-content:space-between;">#'+t.id+' '+_pipefy+_prio+'</div><div class="kanban-card-title">'+(t.titulo||'')+'</div>'+_tInfo+_footer+(_sla?'<div>'+_sla+'</div>':'')+'</div>';
         }
-        return '<div class="kanban-card" onclick="openT(''+t._docId+'')" style="'+_bl+'"><div class="kanban-card-id" style="display:flex;justify-content:space-between;">#'+t.id+' '+_pipefy+_prio+'</div><div class="kanban-card-title">'+(t.titulo||'')+'</div>'+_footer+(_sla?'<div>'+_sla+'</div>':'')+'</div>';
+        return '<div class="kanban-card" data-id="'+t._docId+'" style="'+_bl+'"><div class="kanban-card-id" style="display:flex;justify-content:space-between;">#'+t.id+' '+_pipefy+_prio+'</div><div class="kanban-card-title">'+(t.titulo||'')+'</div>'+_footer+(_sla?'<div>'+_sla+'</div>':'')+'</div>';
       }).join('');
+      container.querySelectorAll('.kanban-card[data-id]').forEach(function(el) {
+        el.addEventListener('click', function() { openT(el.getAttribute('data-id')); });
+      });
     });
 
     // ── Setup da barra de scroll customizada do Kanban (uma vez só) ──
