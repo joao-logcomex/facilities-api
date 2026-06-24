@@ -2722,9 +2722,15 @@ window.initPeriodo = initPeriodo;
 
 let chartsLog = {};
 function renderLogistica() {
-  const logT = allTickets.filter(t => t.transportadora === 'DHL' || t.transportadora === 'Correio' || t.transportadora === 'Uber Flash' || t.categoria === 'logistica');
+  const TRANSP = ['DHL','Correio','Uber Flash'];
+  const logT = allTickets.filter(t =>
+    t.categoria === 'logistica' ||
+    TRANSP.includes(t.transportadora) ||
+    TRANSP.includes(t.subcategoria) ||
+    (t.tipo_entrega === 'Envio para endereço' && t.categoria === 'brindes')
+  );
   const dhl = logT.filter(t => t.transportadora === 'DHL' || t.subcategoria === 'DHL').length;
-  const cor = logT.filter(t => t.transportadora === 'Correio' || t.subcategoria === 'Correio').length;
+  const cor = logT.filter(t => t.transportadora === 'Correio' || t.subcategoria === 'Correio' || (t.tipo_entrega === 'Envio para endereço' && t.categoria === 'brindes' && !t.transportadora)).length;
   const uber = logT.filter(t => t.transportadora === 'Uber Flash' || t.subcategoria === 'Uber Flash').length;
   document.getElementById('log-total-dhl').textContent = dhl;
   document.getElementById('log-total-correio').textContent = cor;
