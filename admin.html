@@ -2727,10 +2727,11 @@ function renderLogistica() {
     t.categoria === 'logistica' ||
     TRANSP.includes(t.transportadora) ||
     TRANSP.includes(t.subcategoria) ||
-    (t.tipo_entrega === 'Envio para endereço' && t.categoria === 'brindes')
+    t.tipo_entrega === 'Envio pelos Correios' ||
+    t.tipo_entrega === 'Envio para endereço'
   );
   const dhl = logT.filter(t => t.transportadora === 'DHL' || t.subcategoria === 'DHL').length;
-  const cor = logT.filter(t => t.transportadora === 'Correio' || t.subcategoria === 'Correio' || (t.tipo_entrega === 'Envio para endereço' && t.categoria === 'brindes' && !t.transportadora)).length;
+  const cor = logT.filter(t => t.transportadora === 'Correio' || t.subcategoria === 'Correio' || t.tipo_entrega === 'Envio pelos Correios' || (t.tipo_entrega === 'Envio para endereço' && !t.transportadora)).length;
   const uber = logT.filter(t => t.transportadora === 'Uber Flash' || t.subcategoria === 'Uber Flash').length;
   document.getElementById('log-total-dhl').textContent = dhl;
   document.getElementById('log-total-correio').textContent = cor;
