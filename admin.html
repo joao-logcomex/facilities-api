@@ -1614,6 +1614,19 @@ function updateBadge() {
     });
   }
 
+  function diasUteisPassados(dataInicio) {
+    var d = new Date(dataInicio); d.setHours(0,0,0,0);
+    var hoje = new Date(); hoje.setHours(0,0,0,0);
+    var count = 0;
+    var cur = new Date(d);
+    while (cur < hoje) {
+      var dow = cur.getDay();
+      if (dow >= 1 && dow <= 4) count++; // seg a qui — sexta/sáb/dom não contam
+      cur.setDate(cur.getDate()+1);
+    }
+    return count;
+  }
+
   function renderKanban() {
     // Mapeamento fase_pipefy → coluna
     const FASE_COL = {
@@ -1662,18 +1675,7 @@ function updateBadge() {
       cntEl.textContent = tickets.length;
       if (!tickets.length) { container.innerHTML = '<div class="kanban-empty">Nenhum chamado</div>'; return; }
       const SLA_DIAS_K = {brindes:5,suprimentos:7,manutencao:60,reforma:60,seguranca:2,logistica:3,outros:7,infraestrutura:7,limpeza:7,plataformas:3,gestao:7};
-      function diasUteisPassados(dataInicio) {
-        var d = new Date(dataInicio); d.setHours(0,0,0,0);
-        var hoje = new Date(); hoje.setHours(0,0,0,0);
-        var count = 0;
-        var cur = new Date(d);
-        while (cur < hoje) {
-          var dow = cur.getDay(); // 0=dom,1=seg,...,5=sex,6=sab
-          if (dow >= 1 && dow <= 4) count++; // só seg a qui
-          cur.setDate(cur.getDate()+1);
-        }
-        return count;
-      }
+
       const PRIO_COR = {Urgente:'#ef4444',Alta:'#FF6B2B'};
       container.innerHTML = tickets.map(t => {
         const _nome = t.nome || t.email || '';
