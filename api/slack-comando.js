@@ -529,7 +529,7 @@ async function publishHome(userId) {
     const snap = await db.collection('tickets')
       .where('slack_user_id', '==', userId)
       .where('status', 'in', ['Aberto', 'Em andamento', 'Aguardando aprovação'])
-      .orderBy('data_abertura', 'desc').limit(3).get();
+      .limit(3).get();
     chamadosAbertos = snap.docs.map(d => ({id: d.id, ...d.data()}));
   } catch(e) {}
   const STATUS_EMOJI = {'Aberto':'🔵','Em andamento':'🟠','Aguardando aprovação':'🟣'};
