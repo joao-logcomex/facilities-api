@@ -570,6 +570,17 @@ async function publishHome(userId) {
 }
 
 module.exports = async function handler(req, res) {
+  // Reset flag boas-vindas (admin only)
+  if (req.query?.reset_welcome === 'sim_joao') {
+    try {
+      const snap = await db.collection('slack_home_welcomed').get();
+      const batch = db.batch();
+      snap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      return res.status(200).json({ ok: true, deleted: snap.size });
+    } catch(e) { return res.status(500).json({ error: e.message }); }
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Use POST' });
 
   // Captura o corpo bruto pra verificação de assinatura
@@ -816,17 +827,6 @@ module.exports = async function handler(req, res) {
   }
 
   // ============================================================
-  // ROTA TEMP: reset flag boas-vindas (só admin)
-  if (req.query?.reset_welcome === 'sim_joao') {
-    try {
-      const snap = await db.collection('slack_home_welcomed').get();
-      const batch = db.batch();
-      snap.docs.forEach(d => batch.delete(d.ref));
-      await batch.commit();
-      return res.status(200).json({ ok: true, deleted: snap.size });
-    } catch(e) { return res.status(500).json({ error: e.message }); }
-  }
-
   // ROTA 6: URL verification (Slack pede challenge ao configurar Events API)
   // ============================================================
   if (body.type === 'url_verification') {
