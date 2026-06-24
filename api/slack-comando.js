@@ -13,6 +13,7 @@
 
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+const { publishHome } = require('./slack-home');
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -731,6 +732,33 @@ module.exports = async function handler(req, res) {
   }
 
   // ============================================================
+  // ROTA 4b: block_actions da Home Tab — botões de atalho
+  if (payload?.type === 'block_actions' && payload?.view?.type === 'home') {
+    const userId = payload.user?.id;
+    const action = payload.actions?.[0];
+    const categoria = action?.value;
+    res.status(200).send('');
+    if (!userId || !categoria) return;
+    const LABELS = {brinde:'🎁 Brindes',logistica:'📦 Logística',manutencao:'🔧 Manutenção',suprimentos:'📎 Suprimentos',acessos:'🔑 Acessos',outros:'📝 Outros'};
+    try {
+      const dmResp = await fetch('https://slack.com/api/conversations.open', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','Authorization':`Bearer ${SLACK_BOT_TOKEN}`},
+        body: JSON.stringify({users: userId})
+      });
+      const dmData = await dmResp.json();
+      const channel = dmData.channel?.id;
+      if (!channel) return;
+      await db.collection('slack_conversas').doc(userId).set({etapa:'aguardando_descricao',categoria,updatedAt:new Date()});
+      await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','Authorization':`Bearer ${SLACK_BOT_TOKEN}`},
+        body: JSON.stringify({channel, text:`Ótimo! Você escolheu *${LABELS[categoria]||categoria}*. Me conta com mais detalhes o que você precisa — pode falar à vontade! 😊`})
+      });
+    } catch(e) { console.error('home action:', e.message); }
+    return;
+  }
+
   // ROTA 5: block_actions (cliques em botões)
   //         - Aprovação/recusa de brinde → repassa pra /api/brinde-aprovacao
   //         - Botões do fluxo conversacional → trata aqui
@@ -777,6 +805,15 @@ module.exports = async function handler(req, res) {
   }
 
   // ============================================================
+  // ROTA 7b: app_home_opened → publicar Home Tab
+  // ============================================================
+  if (body.type === 'event_callback' && body.event?.type === 'app_home_opened') {
+    const userId = body.event.user;
+    res.status(200).send('');
+    try { await publishHome(userId); } catch(e) { console.error('home tab:', e.message); }
+    return;
+  }
+
   // ROTA 7: event_callback → mensagens recebidas em DM
   // ============================================================
   if (body.type === 'event_callback' && body.event) {
