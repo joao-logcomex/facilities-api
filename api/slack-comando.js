@@ -817,7 +817,7 @@ module.exports = async function handler(req, res) {
 
   // ============================================================
   // ROTA TEMP: reset flag boas-vindas (só admin)
-  if (req.method === 'GET' && req.query?.reset_welcome === 'sim_joao') {
+  if (req.query?.reset_welcome === 'sim_joao') {
     try {
       const snap = await db.collection('slack_home_welcomed').get();
       const batch = db.batch();
