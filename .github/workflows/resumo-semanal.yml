@@ -1,0 +1,14 @@
+name: Resumo Semanal Facilities
+
+on:
+  schedule:
+    - cron: '0 12 * * 1'  # toda segunda às 09:00 BRT (12:00 UTC)
+  workflow_dispatch:  # permite rodar manualmente
+
+jobs:
+  resumo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar resumo semanal
+        run: |
+          curl -s "https://facilities-api.vercel.app/api/resumo-semanal?token=resumo_joao_2024"
