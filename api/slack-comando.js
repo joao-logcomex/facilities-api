@@ -610,6 +610,48 @@ module.exports = async function handler(req, res) {
     } catch(e) { return res.status(500).json({ error: e.message }); }
   }
 
+  // Resumo semanal manual/automático
+  if (req.query?.token === 'resumo_joao_2024') {
+    try {
+      const hoje = new Date();
+      const umaSemanaAtras = new Date(hoje.getTime() - 7*24*60*60*1000);
+      const snap = await db.collection('tickets').where('data_abertura', '>=', umaSemanaAtras).get();
+      const tickets = snap.docs.map(d => d.data());
+      const total = tickets.length;
+      const abertos = tickets.filter(t => t.status === 'Aberto').length;
+      const concluidos = tickets.filter(t => t.status === 'Concluído').length;
+      const andamento = tickets.filter(t => t.status === 'Em andamento').length;
+      const urgentes = tickets.filter(t => t.prioridade === 'alta' && t.status !== 'Concluído').length;
+      const porCat = {};
+      tickets.forEach(t => { porCat[t.categoria] = (porCat[t.categoria]||0)+1; });
+      const topCats = Object.entries(porCat).sort((a,b)=>b[1]-a[1]).slice(0,3);
+      const semana = `${umaSemanaAtras.toLocaleDateString('pt-BR')} a ${hoje.toLocaleDateString('pt-BR')}`;
+      await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SLACK_BOT_TOKEN}` },
+        body: JSON.stringify({
+          channel: 'D0B0NEKTYLA',
+          text: '📊 Resumo semanal Facilities',
+          blocks: [
+            { type: 'header', text: { type: 'plain_text', text: '📊 Resumo Semanal · Facilities', emoji: true } },
+            { type: 'context', elements: [{ type: 'mrkdwn', text: `Semana de ${semana}` }] },
+            { type: 'divider' },
+            { type: 'section', fields: [
+              { type: 'mrkdwn', text: `*Total*\n${total} chamados` },
+              { type: 'mrkdwn', text: `*Concluídos*\n✅ ${concluidos}` },
+              { type: 'mrkdwn', text: `*Em aberto*\n🔵 ${abertos}` },
+              { type: 'mrkdwn', text: `*Em andamento*\n🟠 ${andamento}` },
+            ]},
+            ...(urgentes > 0 ? [{ type: 'section', text: { type: 'mrkdwn', text: `⚠️ *${urgentes} urgente${urgentes>1?'s':''} em aberto!*` } }] : []),
+            ...(topCats.length > 0 ? [{ type: 'section', text: { type: 'mrkdwn', text: `*Top categorias:*\n${topCats.map(([k,v])=>`• ${k}: ${v}`).join('\n')}` } }] : []),
+            { type: 'context', elements: [{ type: 'mrkdwn', text: '<https://facilities-api.vercel.app/admin.html|Ver painel completo →>' }] }
+          ]
+        })
+      });
+      return res.status(200).json({ ok: true, total });
+    } catch(e) { return res.status(500).json({ error: e.message }); }
+  }
+
   // Reset flag boas-vindas (admin only)
   if (req.query?.reset_welcome === 'sim_joao') {
     try {
