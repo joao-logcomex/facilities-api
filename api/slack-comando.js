@@ -929,6 +929,62 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  // ROTA 7b1: confirmação de chamado
+  if (body.type === 'block_actions') {
+    const actionId = body.actions?.[0]?.action_id;
+    const userId2 = body.user?.id || body.message?.bot_id;
+    const channel2 = body.channel?.id;
+
+    if (actionId === 'confirmar_chamado') {
+      res.status(200).send('');
+      try {
+        const estado2 = await getEstado(userId2);
+        if (!estado2 || estado2.etapa !== 'aguardando_confirmacao') {
+          await enviarMensagem(channel2, 'Não encontrei o chamado pendente. Tente novamente.');
+          return;
+        }
+        await limparEstado(userId2);
+        // Buscar dados do colaborador
+        const colabSnap = await db.collection('colaboradores').where('email', '==', body.user?.name ? body.user.name + '@logcomex.com' : '').limit(1).get();
+        const colab = colabSnap.docs[0]?.data() || {};
+        const ticket = await criarTicketNoFirebase({
+          categoria: estado2.categoria,
+          titulo: estado2.titulo || estado2.texto_original,
+          descricao: estado2.descricao || estado2.texto_original,
+          prioridade: estado2.prioridade || 'media',
+          nome: colab.nome || body.user?.name || 'Colaborador',
+          email: colab.email || '',
+          centroCusto: colab.centroCusto || '',
+          slack_user_id: userId2,
+          origem: 'slack',
+        });
+        await enviarMensagem(channel2, `✅ Chamado aberto!`, [
+          { type: 'section', text: { type: 'mrkdwn', text: `✅ *Chamado aberto com sucesso!*
+
+*Protocolo:* #${ticket.id}
+*Título:* ${estado2.titulo || estado2.texto_original}
+
+Você receberá atualizações por aqui. Qualquer dúvida é só chamar! 👍` } }
+        ]);
+      } catch(e) { console.error('confirmar_chamado:', e.message); await enviarMensagem(channel2, 'Erro ao abrir chamado: ' + e.message); }
+      return;
+    }
+
+    if (actionId === 'editar_chamado') {
+      res.status(200).send('');
+      await limparEstado(body.user?.id);
+      await enviarMensagem(channel2, 'Tudo bem! Me conta de novo o que você precisa e eu refaço o chamado. 😊');
+      return;
+    }
+
+    if (actionId === 'cancelar_chamado') {
+      res.status(200).send('');
+      await limparEstado(body.user?.id);
+      await enviarMensagem(channel2, 'Cancelado! Se precisar de algo é só falar. 👋');
+      return;
+    }
+  }
+
   // ROTA 7b2: block_actions — botões de atalho (Home Tab + boas-vindas)
   if (body.type === 'block_actions' && (body.view?.type === 'home' || ['bv_brinde','bv_logistica','bv_manutencao','bv_suprimentos','bv_acessos','bv_outros','home_brinde','home_logistica','home_manutencao','home_suprimentos','home_acessos','home_outros'].includes(body.actions?.[0]?.action_id))) {
     const userId = body.user?.id;
@@ -1069,12 +1125,20 @@ RESPONDA SEMPRE COM JSON:
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 500,
         system: systemPrompt,
-        messages: [{
-          role: 'user',
-          content: estadoAnterior
-            ? `Contexto da conversa anterior: ${JSON.stringify(estadoAnterior)}\n\nNova mensagem: "${texto}"`
-            : `Mensagem do colaborador: "${texto}"`
-        }]
+        messages: (() => {
+          const msgs = [];
+          // Adicionar histórico de conversa se existir
+          if (estadoAnterior?.historico_chat) {
+            estadoAnterior.historico_chat.slice(-6).forEach(h => {
+              msgs.push({ role: h.role, content: h.content });
+            });
+          } else if (estadoAnterior) {
+            msgs.push({ role: 'user', content: `Contexto anterior: categoria=${estadoAnterior.categoria || ''}, titulo=${estadoAnterior.titulo || ''}, descricao=${estadoAnterior.descricao || ''}` });
+            msgs.push({ role: 'assistant', content: '{"resposta_usuario":"Entendido, pode continuar.","pronto_para_abrir":false,"saudacao_apenas":false}' });
+          }
+          msgs.push({ role: 'user', content: `Mensagem do colaborador: "${texto}"` });
+          return msgs;
+        })()
       })
     });
     const data = await r.json();
@@ -1138,13 +1202,6 @@ async function processarMensagemDM(evt) {
   await log('inicio');
   console.log('[processarMensagemDM] início | user:', userId, '| channel:', channel, '| texto:', texto.substring(0, 50));
 
-  // Mostrar "digitando..." enquanto processa
-  fetch('https://slack.com/api/conversations.typing', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SLACK_BOT_TOKEN}` },
-    body: JSON.stringify({ channel })
-  }).catch(() => {});
-
   try {
     // Comandos especiais
     if (/^(cancelar|cancel|sair|reset)$/i.test(texto)) {
@@ -1198,7 +1255,13 @@ async function processarMensagemDM(evt) {
     if (analise.resposta_usuario && !analise.pronto_para_abrir) {
       await log('conversa_natural');
       try {
-        await setEstado(userId, {
+        const historicoAtual = estado?.historico_chat || [];
+      const novoHistorico = [
+        ...historicoAtual.slice(-8),
+        { role: 'user', content: `Mensagem do colaborador: "${texto}"` },
+        { role: 'assistant', content: JSON.stringify({ resposta_usuario: analise.resposta_usuario, pronto_para_abrir: false }) }
+      ];
+      await setEstado(userId, {
           etapa: 'aguardando_resposta',
           categoria: analise.categoria,
           titulo: analise.titulo,
@@ -1206,6 +1269,7 @@ async function processarMensagemDM(evt) {
           prioridade: analise.prioridade,
           texto_original: texto,
           saudacao: analise.saudacao_apenas,
+          historico_chat: novoHistorico,
         });
       } catch (e) { console.warn('setEstado fail:', e.message); }
       await enviarMensagem(channel, analise.resposta_usuario);
@@ -1221,6 +1285,34 @@ async function processarMensagemDM(evt) {
     // Caso 2: Saudação sem resposta_usuario (fallback)
     if (analise.saudacao_apenas && !analise.resposta_usuario) {
       await enviarMensagem(channel, 'Oi! 👋 Como posso te ajudar hoje?');
+      return;
+    }
+
+    // Caso 3: pronto_para_abrir → mostrar confirmação antes de criar
+    if (analise.pronto_para_abrir) {
+      await log('aguardando_confirmacao');
+      const CATLABELS_BOT = {suprimentos:'📎 Suprimentos',manutencao:'🔧 Manutenção',reforma:'🏗️ Reforma',acessos:'🔑 Acessos',brindes:'🎁 Brindes',logistica:'📦 Logística',outros:'📝 Outros'};
+      const PRIOLABELS = {baixa:'🟢 Baixa',media:'🟡 Média',alta:'🔴 Alta'};
+      await setEstado(userId, {
+        etapa: 'aguardando_confirmacao',
+        categoria: analise.categoria,
+        titulo: analise.titulo,
+        descricao: analise.descricao,
+        prioridade: analise.prioridade,
+        texto_original: texto,
+      });
+      await enviarMensagem(channel, analise.resposta_usuario || 'Vou abrir o chamado:', [
+        { type: 'section', text: { type: 'mrkdwn', text: `${analise.resposta_usuario || 'Resumo do chamado:'}
+
+*Categoria:* ${CATLABELS_BOT[analise.categoria] || analise.categoria}
+*Título:* ${analise.titulo || texto}
+*Prioridade:* ${PRIOLABELS[analise.prioridade] || analise.prioridade}` } },
+        { type: 'actions', elements: [
+          { type: 'button', text: { type: 'plain_text', text: '✅ Confirmar', emoji: true }, style: 'primary', action_id: 'confirmar_chamado', value: 'confirmar' },
+          { type: 'button', text: { type: 'plain_text', text: '✏️ Editar', emoji: true }, action_id: 'editar_chamado', value: 'editar' },
+          { type: 'button', text: { type: 'plain_text', text: '❌ Cancelar', emoji: true }, style: 'danger', action_id: 'cancelar_chamado', value: 'cancelar' },
+        ]}
+      ]);
       return;
     }
 
