@@ -1,0 +1,13 @@
+{
+  "name": "Facilities LogComex",
+  "short_name": "Facilities",
+  "description": "Sistema de chamados do time de Facilities da LogComex",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0D19",
+  "theme_color": "#6613D0",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
