@@ -657,7 +657,7 @@
     <div class="dash-welcome" id="dash-welcome">
       <div>
         <div class="dash-welcome-greeting" id="dash-greeting">Bom dia! 👋</div>
-        <div class="dash-welcome-sub" id="dash-welcome-sub">Carregando resumo...</div>
+        <div class="dash-welcome-sub" id="dash-welcome-sub">Carregando dados...</div>
       </div>
       <div class="dash-welcome-pills" id="dash-pills"></div>
     </div>
@@ -1598,7 +1598,7 @@ function updateBadge() {
 
   function atualizarWelcomeCard(tickets) {
     const user = window._auth?.currentUser;
-    const nome = user?.displayName?.split(' ')[0] || 'Admin';
+    const nome = user?.displayName?.split(' ')[0] || user?.email?.split('.')[0] || 'Admin';
     const h = new Date().getHours();
     const saudacao = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
     const greeting = document.getElementById('dash-greeting');
@@ -2742,9 +2742,14 @@ function setPeriodoTipo(tipo) {
 
 function aplicarPeriodo() {
   window._periodoTipo = _periodoTipo;
-  _periodoMes = parseInt(document.getElementById('sel-mes')?.value ?? new Date().getMonth());
-  _periodoAno = parseInt(document.getElementById('sel-ano-mes')?.value ?? new Date().getFullYear());
-  const anoSel = parseInt(document.getElementById('sel-ano')?.value ?? new Date().getFullYear());
+  const _selMes = document.getElementById('sel-mes')?.value;
+  const _selAnoMes = document.getElementById('sel-ano-mes')?.value;
+  const _selAno = document.getElementById('sel-ano')?.value;
+  _periodoMes = _selMes ? parseInt(_selMes) : new Date().getMonth();
+  _periodoAno = _selAnoMes ? parseInt(_selAnoMes) : new Date().getFullYear();
+  const anoSel = _selAno ? parseInt(_selAno) : new Date().getFullYear();
+  if (isNaN(_periodoMes)) _periodoMes = new Date().getMonth();
+  if (isNaN(_periodoAno)) _periodoAno = new Date().getFullYear();
   window._periodoAno = _periodoAno;
   window._periodoMes = _periodoMes;
 
