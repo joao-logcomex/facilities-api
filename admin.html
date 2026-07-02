@@ -693,7 +693,8 @@
       <div class="metric-card green"><div class="metric-card-icon">✅</div><div class="metric-label">Concluídos</div><div class="metric-value" id="m-co">0</div><div class="metric-sub" id="m-co-sub">no período</div></div>
       <div class="metric-card red"><div class="metric-card-icon">🚨</div><div class="metric-label">Urgentes</div><div class="metric-value" id="m-ur">0</div><div class="metric-sub">atenção imediata</div></div>
       <div class="metric-card blue"><div class="metric-card-icon">🎯</div><div class="metric-label">SLA</div><div class="metric-value" id="m-sla">–</div><div class="metric-sub">taxa de conclusão</div></div>
-      <div class="metric-card gray"><div class="metric-card-icon">📊</div><div class="metric-label">Total</div><div class="metric-value" id="m-to">0</div><div class="metric-sub">todos os chamados</div></div>
+      <div class="metric-card gray"><div class="metric-card-icon">🚫</div><div class="metric-label">Cancelados</div><div class="metric-value" id="m-ca">0</div><div class="metric-sub">no período</div></div>
+      <div class="metric-card gray" style="--dot:#94a3b8"><div class="metric-card-icon">📊</div><div class="metric-label">Total</div><div class="metric-value" id="m-to">0</div><div class="metric-sub">todos os chamados</div></div>
     </div>
     <div class="charts-grid">
       <div class="chart-card"><div class="chart-title">Chamados por Categoria</div><div class="chart-sub">Distribuição total de chamados</div><div class="chart-wrap"><canvas id="chart-cat"></canvas></div></div>
@@ -1661,11 +1662,19 @@ function updateBadge() {
       months.push(d.toLocaleString('pt-BR', { month: 'short' }).replace('.',''));
       monthCounts.push(T.filter(t => { const td = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura||0); return td.getMonth()===d.getMonth() && td.getFullYear()===d.getFullYear(); }).length);
     }
+    const monthCancelados = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(); d.setMonth(d.getMonth() - i);
+      monthCancelados.push(T.filter(t => { const td = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura||0); return td.getMonth()===d.getMonth() && td.getFullYear()===d.getFullYear() && t.status==='Cancelado'; }).length);
+    }
     if (charts.monthly) charts.monthly.destroy();
     charts.monthly = new Chart(document.getElementById('chart-monthly').getContext('2d'), {
       type: 'line',
-      data: { labels: months, datasets: [{ data: monthCounts, borderColor: '#6613D0', backgroundColor: 'rgba(102,19,208,0.07)', tension: 0.45, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#6613D0', pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { ...TOOLTIP } }, scales: { y: { beginAtZero: true, ticks: { font: FONT, stepSize: 1 }, grid: GRID }, x: { ticks: { font: FONT }, grid: { display: false } } } }
+      data: { labels: months, datasets: [
+        { label: 'Abertos', data: monthCounts, borderColor: '#6613D0', backgroundColor: 'rgba(102,19,208,0.07)', tension: 0.45, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#6613D0', pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7 },
+        { label: 'Cancelados', data: monthCancelados, borderColor: '#94a3b8', backgroundColor: 'rgba(148,163,184,0.05)', tension: 0.45, fill: false, borderDash: [4,3], pointBackgroundColor: '#fff', pointBorderColor: '#94a3b8', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'top', labels: { font: FONT, boxWidth: 10, boxHeight: 10, padding: 12 } }, tooltip: { ...TOOLTIP } }, scales: { y: { beginAtZero: true, ticks: { font: FONT, stepSize: 1 }, grid: GRID }, x: { ticks: { font: FONT }, grid: { display: false } } } }
     });
 
     // SLA bars
@@ -2781,6 +2790,9 @@ function renderDashboardComFiltro(tickets) {
   document.getElementById('m-an').textContent = an;
   document.getElementById('m-co').textContent = co;
   document.getElementById('m-ur').textContent = ur;
+  const cancelados = T.filter(t => t.status === 'Cancelado').length;
+  const mCa = document.getElementById('m-ca');
+  if (mCa) mCa.textContent = cancelados;
   document.getElementById('m-to').textContent = total;
   document.getElementById('m-sla').textContent = sla + '%';
   const subEl = document.getElementById('m-co-sub');
