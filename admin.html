@@ -2795,7 +2795,7 @@ function renderDashboardComFiltro(tickets) {
   document.getElementById('m-an').textContent = an;
   document.getElementById('m-co').textContent = co;
   document.getElementById('m-ur').textContent = ur;
-  const cancelados = T.filter(t => t.status === 'Cancelado').length;
+  const cancelados = ca;
   const mCa = document.getElementById('m-ca');
   if (mCa) mCa.textContent = cancelados;
   document.getElementById('m-to').textContent = total;
