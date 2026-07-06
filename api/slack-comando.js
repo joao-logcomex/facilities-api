@@ -1253,10 +1253,40 @@ async function processarMensagemDM(evt) {
       return;
     }
 
+    // ⚡ DETECÇÃO DE PRIMEIRA MENSAGEM
+    // Se é a primeira vez que a pessoa escreve, checar se é saudação ou pedido real
+    const flagRef2 = db.collection('slack_home_welcomed').doc(userId);
+    const flag2 = await flagRef2.get();
+    const primeiraVez = !flag2.exists;
+    if (primeiraVez) {
+      await flagRef2.set({ at: new Date() });
+    }
+
     // ⚡ DETECÇÃO RÁPIDA DE SAUDAÇÃO (sem IA, sem Firebase)
     // Responde imediato — não depende de quota nem de timeout
     const padraoSaudacao = /^(oi+|oii+|ola+|ol[áa]+|hey|hi|hello|alo|al[ôo]+|bom dia|boa tarde|boa noite|e a[ií]+|eai+|menu|ajuda|help|começar|comecar|start|teste)[\s!.?,]*$/i;
-    if (padraoSaudacao.test(texto)) {
+    const eSaudacaoPura = padraoSaudacao.test(texto);
+
+    // Se é primeira vez E é saudação pura → mostrar boas-vindas com botões
+    if (primeiraVez && eSaudacaoPura) {
+      await log('boas_vindas_primeira_vez');
+      await enviarMensagem(channel, 'Olá! Sou o assistente de Facilities da LogComex 👋', [
+        { type: 'section', text: { type: 'mrkdwn', text: '*Olá! Sou o assistente de Facilities da LogComex* 👋\n\nPode falar comigo naturalmente — me diz o que você precisa e eu cuido do resto!\n\nOu escolha uma categoria pra começar:' } },
+        { type: 'actions', elements: [
+          { type: 'button', text: { type: 'plain_text', text: '🎁 Pedir brinde', emoji: true }, style: 'primary', action_id: 'bv_brinde', value: 'brindes' },
+          { type: 'button', text: { type: 'plain_text', text: '📦 Logística', emoji: true }, action_id: 'bv_logistica', value: 'logistica' },
+          { type: 'button', text: { type: 'plain_text', text: '🔧 Manutenção', emoji: true }, action_id: 'bv_manutencao', value: 'manutencao' },
+        ]},
+        { type: 'actions', elements: [
+          { type: 'button', text: { type: 'plain_text', text: '📎 Suprimentos', emoji: true }, action_id: 'bv_suprimentos', value: 'suprimentos' },
+          { type: 'button', text: { type: 'plain_text', text: '🔑 Acessos', emoji: true }, action_id: 'bv_acessos', value: 'acessos' },
+          { type: 'button', text: { type: 'plain_text', text: '📝 Outro assunto', emoji: true }, action_id: 'bv_outros', value: 'outros' },
+        ]}
+      ]);
+      return;
+    }
+
+    if (eSaudacaoPura) {
       await log('saudacao_direta');
       console.log('[processarMensagemDM] detectada saudação direta');
       await enviarMensagem(channel, '👋 Olá! Sou o assistente do time de Facilities.', [
