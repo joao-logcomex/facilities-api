@@ -986,27 +986,26 @@ module.exports = async function handler(req, res) {
           return;
         }
         await limparEstado(userId2);
-        // Buscar dados do colaborador
-        const colabSnap = await db.collection('colaboradores').where('email', '==', body.user?.name ? body.user.name + '@logcomex.com' : '').limit(1).get();
-        const colab = colabSnap.docs[0]?.data() || {};
+        // Buscar dados do colaborador pelo Slack User ID
+        const colabSnap2 = await db.collection('colaboradores').where('slackId', '==', userId2).limit(1).get();
+        const colab2 = colabSnap2.docs[0]?.data() || {};
+        const slackUser2 = {
+          slackId: userId2,
+          nome: colab2.nome || body.user?.real_name || body.user?.name || 'Colaborador',
+          email: colab2.email || (body.user?.name ? body.user.name + '@logcomex.com' : ''),
+          centroCusto: colab2.centroCusto || '',
+          cargo: colab2.cargo || '',
+        };
         const ticket = await criarTicketNoFirebase({
           categoria: estado2.categoria,
           titulo: estado2.titulo || estado2.texto_original,
           descricao: estado2.descricao || estado2.texto_original,
           prioridade: estado2.prioridade || 'media',
-          nome: colab.nome || body.user?.name || 'Colaborador',
-          email: colab.email || '',
-          centroCusto: colab.centroCusto || '',
-          slack_user_id: userId2,
-          origem: 'slack',
+          slackUser: slackUser2,
+          dadosExtras: {},
         });
-        await enviarMensagem(channel2, `✅ Chamado aberto!`, [
-          { type: 'section', text: { type: 'mrkdwn', text: `✅ *Chamado aberto com sucesso!*
-
-*Protocolo:* #${ticket.id}
-*Título:* ${estado2.titulo || estado2.texto_original}
-
-Você receberá atualizações por aqui. Qualquer dúvida é só chamar! 👍` } }
+        await enviarMensagem(channel2, '✅ Chamado aberto!', [
+          { type: 'section', text: { type: 'mrkdwn', text: `✅ *Chamado aberto com sucesso!*\n\n*Protocolo:* #${ticket.id}\n*Título:* ${estado2.titulo || estado2.texto_original}\n\nVocê receberá atualizações por aqui. Qualquer dúvida é só chamar! 👍` } }
         ]);
       } catch(e) { console.error('confirmar_chamado:', e.message); await enviarMensagem(channel2, 'Erro ao abrir chamado: ' + e.message); }
       return;
@@ -1609,60 +1608,7 @@ async function processarMensagemDM(evt) {
     }
 
     // ═══ 📦 LOGÍSTICA ═════════════════════════════════════
-    // Etapas: (1) transportadora via botão → (2) dados destinatário
-    if (cat === 'logistica' && !dados.transportadora) {
-      await log('logistica_pergunta_transp');
-      await setEstado(userId, { etapa: 'aguardando_transportadora', ...dados });
-      await enviarMensagem(channel, '📦 Qual transportadora?', [
-        { type: 'header', text: { type: 'plain_text', text: '📦 Qual transportadora?', emoji: true } },
-        { type: 'section', text: { type: 'mrkdwn', text: 'Por onde você quer fazer o envio?' } },
-        {
-          type: 'actions',
-          elements: [
-            { type: 'button', text: { type: 'plain_text', text: '📦 DHL', emoji: true }, action_id: 'fac_transp_dhl', value: 'DHL', style: 'primary' },
-            { type: 'button', text: { type: 'plain_text', text: '📮 Correios', emoji: true }, action_id: 'fac_transp_correios', value: 'Correios' },
-            { type: 'button', text: { type: 'plain_text', text: '🚗 Uber Flash', emoji: true }, action_id: 'fac_transp_uber', value: 'Uber Flash' },
-          ]
-        },
-        { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
-      ]);
-      return;
-    }
-
-    // Preserva também o "o que enviar" entre interações
-    if (estado?.item_envio) dados.item_envio = estado.item_envio;
-
-    if (cat === 'logistica' && dados.transportadora && !dados.item_envio) {
-      // PRIMEIRA pergunta após escolher transportadora: o que será enviado
-      if (estado?.etapa === 'aguardando_item_envio') {
-        dados.item_envio = texto;
-      } else {
-        await log('logistica_pergunta_item');
-        await setEstado(userId, { etapa: 'aguardando_item_envio', ...dados });
-        await enviarMensagem(channel, '📦 O que será enviado?', [
-          { type: 'header', text: { type: 'plain_text', text: '📦 O que será enviado?', emoji: true } },
-          { type: 'section', text: { type: 'mrkdwn', text: `Via *${dados.transportadora}*.\n\nMe descreve o que precisa ser enviado:\n\n• *Item ou itens* (ex: notebook Dell, kit de brindes, documento, headset)\n• *Quantidade* (se mais de 1)\n• *Observações* sobre o conteúdo (ex: frágil, valor declarado, equipamento)` } },
-          { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
-        ]);
-        return;
-      }
-    }
-
-    if (cat === 'logistica' && dados.transportadora && dados.item_envio && !dados.destinatario_envio) {
-      // SEGUNDA pergunta: pra quem e pra onde
-      if (estado?.etapa === 'aguardando_destinatario') {
-        dados.destinatario_envio = texto;
-      } else {
-        await log('logistica_pergunta_destinatario');
-        await setEstado(userId, { etapa: 'aguardando_destinatario', ...dados });
-        await enviarMensagem(channel, '📍 Dados do destinatário', [
-          { type: 'header', text: { type: 'plain_text', text: '📍 Pra quem e pra onde?', emoji: true } },
-          { type: 'section', text: { type: 'mrkdwn', text: `Agora me passa os dados completos do destinatário em uma única mensagem:\n\n• *Nome completo*\n• *Endereço* (rua, número, complemento)\n• *Bairro, cidade, estado, CEP*\n• *Telefone* com DDD\n• *CPF* ${dados.transportadora === 'DHL' ? '*(obrigatório para DHL)*' : '(opcional)'}` } },
-          { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
-        ]);
-        return;
-      }
-    }
+    // Fluxo conversacional — Claude conduz naturalmente
 
     // ═══ 🔑 ACESSOS ═══════════════════════════════════════
     if (cat === 'acessos') {
