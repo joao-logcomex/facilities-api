@@ -53,5 +53,8 @@ service cloud.firestore {
     match /estoque_ti/{docId} { allow read, write: if isAdmin(); }
     match /estoque_onboarding/{docId} { allow read, write: if isAdmin(); }
     match /estoque_saidas/{docId} { allow read, write: if isAdmin(); }
+    match /contadores/{docId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }
