@@ -1094,6 +1094,7 @@
             <option value="">Todos os tipos</option>
             <option value="saida_ti">Estoque TI</option>
             <option value="kit_onboarding">Kit Onboarding</option>
+            <option value="saida_onboarding">Onboarding (item)</option>
             <option value="brinde">Brinde</option>
           </select>
           <input id="saidas-busca" type="text" placeholder="Buscar por item ou responsável..." oninput="renderSaidas()" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);font-size:13px;color:var(--ink);flex:1;min-width:200px;">
@@ -1321,6 +1322,7 @@
   window._doc = doc;
   window._updateDoc = updateDoc;
   window._addDoc = addDoc;
+  window._collection = collection;
   window.auth = auth;
   const ADMINS = ['christian.bertolino@logcomex.com','joao.faria@logcomex.com','henrique.silva@logcomex.com','adriano.martins@logcomex.com','daniel.alle@logcomex.com'];
 const VIEWERS = ['leandro.oliveira@logcomex.com']; // Acesso somente leitura
@@ -3242,7 +3244,7 @@ window.renderHistorico = renderHistorico;
     window._updateDoc(window._doc(window.db, 'estoque_ti', id), { quantidade: nova, updatedAt: new Date() })
       .then(() => {
         if (_mtiAba === 'saida') {
-          window._addDoc(collection(window.db, 'estoque_saidas'), {
+          window._addDoc(window._collection(window.db, 'estoque_saidas'), {
             tipo: 'saida_ti', item: item.nome, quantidade: qtd,
             observacao: obsEl?.value || '', data: new Date(),
             criadoPor: window._auth?.currentUser?.email || ''
@@ -3263,7 +3265,16 @@ window.renderHistorico = renderHistorico;
     if (isNaN(n) || n === 0) { alert('Valor invalido'); return; }
     const nova = Math.max(0, (item.quantidade||0) + n);
     window._updateDoc(window._doc(window.db, 'estoque_ti', id), { quantidade: nova, updatedAt: new Date() })
-      .then(() => alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + nova))
+      .then(() => {
+        if (n < 0) {
+          window._addDoc(window._collection(window.db, 'estoque_saidas'), {
+            tipo: 'saida_ti', item: item.nome, quantidade: Math.abs(n),
+            observacao: 'Ajuste rápido via card', data: new Date(),
+            criadoPor: window._auth?.currentUser?.email || ''
+          }).catch(()=>{});
+        }
+        alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + nova);
+      })
       .catch(e => alert('Erro: ' + e.message));
   };
 
@@ -3271,14 +3282,14 @@ window.renderHistorico = renderHistorico;
     const saidas = window._saidasEstoque || [];
     const filtroTipo = document.getElementById('saidas-filtro-tipo')?.value || '';
     const busca = (document.getElementById('saidas-busca')?.value || '').toLowerCase();
-    const TIPO_LABEL = { saida_ti: '💻 TI', kit_onboarding: '🎒 Kit Onboarding', brinde: '🎁 Brinde' };
-    const TIPO_COR = { saida_ti: '#0ea5e9', kit_onboarding: '#12b76a', brinde: '#FF6B2B' };
+    const TIPO_LABEL = { saida_ti: '💻 TI', kit_onboarding: '🎒 Kit Onboarding', saida_onboarding: '🎒 Onboarding (item)', brinde: '🎁 Brinde' };
+    const TIPO_COR = { saida_ti: '#0ea5e9', kit_onboarding: '#12b76a', saida_onboarding: '#0d9488', brinde: '#FF6B2B' };
 
     // KPIs
     const total = saidas.length;
     const brindes = saidas.filter(s => s.tipo === 'brinde').length;
     const ti = saidas.filter(s => s.tipo === 'saida_ti').length;
-    const onboard = saidas.filter(s => s.tipo === 'kit_onboarding').length;
+    const onboard = saidas.filter(s => s.tipo === 'kit_onboarding' || s.tipo === 'saida_onboarding').length;
     const skTotal = document.getElementById('sk-total');
     const skBrindes = document.getElementById('sk-brindes');
     const skTi = document.getElementById('sk-ti');
@@ -3332,7 +3343,16 @@ window.renderHistorico = renderHistorico;
     if (isNaN(n) || n === 0) { alert('Valor invalido'); return; }
     const nova = Math.max(0, (item.quantidade||0) + n);
     window._updateDoc(window._doc(window.db, 'estoque_onboarding', id), { quantidade: nova, updatedAt: new Date() })
-      .then(() => alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + nova))
+      .then(() => {
+        if (n < 0) {
+          window._addDoc(window._collection(window.db, 'estoque_saidas'), {
+            tipo: 'saida_onboarding', item: item.nome, quantidade: Math.abs(n),
+            observacao: 'Ajuste rápido via card', data: new Date(),
+            criadoPor: window._auth?.currentUser?.email || ''
+          }).catch(()=>{});
+        }
+        alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + nova);
+      })
       .catch(e => alert('Erro: ' + e.message));
   };
 
@@ -3353,7 +3373,7 @@ window.renderHistorico = renderHistorico;
     if (!confirm('Entregar kit para ' + colaborador + '?\nCamiseta ' + tam + ' + ' + outros.map(i=>i.nome).join(', '))) return;
     const updates = [window._updateDoc(window._doc(window.db, 'estoque_onboarding', itemCamisa._id), { quantidade: (itemCamisa.quantidade||0)-1, updatedAt: new Date() })];
     outros.forEach(i => updates.push(window._updateDoc(window._doc(window.db, 'estoque_onboarding', i._id), { quantidade: (i.quantidade||0)-1, updatedAt: new Date() })));
-    updates.push(window._addDoc(collection(db, 'estoque_saidas'), { tipo:'kit_onboarding', colaborador, tamanhoCamiseta:tam, itens:['Camiseta '+tam,...outros.map(i=>i.nome)], data:new Date(), criadoPor:window._auth?.currentUser?.email||'' }));
+    updates.push(window._addDoc(window._collection(db, 'estoque_saidas'), { tipo:'kit_onboarding', colaborador, tamanhoCamiseta:tam, itens:['Camiseta '+tam,...outros.map(i=>i.nome)], data:new Date(), criadoPor:window._auth?.currentUser?.email||'' }));
     Promise.all(updates).then(() => alert('Kit entregue para ' + colaborador + '!')).catch(e => alert('Erro: ' + e.message));
   };
 
