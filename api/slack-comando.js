@@ -447,7 +447,6 @@ async function criarTicketNoFirebase(payload) {
     centroCusto: slackUser?.centroCusto || null,
     cargo: slackUser?.cargo || null,
     slack_user_id: slackUser?.slackId || null,
-    dentroSLA: true,
     historico: [{
       acao: `Chamado aberto via Slack por ${slackUser?.nome || slackUser?.email || 'usuário'}`,
       data: new Date().toISOString(),
