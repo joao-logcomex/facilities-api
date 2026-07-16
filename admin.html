@@ -1490,6 +1490,28 @@ const isAdminOrViewer = (email) => {
       const updates = { status: s, historico: hist };
       if (observacao) updates.ultima_observacao = observacao;
       if (s === 'Cancelado' && observacao) updates.motivo_cancelamento = observacao;
+
+      // ── Calcula dentroSLA + grava data_conclusao ao concluir ──
+      // Cancelado NÃO conta pra SLA (regra de negócio confirmada) — fica null, sem alterar.
+      // Prazos em dias corridos, mesmos usados na sincronização histórica do Pipefy
+      // (SLA_PRAZOS_SYNC) — mantém o cálculo consistente entre chamados antigos e novos.
+      if (s === 'Concluído') {
+        const agora = new Date();
+        updates.data_conclusao = agora;
+        const PRAZOS_SLA = { brindes: 5, seguranca: 2, manutencao: 60, suprimentos: 7, outros: 30 };
+        const SLA_LOGISTICA = { 'DHL': 2, 'Correio': 7, 'Uber Flash': 1 };
+        let prazo = t.categoria === 'logistica'
+          ? (SLA_LOGISTICA[t.transportadora] ?? SLA_LOGISTICA[t.subcategoria])
+          : PRAZOS_SLA[t.categoria];
+        if (prazo != null && t.data_abertura) {
+          const abertura = t.data_abertura.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura);
+          const diasCorridos = (agora - abertura) / 86400000;
+          updates.dentroSLA = diasCorridos <= prazo;
+        }
+        // categorias sem prazo definido (infraestrutura, plataformas) ficam sem dentroSLA,
+        // igual já era — não existe política de SLA estabelecida pra elas ainda.
+      }
+
       await updateDoc(doc(db, 'tickets', currentDocId), updates);
       document.querySelectorAll('.status-btn').forEach(b => b.classList.toggle('active-s', b.textContent === s));
 
