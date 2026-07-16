@@ -410,12 +410,25 @@ function extrairValores(view) {
   return { get };
 }
 
+// Gerador de ID sequencial atômico — compartilha o MESMO contador do formulário
+// web (contadores/tickets_lc). Antes: ID = prefixo + últimos 6 dígitos de Date.now(),
+// que se repete a cada ~16.7 minutos e já causou colisão real. Prefixo LC- é novo
+// de propósito para nunca colidir com IDs antigos (LOG-/F-).
+async function gerarIdSequencial() {
+  const contadorRef = db.collection('contadores').doc('tickets_lc');
+  const novo = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(contadorRef);
+    const atual = snap.exists ? (snap.data().seq || 0) : 0;
+    const proximo = atual + 1;
+    tx.set(contadorRef, { seq: proximo }, { merge: true });
+    return proximo;
+  });
+  return 'LC-' + String(novo).padStart(5, '0');
+}
+
 async function criarTicketNoFirebase(payload) {
   const { categoria, titulo, descricao, prioridade, slackUser, dadosExtras } = payload;
-  // Gera ID humanamente legível: LOG-XXXX para logistica, F-XXXX para outros
-  const prefix = categoria === 'logistica' ? 'LOG' : 'F';
-  const ts = Date.now().toString().slice(-6);
-  const id = `${prefix}-${ts}`;
+  const id = await gerarIdSequencial();
 
   const docData = {
     id,
