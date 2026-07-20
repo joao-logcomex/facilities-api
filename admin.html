@@ -615,6 +615,17 @@
       Saídas
     </div>
 
+    <!-- ── TV / GO LIVE ── -->
+    <div class="nav-section-label">TV do Setor</div>
+    <div class="nav-item" onclick="nav('projetos-ia',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      Projetos (%)
+    </div>
+    <a href="/tv.html" target="_blank" rel="noopener" class="nav-item" style="text-decoration:none;border:1px solid rgba(254,143,28,0.3);background:rgba(254,143,28,0.06);color:rgba(254,143,28,0.9);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Acessar Go Live ↗
+    </a>
+
     <!-- ── RODAPÉ COM PERFIL ── -->
     <div class="sb-footer">
       <div class="nav-item" onclick="syncPipefy()" id="btn-sync-pipefy" style="border:1px solid rgba(254,143,28,0.25);background:rgba(254,143,28,0.05);color:rgba(254,143,28,0.85);margin-bottom:8px;">
@@ -1133,7 +1144,24 @@
       </div>
     </div>
 
-    <!-- ═══ LOCALIZAÇÕES DE PATRIMÔNIO ═══ -->
+    <!-- ═══ PROJETOS IA (% mostrado na TV) ═══ -->
+    <div class="page" id="page-projetos-ia">
+      <div class="topbar"><div class="page-title">📊 Projetos (% na TV)</div></div>
+      <div style="padding:0 0.5rem;">
+        <div class="imob-header">
+          <div>
+            <div class="imob-title">Progresso dos projetos</div>
+            <div style="font-size:0.82rem;color:var(--ink2);margin-top:2px;">Esses nomes e porcentagens aparecem na tela "Go Live" da TV. Edite aqui sempre que o progresso mudar.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button class="imob-btn-add" onclick="abrirModalProjetoIA()">+ Novo projeto</button>
+          </div>
+        </div>
+        <div id="grid-projetos-ia" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:1rem;"></div>
+      </div>
+    </div>
+
+
     <div class="page" id="page-patrim-locais">
       <div class="topbar"><div class="page-title">📍 Localizações</div></div>
       <div style="padding:0 0.5rem;">
@@ -3575,6 +3603,107 @@ window.renderHistorico = renderHistorico;
       alert('Erro ao excluir: ' + e.message);
     }
   }
+
+  // ── PROJETOS IA (% mostrado na TV / Go Live) ──────────────
+  window._projetosIA = [];
+  (async () => {
+    const { collection, onSnapshot, query, orderBy } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    onSnapshot(query(collection(db, 'projetos_ia'), orderBy('ordem', 'asc')), snap => {
+      window._projetosIA = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      if (document.getElementById('grid-projetos-ia')) renderProjetosIA();
+    }, () => {
+      // fallback sem orderBy caso algum doc antigo nao tenha 'ordem'
+      onSnapshot(collection(db, 'projetos_ia'), snap => {
+        window._projetosIA = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+        if (document.getElementById('grid-projetos-ia')) renderProjetosIA();
+      });
+    });
+  })();
+
+  function renderProjetosIA() {
+    const grid = document.getElementById('grid-projetos-ia');
+    if (!grid) return;
+    const lista = window._projetosIA || [];
+    if (!lista.length) {
+      grid.innerHTML = '<div style="color:var(--ink2);font-size:0.9rem;padding:1rem;">Nenhum projeto cadastrado ainda. Clique em "+ Novo projeto".</div>';
+      return;
+    }
+    grid.innerHTML = lista.map(p => `
+      <div class="imob-card" style="cursor:pointer;" onclick="abrirModalProjetoIA('${p._id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-weight:600;">${p.nome || '(sem nome)'}</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--purple);">${p.percentual ?? 0}%</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;height:8px;margin-top:8px;overflow:hidden;">
+          <div style="width:${Math.min(100, Math.max(0, p.percentual ?? 0))}%;background:linear-gradient(90deg,var(--purple),var(--orange));height:8px;"></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.abrirModalProjetoIA = function(id) {
+    const proj = id ? (window._projetosIA || []).find(p => p._id === id) : null;
+    const modal = document.getElementById('imob-modal');
+    document.getElementById('imob-modal-title').textContent = proj ? 'Editar projeto' : 'Novo projeto';
+    document.getElementById('imob-modal-form').innerHTML = `
+      <div style="display:grid;gap:14px;">
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Nome do projeto *</label>
+          <input type="text" id="pia-nome" value="${proj?.nome || ''}" placeholder="Ex: XGH, War Room, Full Stack..."
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Progresso (%) *</label>
+          <input type="number" id="pia-percentual" min="0" max="100" value="${proj?.percentual ?? ''}" placeholder="0 a 100"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Ordem de exibição</label>
+          <input type="number" id="pia-ordem" value="${proj?.ordem ?? (window._projetosIA?.length || 0)}" placeholder="0, 1, 2..."
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;">
+        </div>
+      </div>
+    `;
+    const btnDel = document.getElementById('imob-btn-del');
+    if (btnDel) {
+      btnDel.style.display = proj ? '' : 'none';
+      btnDel.onclick = () => deletarProjetoIA(proj._id, proj.nome);
+    }
+    modal.querySelector('.imob-btn-save').onclick = () => salvarProjetoIA(proj?._id);
+    modal.classList.add('open');
+  };
+
+  async function salvarProjetoIA(id) {
+    const nome = document.getElementById('pia-nome').value.trim();
+    const percentual = parseInt(document.getElementById('pia-percentual').value);
+    const ordem = parseInt(document.getElementById('pia-ordem').value) || 0;
+    if (!nome) { alert('Digite o nome do projeto.'); return; }
+    if (isNaN(percentual) || percentual < 0 || percentual > 100) { alert('Progresso precisa ser um número de 0 a 100.'); return; }
+    try {
+      const { collection, doc, setDoc, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const dados = { nome, percentual, ordem, updatedAt: serverTimestamp() };
+      if (id) {
+        await setDoc(doc(db, 'projetos_ia', id), dados, { merge: true });
+      } else {
+        dados.createdAt = serverTimestamp();
+        await addDoc(collection(db, 'projetos_ia'), dados);
+      }
+      fecharModalImob();
+    } catch (e) {
+      alert('Erro ao salvar: ' + e.message);
+    }
+  }
+
+  window.deletarProjetoIA = async function(id, nome) {
+    if (!confirm(`Excluir o projeto "${nome}"? Ele deixa de aparecer na TV.`)) return;
+    try {
+      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      await deleteDoc(doc(db, 'projetos_ia', id));
+      fecharModalImob();
+    } catch (e) {
+      alert('Erro ao excluir: ' + e.message);
+    }
+  };
 
   // ── LOCALIZAÇÕES DE PATRIMÔNIO ────────────────────────────
   function renderLocalizacoes() {
