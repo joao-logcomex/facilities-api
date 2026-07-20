@@ -107,7 +107,7 @@
   </div>
 
   <div class="section-label">Progresso dos projetos</div>
-  <div class="bars" id="fac-projetos"><!-- preenchido via JS --></div>
+  <div id="fac-projetos"><!-- preenchido via JS --></div>
 </div>
 
 <!-- SLIDE 2 — SALAS -->
@@ -218,11 +218,32 @@ async function loadFacilities(){
     if (!projetos.length) {
       cont.innerHTML = '<div style="opacity:.6;font-size:1rem;">Nenhum projeto cadastrado ainda.</div>';
     } else {
-      cont.innerHTML = projetos.map(p => `
-        <div class="bar-row">
-          <div class="bar-name">${p.nome}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,Math.max(0,p.percentual||0))}%;"></div></div>
-          <div class="bar-pct">${p.percentual ?? 0}%</div>
+      // Agrupa por 'grupo' (itens sem grupo viram grupo próprio, usando o nome)
+      const grupos = {};
+      projetos.forEach(p => {
+        const chave = p.grupo || p.nome;
+        if (!grupos[chave]) grupos[chave] = { titulo: chave, status: null, itens: [] };
+        grupos[chave].itens.push(p);
+        if (p.status_texto && !grupos[chave].status) grupos[chave].status = p.status_texto;
+      });
+      cont.innerHTML = Object.values(grupos).map(g => `
+        <div style="margin-bottom:6px;">
+          ${g.titulo !== g.itens[0].nome || g.itens.length > 1 ? `
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+              <div style="font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;color:var(--purple);">${g.titulo}</div>
+              ${g.status ? `<div style="font-size:0.92rem;color:var(--ink2);">${g.status}</div>` : ''}
+            </div>
+          ` : ''}
+          <div class="bars">
+            ${g.itens.map(p => `
+              <div class="bar-row">
+                <div class="bar-name">${p.nome}</div>
+                <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,Math.max(0,p.percentual||0))}%;"></div></div>
+                <div class="bar-pct">${p.percentual ?? 0}%</div>
+              </div>
+            `).join('')}
+          </div>
+          ${(g.titulo === g.itens[0].nome && g.itens.length === 1 && g.status) ? `<div style="font-size:0.92rem;color:var(--ink2);margin-top:6px;">${g.status}</div>` : ''}
         </div>
       `).join('');
     }
