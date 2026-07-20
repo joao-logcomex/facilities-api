@@ -27,6 +27,53 @@ function contar(arr, getter) {
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // ── Endpoint público (sem login) para a TV do setor — "Go Live" ──
+  // Ativado com ?tv=facilities. Devolve só números agregados de 2026,
+  // nunca dados individuais de chamados (nome, e-mail etc).
+  if (req.query && req.query.tv === 'facilities') {
+    try {
+      const anoAlvo = parseInt(req.query.ano) || new Date().getFullYear();
+      const [ticketsSnap, projetosSnap] = await Promise.all([
+        db.collection('tickets').get(),
+        db.collection('projetos_ia').get(),
+      ]);
+      const tickets = ticketsSnap.docs.map(d => d.data());
+      const doAno = tickets.filter(t => {
+        const raw = t.data_abertura;
+        if (!raw) return false;
+        const d = raw.toDate ? raw.toDate() : new Date(raw);
+        return d.getFullYear() === anoAlvo;
+      });
+      const CATLABELS = {
+        manutencao: 'Manutenção', infraestrutura: 'Infraestrutura', limpeza: 'Limpeza',
+        seguranca: 'Segurança', brindes: 'Brindes', suprimentos: 'Suprimentos',
+        plataformas: 'Plataformas', outros: 'Outros', logistica: 'Logística', acessos: 'Acessos'
+      };
+      const abertos = doAno.filter(t => !['Concluído', 'Cancelado'].includes(t.status)).length;
+      const concluidos = doAno.filter(t => t.status === 'Concluído').length;
+      const cancelados = doAno.filter(t => t.status === 'Cancelado').length;
+      const porCategoria = contar(doAno, x => CATLABELS[x.categoria] || x.categoria || 'Outros');
+      const projetos = projetosSnap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+
+      return res.status(200).json({
+        ok: true,
+        ano: anoAlvo,
+        total: doAno.length,
+        abertos, concluidos, cancelados,
+        por_categoria: porCategoria,
+        projetos,
+        atualizado_em: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.error('tv=facilities erro:', e);
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
   try {
     // 1. Buscar tudo do Firebase
     const [patrimonioSnap, espacosSnap, contratosSnap] = await Promise.all([
