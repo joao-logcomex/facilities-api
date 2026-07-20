@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go Live · Facilities LogComex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Funnel+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple-dark:#2D085D; --purple:#6613D0; --purple-mid:#8E44ED; --lavanda:#E2D0FA;
+    --orange:#FE8F1C; --black:#0B0D19; --offwhite:#F5F6FC;
+    --green:#3ECF8E; --red:#F2545B; --amber:#F2B544;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{
+    width:100%;height:100%;overflow:hidden;
+    background:linear-gradient(135deg,var(--black) 0%,var(--purple-dark) 55%,var(--purple) 100%);
+    font-family:'Poppins',sans-serif; color:var(--offwhite);
+  }
+  .progress-track{position:fixed;top:0;left:0;right:0;height:5px;background:rgba(255,255,255,0.08);z-index:50;}
+  .progress-fill{height:100%;background:var(--orange);width:0%;transition:width linear;}
+  .dots{position:fixed;bottom:22px;left:0;right:0;display:flex;justify-content:center;gap:8px;z-index:50;}
+  .dot{width:34px;height:4px;border-radius:3px;background:rgba(255,255,255,0.18);transition:background .3s;}
+  .dot.active{background:var(--orange);}
+
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;padding:48px 64px;opacity:0;transition:opacity .6s ease;pointer-events:none;}
+  .slide.active{opacity:1;pointer-events:auto;}
+
+  .eyebrow{font-size:1.05rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--lavanda);font-weight:600;opacity:.85;}
+  .title{font-family:'Funnel Display',sans-serif;font-size:3rem;font-weight:600;margin-top:4px;display:flex;align-items:baseline;gap:16px;}
+  .subtitle{font-size:1.05rem;color:var(--lavanda);opacity:.75;margin-top:2px;}
+
+  .kpi-row{display:flex;gap:28px;margin-top:36px;}
+  .kpi-card{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:26px 30px;backdrop-filter:blur(6px);}
+  .kpi-label{font-size:1rem;color:var(--lavanda);opacity:.8;font-weight:500;}
+  .kpi-value{font-family:'Funnel Display',sans-serif;font-size:3.6rem;font-weight:700;margin-top:6px;line-height:1;}
+  .kpi-value.orange{color:var(--orange);}
+  .kpi-value.green{color:var(--green);}
+  .kpi-value.red{color:var(--red);}
+
+  .section-label{font-size:1.05rem;font-weight:600;color:var(--offwhite);margin-top:38px;margin-bottom:16px;opacity:.9;}
+
+  .bars{display:flex;flex-direction:column;gap:14px;}
+  .bar-row{display:flex;align-items:center;gap:18px;}
+  .bar-name{width:200px;font-size:1.05rem;color:var(--lavanda);flex-shrink:0;}
+  .bar-track{flex:1;height:16px;background:rgba(255,255,255,0.08);border-radius:8px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--purple-mid),var(--orange));}
+  .bar-pct{width:64px;text-align:right;font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;flex-shrink:0;}
+
+  .rooms-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:14px;}
+  .room-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px 14px;text-align:center;}
+  .room-name{font-size:0.98rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .room-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:0.85rem;font-weight:500;}
+  .room-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .room-time{font-size:0.72rem;opacity:.65;margin-top:2px;}
+
+  .placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;}
+  .placeholder-emoji{font-size:4rem;}
+  .placeholder-text{font-size:1.3rem;color:var(--lavanda);opacity:.8;max-width:600px;}
+
+  .footer-clock{position:fixed;bottom:22px;right:40px;font-size:1rem;color:var(--lavanda);opacity:.6;font-weight:500;z-index:50;}
+  .logo-badge{position:fixed;top:26px;right:40px;font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;opacity:.7;z-index:50;}
+</style>
+</head>
+<body>
+
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+<div class="logo-badge">⚡ Facilities LogComex</div>
+<div class="footer-clock" id="clock">--:--</div>
+<div class="dots" id="dots"></div>
+
+<!-- SLIDE 1 — FACILITIES -->
+<div class="slide" id="slide-facilities">
+  <div class="eyebrow">Facilities · 2026</div>
+  <div class="title">Chamados do ano</div>
+  <div class="subtitle">Atualizado em tempo real</div>
+
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Em aberto</div>
+      <div class="kpi-value orange" id="fac-abertos">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Concluídos</div>
+      <div class="kpi-value green" id="fac-concluidos">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Cancelados</div>
+      <div class="kpi-value" id="fac-cancelados">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total no ano</div>
+      <div class="kpi-value" id="fac-total">—</div>
+    </div>
+  </div>
+
+  <div class="section-label">Progresso dos projetos</div>
+  <div class="bars" id="fac-projetos"><!-- preenchido via JS --></div>
+</div>
+
+<!-- SLIDE 2 — SALAS -->
+<div class="slide" id="slide-salas">
+  <div class="eyebrow">Salas de Reunião</div>
+  <div class="title">Disponibilidade agora</div>
+  <div class="subtitle" id="salas-sub">Atualizado em tempo real</div>
+
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Reservas (30 dias)</div>
+      <div class="kpi-value" id="sal-total">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Taxa de check-in</div>
+      <div class="kpi-value orange" id="sal-checkin">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Sala mais usada</div>
+      <div class="kpi-value" style="font-size:2.1rem;" id="sal-maisusada">—</div>
+    </div>
+  </div>
+
+  <div class="section-label">Status das salas</div>
+  <div class="rooms-grid" id="rooms-grid"><!-- preenchido via JS --></div>
+</div>
+
+<!-- SLIDE 3 — HELP DESK (placeholder até termos acesso aos dados) -->
+<div class="slide" id="slide-helpdesk">
+  <div class="eyebrow">Help Desk · TI</div>
+  <div class="title">Chamados de TI</div>
+  <div class="placeholder">
+    <div class="placeholder-emoji">🛠️</div>
+    <div class="placeholder-text">Integração com o Help Desk em andamento.<br>Essa tela vai mostrar os KPIs de chamados de TI em breve.</div>
+  </div>
+</div>
+
+<script>
+const SLIDE_IDS = ['slide-facilities','slide-salas','slide-helpdesk'];
+const SLIDE_MS = 22000;
+const DATA_REFRESH_MS = 60000;
+const SALAS_BACKEND = 'https://script.google.com/macros/s/AKfycbyDgucsB17Z1Al0_15ZJ1WaPvJHkapmyxITLDHE9WBGl3DHmXNnMJET9xRNLzn-aov7/exec';
+
+const ROOMS = [
+  {name:'PHP',capacity:5,email:'c_1884rp7puo7gejdji3bfro291a05i@resource.calendar.google.com'},
+  {name:'Javascript',capacity:5,email:'c_18846snhor0rghuijj2jq394chmhm@resource.calendar.google.com'},
+  {name:'Python',capacity:1,email:'c_18861lda8ehrigurm6fjo5nbo1c5g@resource.calendar.google.com'},
+  {name:'Container',capacity:8,email:'c_1885hqdo4dj4oi8rgski9h95qrg08@resource.calendar.google.com'},
+  {name:'API',email:'c_1885ntl4m11isgpvjuc8fo1iv4qmo@resource.calendar.google.com'},
+  {name:'Cloud',capacity:1,email:'c_1881ud60ske32hi6ijkhq4vqc82pk@resource.calendar.google.com'},
+  {name:'HTML',capacity:2,email:'c_188fffg8bgsf2hc2n3akt767cul1c@resource.calendar.google.com'},
+  {name:'Cron',capacity:1,email:'c_188etf42m0avah8cja6sc0hcg3o0u@resource.calendar.google.com'},
+  {name:'Linux',capacity:1,email:'c_1881e936asq96go0jfpj5bjigjpck@resource.calendar.google.com'},
+  {name:'Bot',capacity:2,email:'c_18838gojbu52mh82nle2pf8heg7h4@resource.calendar.google.com'},
+  {name:'Git',capacity:3,email:'c_188bm0osiiqtkgishm26mbabaae30@resource.calendar.google.com'},
+  {name:'Fullstack',capacity:10,email:'c_18864rq4tvokmh1cn3fju1d4nkauk@resource.calendar.google.com'},
+  {name:'War Room',capacity:20,email:'c_188etao1p55mmit9nqqemnvfhlhuc@resource.calendar.google.com'},
+  {name:'XGH',capacity:6,email:'c_1886tvmpocelmh5pjo46elcu1lkb6@resource.calendar.google.com'},
+  {name:'IA',capacity:6,email:'c_1882utjqrvmj0hn8njjjtulf0e6j6@resource.calendar.google.com'},
+  {name:'Deploy',capacity:6,email:'c_1887ki69uao2uj01mvhinb7rma7re@resource.calendar.google.com'},
+  {name:'Root',capacity:4,email:'c_1881aq8cgkbfuhdpgdh4dn4oj0qjk@resource.calendar.google.com'},
+];
+
+let cur = 0;
+let slideStart = Date.now();
+
+function renderDots(){
+  const dotsEl = document.getElementById('dots');
+  dotsEl.innerHTML = SLIDE_IDS.map((_,i) => `<div class="dot${i===cur?' active':''}"></div>`).join('');
+}
+
+function showSlide(i){
+  SLIDE_IDS.forEach((id,idx) => {
+    document.getElementById(id).classList.toggle('active', idx === i);
+  });
+  renderDots();
+  slideStart = Date.now();
+}
+
+function tickProgress(){
+  const elapsed = Date.now() - slideStart;
+  const pct = Math.min(100, (elapsed / SLIDE_MS) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  if (elapsed >= SLIDE_MS) {
+    cur = (cur + 1) % SLIDE_IDS.length;
+    showSlide(cur);
+  }
+}
+
+function tickClock(){
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+}
+
+// ── FACILITIES ──
+async function loadFacilities(){
+  try{
+    const r = await fetch('/api/relatorio-imobiliario?tv=facilities&ano=2026');
+    const d = await r.json();
+    if (!d.ok) return;
+    document.getElementById('fac-abertos').textContent = d.abertos;
+    document.getElementById('fac-concluidos').textContent = d.concluidos;
+    document.getElementById('fac-cancelados').textContent = d.cancelados;
+    document.getElementById('fac-total').textContent = d.total;
+
+    const projetos = (d.projetos || []);
+    const cont = document.getElementById('fac-projetos');
+    if (!projetos.length) {
+      cont.innerHTML = '<div style="opacity:.6;font-size:1rem;">Nenhum projeto cadastrado ainda.</div>';
+    } else {
+      cont.innerHTML = projetos.map(p => `
+        <div class="bar-row">
+          <div class="bar-name">${p.nome}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,Math.max(0,p.percentual||0))}%;"></div></div>
+          <div class="bar-pct">${p.percentual ?? 0}%</div>
+        </div>
+      `).join('');
+    }
+  }catch(e){ console.warn('Erro ao carregar Facilities:', e); }
+}
+
+// ── SALAS — KPIs históricos ──
+async function loadSalasKPI(){
+  try{
+    const r = await fetch(`${SALAS_BACKEND}?action=relatorio`);
+    const d = await r.json();
+    const trintaDiasAtras = Date.now() - 30*24*60*60*1000;
+    const regs = (d.registros || []).filter(x => new Date(x.ts).getTime() >= trintaDiasAtras);
+    const total = regs.length;
+    const comCheckin = regs.filter(x => x.checkin).length;
+    const taxa = total > 0 ? Math.round((comCheckin/total)*100) : 0;
+    const porSala = {};
+    regs.forEach(x => { porSala[x.room] = (porSala[x.room]||0) + 1; });
+    const salaTop = Object.entries(porSala).sort((a,b)=>b[1]-a[1])[0];
+
+    document.getElementById('sal-total').textContent = total;
+    document.getElementById('sal-checkin').textContent = taxa + '%';
+    document.getElementById('sal-maisusada').textContent = salaTop ? salaTop[0].replace(/^\d+\.\s*/,'') : '—';
+  }catch(e){ console.warn('Erro ao carregar KPI salas:', e); }
+}
+
+// ── SALAS — status ao vivo ──
+function statusAgora(busyList){
+  const now = new Date();
+  for (const ev of (busyList||[])) {
+    const ini = new Date(ev.start), fim = new Date(ev.end);
+    if (now >= ini && now <= fim) {
+      return { status:'ocupada', ate: fim };
+    }
+  }
+  const proximos = (busyList||[])
+    .map(ev => ({...ev, ini:new Date(ev.start)}))
+    .filter(ev => ev.ini > now)
+    .sort((a,b)=>a.ini-b.ini);
+  if (proximos.length) {
+    const minutos = (proximos[0].ini - now) / 60000;
+    if (minutos <= 15) return { status:'em_breve', em: proximos[0].ini };
+  }
+  return { status:'livre' };
+}
+
+async function loadSalasLive(){
+  const grid = document.getElementById('rooms-grid');
+  const results = await Promise.all(ROOMS.map(async room => {
+    try{
+      const r = await fetch(`${SALAS_BACKEND}?email=${encodeURIComponent(room.email)}`);
+      const d = await r.json();
+      return { room, info: statusAgora(d.busy) };
+    }catch(e){
+      return { room, info: { status:'livre' } };
+    }
+  }));
+
+  const CORES = { ocupada:'var(--red)', em_breve:'var(--amber)', livre:'var(--green)' };
+  const LABELS = { ocupada:'Ocupada', em_breve:'Em breve', livre:'Livre' };
+  const hora = d => d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+  grid.innerHTML = results.map(({room, info}) => `
+    <div class="room-card">
+      <div class="room-name">${room.name}</div>
+      <div class="room-status">
+        <div class="room-dot" style="background:${CORES[info.status]};"></div>
+        ${LABELS[info.status]}
+      </div>
+      <div class="room-time">${info.status==='ocupada' ? 'até '+hora(info.ate) : info.status==='em_breve' ? 'às '+hora(info.em) : ''}</div>
+    </div>
+  `).join('');
+}
+
+async function loadAll(){
+  loadFacilities();
+  loadSalasKPI();
+  loadSalasLive();
+}
+
+// ── boot ──
+showSlide(0);
+loadAll();
+setInterval(tickProgress, 200);
+setInterval(tickClock, 1000);
+setInterval(loadAll, DATA_REFRESH_MS);
+tickClock();
+</script>
+</body>
+</html>
