@@ -9,58 +9,69 @@
 <style>
   :root{
     --purple-dark:#2D085D; --purple:#6613D0; --purple-mid:#8E44ED; --lavanda:#E2D0FA;
-    --orange:#FE8F1C; --black:#0B0D19; --offwhite:#F5F6FC;
-    --green:#3ECF8E; --red:#F2545B; --amber:#F2B544;
+    --orange:#FF6B2B; --ink:#0B0D19; --ink2:#5b5f75; --bg:#F5F6FC; --card:#ffffff; --border:#e5e3f0;
+    --green:#16db6a; --green-bg:rgba(22,219,106,.1); --green-border:rgba(22,219,106,.35);
+    --yellow:#FF6B2B; --yellow-bg:rgba(255,107,43,.1); --yellow-border:rgba(255,107,43,.3);
+    --red:#ff1f1f; --red-bg:rgba(255,31,31,.06); --red-border:rgba(255,31,31,.18);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{
     width:100%;height:100%;overflow:hidden;
-    background:linear-gradient(135deg,var(--black) 0%,var(--purple-dark) 55%,var(--purple) 100%);
-    font-family:'Poppins',sans-serif; color:var(--offwhite);
+    background:var(--bg);
+    font-family:'Poppins',sans-serif; color:var(--ink);
   }
-  .progress-track{position:fixed;top:0;left:0;right:0;height:5px;background:rgba(255,255,255,0.08);z-index:50;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .progress-track{position:fixed;top:0;left:0;right:0;height:5px;background:var(--border);z-index:50;}
   .progress-fill{height:100%;background:var(--orange);width:0%;transition:width linear;}
   .dots{position:fixed;bottom:22px;left:0;right:0;display:flex;justify-content:center;gap:8px;z-index:50;}
-  .dot{width:34px;height:4px;border-radius:3px;background:rgba(255,255,255,0.18);transition:background .3s;}
+  .dot{width:34px;height:4px;border-radius:3px;background:var(--border);transition:background .3s;}
   .dot.active{background:var(--orange);}
 
   .slide{position:absolute;inset:0;display:flex;flex-direction:column;padding:48px 64px;opacity:0;transition:opacity .6s ease;pointer-events:none;}
   .slide.active{opacity:1;pointer-events:auto;}
 
-  .eyebrow{font-size:1.05rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--lavanda);font-weight:600;opacity:.85;}
-  .title{font-family:'Funnel Display',sans-serif;font-size:3rem;font-weight:600;margin-top:4px;display:flex;align-items:baseline;gap:16px;}
-  .subtitle{font-size:1.05rem;color:var(--lavanda);opacity:.75;margin-top:2px;}
+  .eyebrow{font-size:1.05rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--purple);font-weight:600;}
+  .title{font-family:'Funnel Display',sans-serif;font-size:3rem;font-weight:600;margin-top:4px;color:var(--ink);}
+  .subtitle{font-size:1.05rem;color:var(--ink2);margin-top:2px;}
 
-  .kpi-row{display:flex;gap:28px;margin-top:36px;}
-  .kpi-card{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:26px 30px;backdrop-filter:blur(6px);}
-  .kpi-label{font-size:1rem;color:var(--lavanda);opacity:.8;font-weight:500;}
-  .kpi-value{font-family:'Funnel Display',sans-serif;font-size:3.6rem;font-weight:700;margin-top:6px;line-height:1;}
+  .kpi-row{display:flex;gap:24px;margin-top:32px;}
+  .kpi-card{flex:1;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px 28px;box-shadow:0 2px 12px rgba(45,8,93,0.04);}
+  .kpi-label{font-size:0.98rem;color:var(--ink2);font-weight:500;}
+  .kpi-value{font-family:'Funnel Display',sans-serif;font-size:3.4rem;font-weight:700;margin-top:6px;line-height:1;color:var(--purple);}
   .kpi-value.orange{color:var(--orange);}
   .kpi-value.green{color:var(--green);}
   .kpi-value.red{color:var(--red);}
 
-  .section-label{font-size:1.05rem;font-weight:600;color:var(--offwhite);margin-top:38px;margin-bottom:16px;opacity:.9;}
+  .section-label{font-size:1.05rem;font-weight:600;color:var(--ink);margin-top:34px;margin-bottom:14px;}
 
   .bars{display:flex;flex-direction:column;gap:14px;}
   .bar-row{display:flex;align-items:center;gap:18px;}
-  .bar-name{width:200px;font-size:1.05rem;color:var(--lavanda);flex-shrink:0;}
-  .bar-track{flex:1;height:16px;background:rgba(255,255,255,0.08);border-radius:8px;overflow:hidden;}
+  .bar-name{width:200px;font-size:1.05rem;color:var(--ink2);flex-shrink:0;}
+  .bar-track{flex:1;height:16px;background:var(--border);border-radius:8px;overflow:hidden;}
   .bar-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--purple-mid),var(--orange));}
-  .bar-pct{width:64px;text-align:right;font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;flex-shrink:0;}
+  .bar-pct{width:64px;text-align:right;font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;flex-shrink:0;color:var(--ink);}
 
-  .rooms-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:14px;}
-  .room-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px 14px;text-align:center;}
-  .room-name{font-size:0.98rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .room-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:0.85rem;font-weight:500;}
+  .rooms-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:12px;}
+  .room-card{border-radius:14px;padding:16px 14px;text-align:center;border:1.5px solid var(--border);background:var(--card);transition:all .2s;}
+  .room-card.free{background:var(--green-bg);border-color:var(--green-border);transform:scale(1.04);box-shadow:0 4px 16px rgba(22,219,106,0.12);}
+  .room-card.soon{background:var(--yellow-bg);border-color:var(--yellow-border);}
+  .room-card.busy{background:var(--card);border-color:var(--border);opacity:.72;}
+  .room-name{font-size:1rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);}
+  .room-card.free .room-name{font-weight:700;}
+  .room-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:0.88rem;font-weight:600;}
+  .room-card.free .room-status{font-size:0.98rem;}
   .room-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-  .room-time{font-size:0.72rem;opacity:.65;margin-top:2px;}
+  .room-dot.free{background:var(--green);animation:blink 2s ease-in-out infinite;}
+  .room-dot.soon{background:var(--yellow);}
+  .room-dot.busy{background:var(--red);}
+  .room-time{font-size:0.74rem;opacity:.7;margin-top:2px;color:var(--ink2);}
 
   .placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;}
   .placeholder-emoji{font-size:4rem;}
-  .placeholder-text{font-size:1.3rem;color:var(--lavanda);opacity:.8;max-width:600px;}
+  .placeholder-text{font-size:1.3rem;color:var(--ink2);max-width:600px;}
 
-  .footer-clock{position:fixed;bottom:22px;right:40px;font-size:1rem;color:var(--lavanda);opacity:.6;font-weight:500;z-index:50;}
-  .logo-badge{position:fixed;top:26px;right:40px;font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;opacity:.7;z-index:50;}
+  .footer-clock{position:fixed;bottom:22px;right:40px;font-size:1rem;color:var(--ink2);font-weight:500;z-index:50;}
+  .logo-badge{position:fixed;top:26px;right:40px;font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;color:var(--purple);z-index:50;}
 </style>
 </head>
 <body>
@@ -270,18 +281,22 @@ async function loadSalasLive(){
     }
   }));
 
-  const CORES = { ocupada:'var(--red)', em_breve:'var(--amber)', livre:'var(--green)' };
+  // Livres primeiro, pra destacar — depois em breve, depois ocupadas
+  const ORDEM = { livre: 0, em_breve: 1, ocupada: 2 };
+  results.sort((a,b) => ORDEM[a.info.status] - ORDEM[b.info.status]);
+
+  const CLASSE = { ocupada:'busy', em_breve:'soon', livre:'free' };
   const LABELS = { ocupada:'Ocupada', em_breve:'Em breve', livre:'Livre' };
   const hora = d => d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
   grid.innerHTML = results.map(({room, info}) => `
-    <div class="room-card">
+    <div class="room-card ${CLASSE[info.status]}">
       <div class="room-name">${room.name}</div>
       <div class="room-status">
-        <div class="room-dot" style="background:${CORES[info.status]};"></div>
+        <div class="room-dot ${CLASSE[info.status]}"></div>
         ${LABELS[info.status]}
       </div>
-      <div class="room-time">${info.status==='ocupada' ? 'até '+hora(info.ate) : info.status==='em_breve' ? 'às '+hora(info.em) : ''}</div>
+      <div class="room-time">${info.status==='ocupada' ? 'até '+hora(info.ate) : info.status==='em_breve' ? 'às '+hora(info.em) : 'o dia todo'}</div>
     </div>
   `).join('');
 }
