@@ -35,17 +35,16 @@ module.exports = async (req, res) => {
   if (req.query && req.query.tv === 'facilities') {
     try {
       const anoAlvo = parseInt(req.query.ano) || new Date().getFullYear();
+      const inicioAno = new Date(`${anoAlvo}-01-01T00:00:00.000Z`);
+      const inicioProxAno = new Date(`${anoAlvo + 1}-01-01T00:00:00.000Z`);
       const [ticketsSnap, projetosSnap] = await Promise.all([
-        db.collection('tickets').get(),
+        db.collection('tickets')
+          .where('data_abertura', '>=', inicioAno)
+          .where('data_abertura', '<', inicioProxAno)
+          .get(),
         db.collection('projetos_ia').get(),
       ]);
-      const tickets = ticketsSnap.docs.map(d => d.data());
-      const doAno = tickets.filter(t => {
-        const raw = t.data_abertura;
-        if (!raw) return false;
-        const d = raw.toDate ? raw.toDate() : new Date(raw);
-        return d.getFullYear() === anoAlvo;
-      });
+      const doAno = ticketsSnap.docs.map(d => d.data());
       const CATLABELS = {
         manutencao: 'Manutenção', infraestrutura: 'Infraestrutura', limpeza: 'Limpeza',
         seguranca: 'Segurança', brindes: 'Brindes', suprimentos: 'Suprimentos',
