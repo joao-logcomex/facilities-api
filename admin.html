@@ -3631,12 +3631,16 @@ window.renderHistorico = renderHistorico;
     grid.innerHTML = lista.map(p => `
       <div class="imob-card" style="cursor:pointer;" onclick="abrirModalProjetoIA('${p._id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-weight:600;">${p.nome || '(sem nome)'}</div>
+          <div>
+            <div style="font-weight:600;">${p.nome || '(sem nome)'}</div>
+            ${p.grupo ? `<div style="font-size:0.7rem;color:var(--ink3);margin-top:2px;">Grupo: ${p.grupo}</div>` : ''}
+          </div>
           <div style="font-size:1.1rem;font-weight:700;color:var(--purple);">${p.percentual ?? 0}%</div>
         </div>
         <div style="background:var(--surface2);border-radius:6px;height:8px;margin-top:8px;overflow:hidden;">
           <div style="width:${Math.min(100, Math.max(0, p.percentual ?? 0))}%;background:linear-gradient(90deg,var(--purple),var(--orange));height:8px;"></div>
         </div>
+        ${p.status_texto ? `<div style="font-size:0.76rem;color:var(--ink2);margin-top:8px;">${p.status_texto}</div>` : ''}
       </div>
     `).join('');
   }
@@ -3648,13 +3652,24 @@ window.renderHistorico = renderHistorico;
     document.getElementById('imob-modal-form').innerHTML = `
       <div style="display:grid;gap:14px;">
         <div>
-          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Nome do projeto *</label>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Nome do item *</label>
           <input type="text" id="pia-nome" value="${proj?.nome || ''}" placeholder="Ex: XGH, War Room, Full Stack..."
             style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;">
         </div>
         <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Grupo (opcional)</label>
+          <input type="text" id="pia-grupo" value="${proj?.grupo || ''}" placeholder="Ex: Salas, Chamados... (agrupa vários itens na TV)"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;">
+          <div style="font-size:0.72rem;color:var(--ink3);margin-top:4px;">Itens com o mesmo grupo aparecem juntos na TV, com um cabeçalho comum.</div>
+        </div>
+        <div>
           <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Progresso (%) *</label>
           <input type="number" id="pia-percentual" min="0" max="100" value="${proj?.percentual ?? ''}" placeholder="0 a 100"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--ink2);margin-bottom:5px;">Status / texto (opcional)</label>
+          <input type="text" id="pia-status" value="${proj?.status_texto || ''}" placeholder="Ex: Lançamento previsto: 03/08"
             style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:0.85rem;">
         </div>
         <div>
@@ -3675,13 +3690,15 @@ window.renderHistorico = renderHistorico;
 
   async function salvarProjetoIA(id) {
     const nome = document.getElementById('pia-nome').value.trim();
+    const grupo = document.getElementById('pia-grupo').value.trim();
     const percentual = parseInt(document.getElementById('pia-percentual').value);
+    const status_texto = document.getElementById('pia-status').value.trim();
     const ordem = parseInt(document.getElementById('pia-ordem').value) || 0;
     if (!nome) { alert('Digite o nome do projeto.'); return; }
     if (isNaN(percentual) || percentual < 0 || percentual > 100) { alert('Progresso precisa ser um número de 0 a 100.'); return; }
     try {
       const { collection, doc, setDoc, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      const dados = { nome, percentual, ordem, updatedAt: serverTimestamp() };
+      const dados = { nome, grupo: grupo || null, percentual, status_texto: status_texto || null, ordem, updatedAt: serverTimestamp() };
       if (id) {
         await setDoc(doc(db, 'projetos_ia', id), dados, { merge: true });
       } else {
