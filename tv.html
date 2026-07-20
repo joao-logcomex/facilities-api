@@ -55,7 +55,7 @@
   .room-card{border-radius:14px;padding:16px 14px;text-align:center;border:1.5px solid var(--border);background:var(--card);transition:all .2s;}
   .room-card.free{background:var(--green-bg);border-color:var(--green-border);transform:scale(1.04);box-shadow:0 4px 16px rgba(22,219,106,0.12);}
   .room-card.soon{background:var(--yellow-bg);border-color:var(--yellow-border);}
-  .room-card.busy{background:var(--card);border-color:var(--border);opacity:.72;}
+  .room-card.busy{background:var(--red-bg);border-color:var(--red-border);}
   .room-name{font-size:1rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);}
   .room-card.free .room-name{font-weight:700;}
   .room-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:0.88rem;font-weight:600;}
@@ -131,8 +131,10 @@
     </div>
   </div>
 
-  <div class="section-label">Status das salas</div>
-  <div class="rooms-grid" id="rooms-grid"><!-- preenchido via JS --></div>
+  <div class="section-label">Status das salas — 1º Andar</div>
+  <div class="rooms-grid" id="rooms-grid-1"><!-- preenchido via JS --></div>
+  <div class="section-label" style="margin-top:20px;">2º Andar</div>
+  <div class="rooms-grid" id="rooms-grid-2"><!-- preenchido via JS --></div>
 </div>
 
 <!-- SLIDE 3 — HELP DESK (placeholder até termos acesso aos dados) -->
@@ -152,23 +154,23 @@ const DATA_REFRESH_MS = 60000;
 const SALAS_BACKEND = 'https://script.google.com/macros/s/AKfycbyDgucsB17Z1Al0_15ZJ1WaPvJHkapmyxITLDHE9WBGl3DHmXNnMJET9xRNLzn-aov7/exec';
 
 const ROOMS = [
-  {name:'PHP',capacity:5,email:'c_1884rp7puo7gejdji3bfro291a05i@resource.calendar.google.com'},
-  {name:'Javascript',capacity:5,email:'c_18846snhor0rghuijj2jq394chmhm@resource.calendar.google.com'},
-  {name:'Python',capacity:1,email:'c_18861lda8ehrigurm6fjo5nbo1c5g@resource.calendar.google.com'},
-  {name:'Container',capacity:8,email:'c_1885hqdo4dj4oi8rgski9h95qrg08@resource.calendar.google.com'},
-  {name:'API',email:'c_1885ntl4m11isgpvjuc8fo1iv4qmo@resource.calendar.google.com'},
-  {name:'Cloud',capacity:1,email:'c_1881ud60ske32hi6ijkhq4vqc82pk@resource.calendar.google.com'},
-  {name:'HTML',capacity:2,email:'c_188fffg8bgsf2hc2n3akt767cul1c@resource.calendar.google.com'},
-  {name:'Cron',capacity:1,email:'c_188etf42m0avah8cja6sc0hcg3o0u@resource.calendar.google.com'},
-  {name:'Linux',capacity:1,email:'c_1881e936asq96go0jfpj5bjigjpck@resource.calendar.google.com'},
-  {name:'Bot',capacity:2,email:'c_18838gojbu52mh82nle2pf8heg7h4@resource.calendar.google.com'},
-  {name:'Git',capacity:3,email:'c_188bm0osiiqtkgishm26mbabaae30@resource.calendar.google.com'},
-  {name:'Fullstack',capacity:10,email:'c_18864rq4tvokmh1cn3fju1d4nkauk@resource.calendar.google.com'},
-  {name:'War Room',capacity:20,email:'c_188etao1p55mmit9nqqemnvfhlhuc@resource.calendar.google.com'},
-  {name:'XGH',capacity:6,email:'c_1886tvmpocelmh5pjo46elcu1lkb6@resource.calendar.google.com'},
-  {name:'IA',capacity:6,email:'c_1882utjqrvmj0hn8njjjtulf0e6j6@resource.calendar.google.com'},
-  {name:'Deploy',capacity:6,email:'c_1887ki69uao2uj01mvhinb7rma7re@resource.calendar.google.com'},
-  {name:'Root',capacity:4,email:'c_1881aq8cgkbfuhdpgdh4dn4oj0qjk@resource.calendar.google.com'},
+  {name:'PHP',capacity:5,floor:1,email:'c_1884rp7puo7gejdji3bfro291a05i@resource.calendar.google.com'},
+  {name:'Javascript',capacity:5,floor:1,email:'c_18846snhor0rghuijj2jq394chmhm@resource.calendar.google.com'},
+  {name:'Python',capacity:1,floor:1,email:'c_18861lda8ehrigurm6fjo5nbo1c5g@resource.calendar.google.com'},
+  {name:'Container',capacity:8,floor:1,email:'c_1885hqdo4dj4oi8rgski9h95qrg08@resource.calendar.google.com'},
+  {name:'API',floor:1,email:'c_1885ntl4m11isgpvjuc8fo1iv4qmo@resource.calendar.google.com'},
+  {name:'Cloud',capacity:1,floor:1,email:'c_1881ud60ske32hi6ijkhq4vqc82pk@resource.calendar.google.com'},
+  {name:'HTML',capacity:2,floor:1,email:'c_188fffg8bgsf2hc2n3akt767cul1c@resource.calendar.google.com'},
+  {name:'Cron',capacity:1,floor:1,email:'c_188etf42m0avah8cja6sc0hcg3o0u@resource.calendar.google.com'},
+  {name:'Linux',capacity:1,floor:1,email:'c_1881e936asq96go0jfpj5bjigjpck@resource.calendar.google.com'},
+  {name:'Bot',capacity:2,floor:1,email:'c_18838gojbu52mh82nle2pf8heg7h4@resource.calendar.google.com'},
+  {name:'Git',capacity:3,floor:1,email:'c_188bm0osiiqtkgishm26mbabaae30@resource.calendar.google.com'},
+  {name:'Fullstack',capacity:10,floor:1,email:'c_18864rq4tvokmh1cn3fju1d4nkauk@resource.calendar.google.com'},
+  {name:'War Room',capacity:20,floor:2,email:'c_188etao1p55mmit9nqqemnvfhlhuc@resource.calendar.google.com'},
+  {name:'XGH',capacity:6,floor:2,email:'c_1886tvmpocelmh5pjo46elcu1lkb6@resource.calendar.google.com'},
+  {name:'IA',capacity:6,floor:2,email:'c_1882utjqrvmj0hn8njjjtulf0e6j6@resource.calendar.google.com'},
+  {name:'Deploy',capacity:6,floor:2,email:'c_1887ki69uao2uj01mvhinb7rma7re@resource.calendar.google.com'},
+  {name:'Root',capacity:4,floor:2,email:'c_1881aq8cgkbfuhdpgdh4dn4oj0qjk@resource.calendar.google.com'},
 ];
 
 let cur = 0;
@@ -290,8 +292,23 @@ function statusAgora(busyList){
   return { status:'livre' };
 }
 
+function renderRoomsGrid(elId, items){
+  const CLASSE = { ocupada:'busy', em_breve:'soon', livre:'free' };
+  const LABELS = { ocupada:'Ocupada', em_breve:'Em breve', livre:'Livre' };
+  const hora = d => d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById(elId).innerHTML = items.map(({room, info}) => `
+    <div class="room-card ${CLASSE[info.status]}">
+      <div class="room-name">${room.name}</div>
+      <div class="room-status">
+        <div class="room-dot ${CLASSE[info.status]}"></div>
+        ${LABELS[info.status]}
+      </div>
+      <div class="room-time">${info.status==='ocupada' ? 'até '+hora(info.ate) : info.status==='em_breve' ? 'às '+hora(info.em) : 'o dia todo'}</div>
+    </div>
+  `).join('');
+}
+
 async function loadSalasLive(){
-  const grid = document.getElementById('rooms-grid');
   const results = await Promise.all(ROOMS.map(async room => {
     try{
       const r = await fetch(`${SALAS_BACKEND}?email=${encodeURIComponent(room.email)}`);
@@ -302,24 +319,15 @@ async function loadSalasLive(){
     }
   }));
 
-  // Livres primeiro, pra destacar — depois em breve, depois ocupadas
+  // Livres primeiro dentro de cada andar
   const ORDEM = { livre: 0, em_breve: 1, ocupada: 2 };
-  results.sort((a,b) => ORDEM[a.info.status] - ORDEM[b.info.status]);
+  const porOrdem = (a,b) => ORDEM[a.info.status] - ORDEM[b.info.status];
 
-  const CLASSE = { ocupada:'busy', em_breve:'soon', livre:'free' };
-  const LABELS = { ocupada:'Ocupada', em_breve:'Em breve', livre:'Livre' };
-  const hora = d => d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const andar1 = results.filter(r => r.room.floor === 1).sort(porOrdem);
+  const andar2 = results.filter(r => r.room.floor === 2).sort(porOrdem);
 
-  grid.innerHTML = results.map(({room, info}) => `
-    <div class="room-card ${CLASSE[info.status]}">
-      <div class="room-name">${room.name}</div>
-      <div class="room-status">
-        <div class="room-dot ${CLASSE[info.status]}"></div>
-        ${LABELS[info.status]}
-      </div>
-      <div class="room-time">${info.status==='ocupada' ? 'até '+hora(info.ate) : info.status==='em_breve' ? 'às '+hora(info.em) : 'o dia todo'}</div>
-    </div>
-  `).join('');
+  renderRoomsGrid('rooms-grid-1', andar1);
+  renderRoomsGrid('rooms-grid-2', andar2);
 }
 
 async function loadAll(){
