@@ -11,7 +11,7 @@
     --purple-dark:#2D085D; --purple:#6613D0; --purple-mid:#8E44ED; --lavanda:#E2D0FA;
     --orange:#FF6B2B; --ink:#0B0D19; --ink2:#5b5f75; --bg:#F5F6FC; --card:#ffffff; --border:#e5e3f0;
     --green:#16db6a; --green-bg:rgba(22,219,106,.1); --green-border:rgba(22,219,106,.35);
-    --yellow:#FF6B2B; --yellow-bg:rgba(255,107,43,.1); --yellow-border:rgba(255,107,43,.3);
+    --yellow:#F2A900; --yellow-bg:rgba(242,169,0,.12); --yellow-border:rgba(242,169,0,.4);
     --red:#ff1f1f; --red-bg:rgba(255,31,31,.06); --red-border:rgba(255,31,31,.18);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -204,7 +204,10 @@
 <script>
 const SLIDE_IDS = ['slide-facilities','slide-salas','slide-ranking-salas','slide-helpdesk'];
 const SLIDE_MS = 22000;
-const DATA_REFRESH_MS = 300000; // 5 minutos — evita estourar a cota do Firebase
+const FACILITIES_REFRESH_MS = 60000;    // chamados/KPIs — 1 min (limitado pela cota do Firebase)
+const SALAS_LIVE_REFRESH_MS = 10000;    // disponibilidade agora — 10s (sem risco de cota, é outro sistema)
+const SALAS_KPI_REFRESH_MS = 60000;     // check-in do tablet — 1 min
+const RANKING_REFRESH_MS = 300000;      // ranking anual (pesado, 17 salas x histórico) — 5 min
 const SALAS_BACKEND = 'https://script.google.com/macros/s/AKfycbyDgucsB17Z1Al0_15ZJ1WaPvJHkapmyxITLDHE9WBGl3DHmXNnMJET9xRNLzn-aov7/exec';
 
 const ROOMS = [
@@ -225,6 +228,8 @@ const ROOMS = [
   {name:'IA',capacity:6,floor:2,email:'c_1882utjqrvmj0hn8njjjtulf0e6j6@resource.calendar.google.com'},
   {name:'Deploy',capacity:6,floor:2,email:'c_1887ki69uao2uj01mvhinb7rma7re@resource.calendar.google.com'},
   {name:'Root',capacity:4,floor:2,email:'c_1881aq8cgkbfuhdpgdh4dn4oj0qjk@resource.calendar.google.com'},
+  {name:'Sofá Ext-Gemini',floor:2,email:'c_188cbbs1brgsshq6lo8fasg8lqn26@resource.calendar.google.com'},
+  {name:'Mesa Ext-Dataset',floor:2,email:'c_1880d4ibnjevmg1qidnmi5lhn6m9m@resource.calendar.google.com'},
 ];
 
 let cur = 0;
@@ -276,7 +281,7 @@ function tickClock(){
   document.getElementById('clock').textContent = now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
 }
 
-// ── FACILITIES ──
+// ── FACILITIES — KPIs de chamados ──
 async function loadFacilities(){
   try{
     const r = await fetch('/api/relatorio-imobiliario?tv=facilities&ano=2026');
@@ -286,48 +291,51 @@ async function loadFacilities(){
     animarNumero('fac-concluidos', d.concluidos);
     animarNumero('fac-cancelados', d.cancelados);
     animarNumero('fac-total', d.total);
-
-    const projetos = (d.projetos || []);
-    const cont = document.getElementById('fac-projetos');
-    if (!projetos.length) {
-      cont.innerHTML = '<div style="opacity:.6;font-size:1rem;">Nenhum projeto cadastrado ainda.</div>';
-    } else {
-      // Agrupa por 'grupo' (itens sem grupo viram grupo próprio, usando o nome)
-      const grupos = {};
-      projetos.forEach(p => {
-        const chave = p.grupo || p.nome;
-        if (!grupos[chave]) grupos[chave] = { titulo: chave, status: null, itens: [] };
-        grupos[chave].itens.push(p);
-        if (p.status_texto && !grupos[chave].status) grupos[chave].status = p.status_texto;
-      });
-      cont.innerHTML = Object.values(grupos).map(g => `
-        <div style="margin-bottom:6px;">
-          ${g.titulo !== g.itens[0].nome || g.itens.length > 1 ? `
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-              <div style="font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;color:var(--purple);">${g.titulo}</div>
-              ${g.status ? `<div style="font-size:0.92rem;color:var(--ink2);">${g.status}</div>` : ''}
-            </div>
-          ` : ''}
-          <div class="bars">
-            ${g.itens.map(p => `
-              <div class="bar-row">
-                <div class="bar-name">${p.nome}</div>
-                <div class="bar-track"><div class="bar-fill" data-pct="${Math.min(100,Math.max(0,p.percentual||0))}" style="width:0%;"></div></div>
-                <div class="bar-pct">${p.percentual ?? 0}%</div>
-              </div>
-            `).join('')}
-          </div>
-          ${(g.titulo === g.itens[0].nome && g.itens.length === 1 && g.status) ? `<div style="font-size:0.92rem;color:var(--ink2);margin-top:6px;">${g.status}</div>` : ''}
-        </div>
-      `).join('');
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        cont.querySelectorAll('.bar-fill').forEach(el => {
-          el.style.width = (el.dataset.pct || 0) + '%';
-        });
-      }));
-    }
   }catch(e){ console.warn('Erro ao carregar Facilities:', e); }
 }
+
+// ── FACILITIES — Projetos (%) — atualizado ao vivo via Firestore (ver script type=module abaixo) ──
+window.renderFacilitiesProjetos = function(projetos){
+  const cont = document.getElementById('fac-projetos');
+  if (!cont) return;
+  if (!projetos.length) {
+    cont.innerHTML = '<div style="opacity:.6;font-size:1rem;">Nenhum projeto cadastrado ainda.</div>';
+    return;
+  }
+  // Agrupa por 'grupo' (itens sem grupo viram grupo próprio, usando o nome)
+  const grupos = {};
+  projetos.forEach(p => {
+    const chave = p.grupo || p.nome;
+    if (!grupos[chave]) grupos[chave] = { titulo: chave, status: null, itens: [] };
+    grupos[chave].itens.push(p);
+    if (p.status_texto && !grupos[chave].status) grupos[chave].status = p.status_texto;
+  });
+  cont.innerHTML = Object.values(grupos).map(g => `
+    <div style="margin-bottom:6px;">
+      ${g.titulo !== g.itens[0].nome || g.itens.length > 1 ? `
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+          <div style="font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;color:var(--purple);">${g.titulo}</div>
+          ${g.status ? `<div style="font-size:0.92rem;color:var(--ink2);">${g.status}</div>` : ''}
+        </div>
+      ` : ''}
+      <div class="bars">
+        ${g.itens.map(p => `
+          <div class="bar-row">
+            <div class="bar-name">${p.nome}</div>
+            <div class="bar-track"><div class="bar-fill" data-pct="${Math.min(100,Math.max(0,p.percentual||0))}" style="width:0%;"></div></div>
+            <div class="bar-pct">${p.percentual ?? 0}%</div>
+          </div>
+        `).join('')}
+      </div>
+      ${(g.titulo === g.itens[0].nome && g.itens.length === 1 && g.status) ? `<div style="font-size:0.92rem;color:var(--ink2);margin-top:6px;">${g.status}</div>` : ''}
+    </div>
+  `).join('');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    cont.querySelectorAll('.bar-fill').forEach(el => {
+      el.style.width = (el.dataset.pct || 0) + '%';
+    });
+  }));
+};
 
 // ── SALAS — KPIs de check-in (dados do tablet, últimos 30 dias) ──
 async function loadSalasKPI(){
@@ -356,6 +364,7 @@ async function loadSalasKPI(){
 // Usa action=historico (só leitura, não abre/tranca porta nem cancela nada).
 // Conta TODAS as reuniões da agenda, não só as que passaram pelo tablet/check-in.
 // Feriados nacionais 2026 (fonte: calendário oficial ANBIMA / Gov.br)
+// + feriado municipal de Curitiba/PR (sede da Logcomex)
 const FERIADOS_2026 = new Set([
   '2026-01-01', // Confraternização Universal
   '2026-02-16', // Carnaval (segunda)
@@ -365,6 +374,7 @@ const FERIADOS_2026 = new Set([
   '2026-05-01', // Dia do Trabalho
   '2026-06-04', // Corpus Christi
   '2026-09-07', // Independência do Brasil
+  '2026-09-08', // N. Sra da Luz dos Pinhais (feriado municipal — Curitiba/PR)
   '2026-10-12', // Nossa Senhora Aparecida
   '2026-11-02', // Finados
   '2026-11-15', // Proclamação da República
@@ -507,8 +517,42 @@ showSlide(0);
 loadAll();
 setInterval(tickProgress, 200);
 setInterval(tickClock, 1000);
-setInterval(loadAll, DATA_REFRESH_MS);
+setInterval(loadFacilities, FACILITIES_REFRESH_MS);
+setInterval(loadSalasKPI, SALAS_KPI_REFRESH_MS);
+setInterval(loadSalasLive, SALAS_LIVE_REFRESH_MS);
+setInterval(loadRankingSalas, RANKING_REFRESH_MS);
 tickClock();
+</script>
+
+<!-- Projetos (%) — ao vivo, direto do Firestore (sem precisar de intervalo/polling) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCczKnSawfHiAPuMjY2L80ww_wtBMJJY30",
+    authDomain: "facilities-logcomex.firebaseapp.com",
+    projectId: "facilities-logcomex",
+    storageBucket: "facilities-logcomex.firebasestorage.app",
+    messagingSenderId: "957812645576",
+    appId: "1:957812645576:web:80c88475cc904106d20ffd"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  function iniciar(){
+    onSnapshot(query(collection(db, 'projetos_ia'), orderBy('ordem', 'asc')), snap => {
+      const projetos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (window.renderFacilitiesProjetos) window.renderFacilitiesProjetos(projetos);
+    }, () => {
+      onSnapshot(collection(db, 'projetos_ia'), snap => {
+        const projetos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (window.renderFacilitiesProjetos) window.renderFacilitiesProjetos(projetos);
+      });
+    });
+  }
+  if (window.renderFacilitiesProjetos) iniciar();
+  else window.addEventListener('DOMContentLoaded', iniciar);
 </script>
 </body>
 </html>
