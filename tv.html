@@ -37,7 +37,7 @@
   .dot{width:34px;height:4px;border-radius:3px;background:var(--border);transition:background .3s;}
   .dot.active{background:var(--orange);}
 
-  .slide{position:absolute;inset:0;display:flex;flex-direction:column;padding:48px 64px;opacity:0;transform:translateY(10px);transition:opacity .6s ease, transform .6s ease;pointer-events:none;}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;padding:48px 64px 84px 64px;opacity:0;transform:translateY(10px);transition:opacity .6s ease, transform .6s ease;pointer-events:none;overflow:hidden;}
   .slide.active{transform:translateY(0);}
   .slide.active{opacity:1;pointer-events:auto;}
 
@@ -64,14 +64,14 @@
   .bar-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--purple-mid),var(--orange));}
   .bar-pct{width:64px;text-align:right;font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;flex-shrink:0;color:var(--ink);}
 
-  .rooms-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:12px;}
-  .room-card{border-radius:14px;padding:16px 14px;text-align:center;border:1.5px solid var(--border);background:var(--card);transition:all .2s;}
+  .rooms-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-top:10px;}
+  .room-card{border-radius:12px;padding:12px 10px;text-align:center;border:1.5px solid var(--border);background:var(--card);transition:all .2s;}
   .room-card.free{background:var(--green-bg);border-color:var(--green-border);transform:scale(1.04);box-shadow:0 4px 16px rgba(22,219,106,0.12);}
   .room-card.soon{background:var(--yellow-bg);border-color:var(--yellow-border);}
   .room-card.busy{background:var(--red-bg);border-color:var(--red-border);}
-  .room-name{font-size:1rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);}
+  .room-name{font-size:0.92rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);}
   .room-card.free .room-name{font-weight:700;}
-  .room-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:0.88rem;font-weight:600;}
+  .room-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;font-size:0.82rem;font-weight:600;}
   .room-card.free .room-status{font-size:0.98rem;}
   .room-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
   .room-dot.free{background:var(--green);animation:blink 2s ease-in-out infinite;}
@@ -165,7 +165,7 @@
 
   <div class="section-label">Status das salas — 1º Andar</div>
   <div class="rooms-grid" id="rooms-grid-1"><!-- preenchido via JS --></div>
-  <div class="section-label" style="margin-top:20px;">2º Andar</div>
+  <div class="section-label" style="margin-top:14px;">2º Andar</div>
   <div class="rooms-grid" id="rooms-grid-2"><!-- preenchido via JS --></div>
 </div>
 
