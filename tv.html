@@ -170,6 +170,16 @@
   <div class="rooms-grid" id="rooms-grid-2"><!-- preenchido via JS --></div>
 </div>
 
+<!-- SLIDE 2b — RANKING DE USO DAS SALAS -->
+<div class="slide" id="slide-ranking-salas">
+  <div class="eyebrow">Salas de Reunião</div>
+  <div class="title">Reuniões por sala</div>
+  <div class="subtitle">Últimos 30 dias · Atualizado em tempo real</div>
+
+  <div class="section-label" style="margin-top:28px;">Total de reservas no período</div>
+  <div class="bars" id="ranking-salas"><!-- preenchido via JS --></div>
+</div>
+
 <!-- SLIDE 3 — HELP DESK (placeholder até termos acesso aos dados) -->
 <div class="slide" id="slide-helpdesk">
   <div class="eyebrow">Help Desk · TI</div>
@@ -181,7 +191,7 @@
 </div>
 
 <script>
-const SLIDE_IDS = ['slide-facilities','slide-salas','slide-helpdesk'];
+const SLIDE_IDS = ['slide-facilities','slide-salas','slide-ranking-salas','slide-helpdesk'];
 const SLIDE_MS = 22000;
 const DATA_REFRESH_MS = 300000; // 5 minutos — evita estourar a cota do Firebase
 const SALAS_BACKEND = 'https://script.google.com/macros/s/AKfycbyDgucsB17Z1Al0_15ZJ1WaPvJHkapmyxITLDHE9WBGl3DHmXNnMJET9xRNLzn-aov7/exec';
@@ -319,12 +329,34 @@ async function loadSalasKPI(){
     const comCheckin = regs.filter(x => x.checkin).length;
     const taxa = total > 0 ? Math.round((comCheckin/total)*100) : 0;
     const porSala = {};
-    regs.forEach(x => { porSala[x.room] = (porSala[x.room]||0) + 1; });
+    regs.forEach(x => {
+      const nome = (x.room || '').replace(/^\d+\.\s*/,'').trim();
+      porSala[nome] = (porSala[nome]||0) + 1;
+    });
     const salaTop = Object.entries(porSala).sort((a,b)=>b[1]-a[1])[0];
 
     animarNumero('sal-total', total);
     animarNumero('sal-checkin', taxa, '%');
-    document.getElementById('sal-maisusada').textContent = salaTop ? salaTop[0].replace(/^\d+\.\s*/,'') : '—';
+    document.getElementById('sal-maisusada').textContent = salaTop ? salaTop[0] : '—';
+
+    // ── Ranking de todas as salas (inclui as com 0 reuniões) ──
+    const ranking = ROOMS
+      .map(room => ({ nome: room.name, qtd: porSala[room.name] || 0 }))
+      .sort((a,b) => b.qtd - a.qtd);
+    const maxQtd = Math.max(1, ranking[0]?.qtd || 1);
+    const cont = document.getElementById('ranking-salas');
+    if (cont) {
+      cont.innerHTML = ranking.map(item => `
+        <div class="bar-row">
+          <div class="bar-name">${item.nome}</div>
+          <div class="bar-track"><div class="bar-fill" data-pct="${Math.round((item.qtd/maxQtd)*100)}" style="width:0%;"></div></div>
+          <div class="bar-pct">${item.qtd}</div>
+        </div>
+      `).join('');
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        cont.querySelectorAll('.bar-fill').forEach(el => { el.style.width = (el.dataset.pct || 0) + '%'; });
+      }));
+    }
   }catch(e){ console.warn('Erro ao carregar KPI salas:', e); }
 }
 
