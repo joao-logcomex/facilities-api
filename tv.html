@@ -215,8 +215,14 @@
     </div>
   </div>
 
-  <div class="section-label">Por nível e por categoria</div>
-  <div class="bars" id="hd-breakdown"><!-- preenchido via JS --></div>
+  <div class="section-label">Projetos da área — Helpdesk</div>
+  <div style="display:flex;gap:22px;font-size:0.8rem;color:var(--ink2);margin:2px 0 10px 0;">
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:11px;height:11px;background:var(--purple);border-radius:3px;flex-shrink:0;"></div>Tempo de projeto</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:11px;height:11px;background:#0FBFA8;border-radius:3px;flex-shrink:0;"></div>Operação assistida</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;background:var(--orange);transform:rotate(45deg);flex-shrink:0;"></div>Go live</div>
+  </div>
+  <div id="hd-meses" style="position:relative;height:16px;font-size:0.72rem;color:var(--ink2);margin-bottom:2px;"></div>
+  <div id="hd-timeline"><!-- preenchido via JS --></div>
 </div>
 
 <script>
@@ -557,32 +563,110 @@ async function loadHelpdesk(){
     animarNumero('hd-concluidos', d.concluidos || 0);
     animarNumero('hd-recusados', d.recusados || 0);
     animarNumero('hd-total', d.total || 0);
-
-    const porNivel = (d.por_nivel || []).filter(x => x.nivel);
-    const porCategoria = (d.por_categoria || [])
-      .filter(x => x.tipo)
-      .sort((a,b) => b.qtd - a.qtd)
-      .slice(0, 6);
-
-    const cont = document.getElementById('hd-breakdown');
-    if (cont) {
-      const maxNivel = Math.max(1, ...porNivel.map(x => x.qtd));
-      const maxCat = Math.max(1, ...porCategoria.map(x => x.qtd));
-      cont.innerHTML = `
-        <div style="margin-bottom:6px;">
-          <div style="font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;color:var(--purple);margin-bottom:8px;">Por nível</div>
-          <div class="bars">${porNivel.map(x => barRowHTML(x.nivel, x.qtd, maxNivel)).join('')}</div>
-        </div>
-        <div style="margin-top:22px;">
-          <div style="font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;color:var(--purple);margin-bottom:8px;">Por categoria</div>
-          <div class="bars">${porCategoria.map(x => barRowHTML(x.tipo, x.qtd, maxCat)).join('')}</div>
-        </div>
-      `;
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        cont.querySelectorAll('.bar-fill').forEach(el => { el.style.width = (el.dataset.pct || 0) + '%'; });
-      }));
-    }
+    // Tempo médio e SLA cumprido: pendente — aguardando fórmula exata (dias úteis/feriados/exceções) do Christian
   }catch(e){ console.warn('Erro ao carregar Helpdesk:', e); }
+}
+
+// ── HELP DESK · TI — cronograma de projetos da área ──
+async function loadHelpdeskProjetos(){
+  if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.startsWith('COLE_AQUI')) return;
+  try{
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_projetos_area_public`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ p_token: TOKEN_DASHBOARD }),
+    });
+    const lista = await r.json();
+    if (!Array.isArray(lista)) { console.warn('Projetos helpdesk erro:', lista); return; }
+    // Só projetos em curso, sem "melhorias" (mesma recomendação do manual)
+    const projetos = lista.filter(p => ['planejado','em_andamento','pausado'].includes(p.status) && p.tipo !== 'melhoria');
+    renderTimelineHelpdesk(projetos);
+  }catch(e){ console.warn('Erro ao carregar projetos helpdesk:', e); }
+}
+
+function renderTimelineHelpdesk(projetos){
+  const cont = document.getElementById('hd-timeline');
+  const contMeses = document.getElementById('hd-meses');
+  if (!cont) return;
+  if (!projetos.length) {
+    cont.innerHTML = '<div style="opacity:.6;font-size:1rem;">Nenhum projeto em andamento.</div>';
+    if (contMeses) contMeses.innerHTML = '';
+    return;
+  }
+
+  const todasDatas = [];
+  projetos.forEach(p => {
+    if (p.data_inicio) todasDatas.push(new Date(p.data_inicio));
+    if (p.data_fim) todasDatas.push(new Date(p.data_fim));
+    if (p.go_live_data) todasDatas.push(new Date(p.go_live_data));
+  });
+  if (!todasDatas.length) { cont.innerHTML = ''; return; }
+
+  let minD = new Date(Math.min(...todasDatas));
+  let maxD = new Date(Math.max(...todasDatas));
+  const totalMs = Math.max(1, maxD - minD);
+  minD = new Date(minD.getTime() - totalMs * 0.06);
+  maxD = new Date(maxD.getTime() + totalMs * 0.06);
+  const rangeMs = Math.max(1, maxD - minD);
+  const pct = d => Math.min(100, Math.max(0, ((new Date(d) - minD) / rangeMs) * 100));
+
+  const diasEntre = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+  const fmtData = d => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  // Marcações de mês no topo
+  if (contMeses) {
+    const marcas = [];
+    let d = new Date(minD.getFullYear(), minD.getMonth(), 1);
+    while (d <= maxD) {
+      marcas.push(new Date(d));
+      d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    }
+    contMeses.innerHTML = marcas.map(m => `
+      <div style="position:absolute;left:${pct(m)}%;top:0;">${MESES[m.getMonth()]}</div>
+    `).join('');
+  }
+
+  const hojePct = pct(new Date());
+
+  cont.innerHTML = `
+    <div style="position:relative;padding-top:4px;">
+      <div style="position:absolute;left:${hojePct}%;top:0;bottom:0;width:2px;background:var(--orange);opacity:.35;z-index:0;"></div>
+      ${projetos.map(p => {
+        const inicioPct = p.data_inicio ? pct(p.data_inicio) : null;
+        const fimPct = p.data_fim ? pct(p.data_fim) : null;
+        const assIniPct = p.assistida_inicio ? pct(p.assistida_inicio) : null;
+        const assFimPct = p.assistida_fim ? pct(p.assistida_fim) : null;
+        const goLivePct = p.go_live_data ? pct(p.go_live_data) : null;
+        const diasProjeto = (p.data_inicio && p.data_fim) ? diasEntre(p.data_inicio, p.data_fim) : null;
+        const diasAssistida = (p.assistida_inicio && p.assistida_fim) ? diasEntre(p.assistida_inicio, p.assistida_fim) : null;
+        return `
+          <div style="margin-bottom:16px;position:relative;z-index:1;">
+            <div style="font-size:0.98rem;font-weight:600;color:var(--ink);margin-bottom:5px;">${p.nome}</div>
+            <div style="position:relative;height:30px;">
+              ${(inicioPct !== null && fimPct !== null) ? `
+                <div style="position:absolute;left:${inicioPct}%;width:${Math.max(1.5, fimPct - inicioPct)}%;top:0;height:13px;background:var(--purple);border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
+                  <span style="font-size:0.62rem;color:#fff;font-weight:700;white-space:nowrap;">${diasProjeto !== null ? diasProjeto + 'd' : ''}</span>
+                </div>` : ''}
+              ${(assIniPct !== null && assFimPct !== null) ? `
+                <div style="position:absolute;left:${assIniPct}%;width:${Math.max(1.5, assFimPct - assIniPct)}%;top:16px;height:13px;background:#0FBFA8;border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
+                  <span style="font-size:0.62rem;color:#fff;font-weight:700;white-space:nowrap;">${diasAssistida !== null ? diasAssistida + 'd' : ''}</span>
+                </div>` : ''}
+              ${goLivePct !== null ? `
+                <div style="position:absolute;left:${goLivePct}%;top:-1px;display:flex;align-items:center;gap:4px;">
+                  <div style="width:8px;height:8px;background:var(--orange);transform:rotate(45deg);flex-shrink:0;"></div>
+                  <span style="font-size:0.68rem;font-weight:700;color:var(--orange);white-space:nowrap;">${fmtData(p.go_live_data)}</span>
+                </div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
 }
 
 async function loadAll(){
@@ -591,6 +675,7 @@ async function loadAll(){
   loadSalasLive();
   loadRankingSalas();
   loadHelpdesk();
+  loadHelpdeskProjetos();
 }
 
 // ── boot ──
@@ -603,6 +688,7 @@ setInterval(loadSalasKPI, SALAS_KPI_REFRESH_MS);
 setInterval(loadSalasLive, SALAS_LIVE_REFRESH_MS);
 setInterval(loadRankingSalas, RANKING_REFRESH_MS);
 setInterval(loadHelpdesk, HD_REFRESH_MS);
+setInterval(loadHelpdeskProjetos, HD_REFRESH_MS);
 tickClock();
 </script>
 
