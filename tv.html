@@ -174,7 +174,7 @@
 <div class="slide" id="slide-ranking-salas">
   <div class="eyebrow">Salas de Reunião</div>
   <div class="title">Reuniões por sala</div>
-  <div class="subtitle" id="ranking-sub">2026 · Direto do Google Agenda · Atualizado em tempo real</div>
+  <div class="subtitle" id="ranking-sub">2026 · Seg-sex, exceto feriados · Direto do Google Agenda</div>
 
   <div class="kpi-row">
     <div class="kpi-card">
@@ -355,6 +355,44 @@ async function loadSalasKPI(){
 // ── SALAS — ranking real de uso em 2026, direto do Google Agenda ──
 // Usa action=historico (só leitura, não abre/tranca porta nem cancela nada).
 // Conta TODAS as reuniões da agenda, não só as que passaram pelo tablet/check-in.
+// Feriados nacionais 2026 (fonte: calendário oficial ANBIMA / Gov.br)
+const FERIADOS_2026 = new Set([
+  '2026-01-01', // Confraternização Universal
+  '2026-02-16', // Carnaval (segunda)
+  '2026-02-17', // Carnaval (terça)
+  '2026-04-03', // Paixão de Cristo
+  '2026-04-21', // Tiradentes
+  '2026-05-01', // Dia do Trabalho
+  '2026-06-04', // Corpus Christi
+  '2026-09-07', // Independência do Brasil
+  '2026-10-12', // Nossa Senhora Aparecida
+  '2026-11-02', // Finados
+  '2026-11-15', // Proclamação da República
+  '2026-11-20', // Dia da Consciência Negra
+  '2026-12-25', // Natal
+]);
+
+function ehDiaUtil(dataISO){
+  const d = new Date(dataISO);
+  const diaSemana = d.getUTCDay(); // 0=domingo, 6=sabado
+  if (diaSemana === 0 || diaSemana === 6) return false;
+  const chave = dataISO.slice(0,10);
+  if (FERIADOS_2026.has(chave)) return false;
+  return true;
+}
+
+function contarDiasUteisNoAno(anoAlvo){
+  const hoje = new Date();
+  let d = new Date(Date.UTC(anoAlvo, 0, 1));
+  let count = 0;
+  while (d <= hoje) {
+    const iso = d.toISOString();
+    if (ehDiaUtil(iso)) count++;
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return count;
+}
+
 async function loadRankingSalas(){
   try{
     const ANO_ALVO = 2026;
@@ -364,7 +402,10 @@ async function loadRankingSalas(){
       try{
         const r = await fetch(`${SALAS_BACKEND}?action=historico&roomEmail=${encodeURIComponent(room.email)}&dias=${diasDesdeInicioAno}`);
         const d = await r.json();
-        const doAno = (d.eventos || []).filter(ev => new Date(ev.start).getFullYear() === ANO_ALVO);
+        // Só conta reunião de segunda a sexta, fora feriados nacionais
+        const doAno = (d.eventos || []).filter(ev =>
+          new Date(ev.start).getFullYear() === ANO_ALVO && ehDiaUtil(ev.start)
+        );
         return { nome: room.name, qtd: doAno.length };
       }catch(e){
         return { nome: room.name, qtd: 0 };
@@ -372,7 +413,7 @@ async function loadRankingSalas(){
     }));
 
     const totalGeral = resultados.reduce((s, r) => s + r.qtd, 0);
-    const diasUteis = Math.max(1, Math.round(diasDesdeInicioAno * 5/7)); // aproximação seg-sex
+    const diasUteis = Math.max(1, contarDiasUteisNoAno(ANO_ALVO));
     const media = Math.round(totalGeral / diasUteis);
 
     animarNumero('rank-total', totalGeral);
