@@ -598,11 +598,19 @@ function renderTimelineHelpdesk(projetos){
     return;
   }
 
+  // Datas vêm como 'YYYY-MM-DD' — parse manual em horário local pra não
+  // deslocar 1 dia pra trás (o que aconteceria com new Date('YYYY-MM-DD'), que assume UTC).
+  const parseData = (s) => {
+    if (!s) return null;
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+
   const todasDatas = [];
   projetos.forEach(p => {
-    if (p.data_inicio) todasDatas.push(new Date(p.data_inicio));
-    if (p.data_fim) todasDatas.push(new Date(p.data_fim));
-    if (p.go_live_data) todasDatas.push(new Date(p.go_live_data));
+    if (p.data_inicio) todasDatas.push(parseData(p.data_inicio));
+    if (p.data_fim) todasDatas.push(parseData(p.data_fim));
+    if (p.go_live_data) todasDatas.push(parseData(p.go_live_data));
   });
   if (!todasDatas.length) { cont.innerHTML = ''; return; }
 
@@ -612,10 +620,10 @@ function renderTimelineHelpdesk(projetos){
   minD = new Date(minD.getTime() - totalMs * 0.06);
   maxD = new Date(maxD.getTime() + totalMs * 0.06);
   const rangeMs = Math.max(1, maxD - minD);
-  const pct = d => Math.min(100, Math.max(0, ((new Date(d) - minD) / rangeMs) * 100));
+  const pct = d => Math.min(100, Math.max(0, ((d - minD) / rangeMs) * 100));
 
-  const diasEntre = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
-  const fmtData = d => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  const diasEntre = (a, b) => Math.round((parseData(b) - parseData(a)) / 86400000);
+  const fmtData = d => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
   // Marcações de mês no topo
@@ -631,35 +639,44 @@ function renderTimelineHelpdesk(projetos){
     `).join('');
   }
 
-  const hojePct = pct(new Date());
+  const hoje = new Date();
+  const hojePct = pct(hoje);
+  const comAssistida = projetos.filter(p => p.tem_operacao_assistida).length;
 
   cont.innerHTML = `
-    <div style="position:relative;padding-top:4px;">
-      <div style="position:absolute;left:${hojePct}%;top:0;bottom:0;width:2px;background:var(--orange);opacity:.35;z-index:0;"></div>
+    <div style="background:var(--ink);color:#fff;border-radius:8px;padding:8px 14px;font-size:0.85rem;font-weight:600;margin-bottom:12px;">
+      Helpdesk · ${projetos.length} projeto${projetos.length > 1 ? 's' : ''} · ${comAssistida} c/ operação assistida
+    </div>
+    <div style="position:relative;padding-top:20px;">
+      <div style="position:absolute;left:${hojePct}%;top:0;bottom:0;width:2px;background:var(--orange);opacity:.45;z-index:0;"></div>
+      <div style="position:absolute;left:${hojePct}%;top:0;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:0.62rem;font-weight:700;padding:2px 7px;border-radius:5px;white-space:nowrap;z-index:2;">HOJE · ${fmtData(hoje)}</div>
       ${projetos.map(p => {
-        const inicioPct = p.data_inicio ? pct(p.data_inicio) : null;
-        const fimPct = p.data_fim ? pct(p.data_fim) : null;
-        const assIniPct = p.assistida_inicio ? pct(p.assistida_inicio) : null;
-        const assFimPct = p.assistida_fim ? pct(p.assistida_fim) : null;
-        const goLivePct = p.go_live_data ? pct(p.go_live_data) : null;
+        const dIni = parseData(p.data_inicio), dFim = parseData(p.data_fim);
+        const aIni = parseData(p.assistida_inicio), aFim = parseData(p.assistida_fim);
+        const gLive = parseData(p.go_live_data);
+        const inicioPct = dIni ? pct(dIni) : null;
+        const fimPct = dFim ? pct(dFim) : null;
+        const assIniPct = aIni ? pct(aIni) : null;
+        const assFimPct = aFim ? pct(aFim) : null;
+        const goLivePct = gLive ? pct(gLive) : null;
         const diasProjeto = (p.data_inicio && p.data_fim) ? diasEntre(p.data_inicio, p.data_fim) : null;
         const diasAssistida = (p.assistida_inicio && p.assistida_fim) ? diasEntre(p.assistida_inicio, p.assistida_fim) : null;
         return `
-          <div style="margin-bottom:16px;position:relative;z-index:1;">
-            <div style="font-size:0.98rem;font-weight:600;color:var(--ink);margin-bottom:5px;">${p.nome}</div>
-            <div style="position:relative;height:30px;">
+          <div style="margin-bottom:18px;position:relative;z-index:1;">
+            <div style="font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:6px;">${p.nome}</div>
+            <div style="position:relative;height:32px;">
               ${(inicioPct !== null && fimPct !== null) ? `
-                <div style="position:absolute;left:${inicioPct}%;width:${Math.max(1.5, fimPct - inicioPct)}%;top:0;height:13px;background:var(--purple);border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
-                  <span style="font-size:0.62rem;color:#fff;font-weight:700;white-space:nowrap;">${diasProjeto !== null ? diasProjeto + 'd' : ''}</span>
+                <div style="position:absolute;left:${inicioPct}%;width:${Math.max(1.5, fimPct - inicioPct)}%;top:0;height:14px;background:var(--purple);border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
+                  <span style="font-size:0.64rem;color:#fff;font-weight:700;white-space:nowrap;">${diasProjeto !== null ? diasProjeto + 'd' : ''}</span>
                 </div>` : ''}
               ${(assIniPct !== null && assFimPct !== null) ? `
-                <div style="position:absolute;left:${assIniPct}%;width:${Math.max(1.5, assFimPct - assIniPct)}%;top:16px;height:13px;background:#0FBFA8;border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
-                  <span style="font-size:0.62rem;color:#fff;font-weight:700;white-space:nowrap;">${diasAssistida !== null ? diasAssistida + 'd' : ''}</span>
+                <div style="position:absolute;left:${assIniPct}%;width:${Math.max(1.5, assFimPct - assIniPct)}%;top:17px;height:14px;background:#0FBFA8;border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
+                  <span style="font-size:0.64rem;color:#fff;font-weight:700;white-space:nowrap;">${diasAssistida !== null ? diasAssistida + 'd' : ''}</span>
                 </div>` : ''}
               ${goLivePct !== null ? `
                 <div style="position:absolute;left:${goLivePct}%;top:-1px;display:flex;align-items:center;gap:4px;">
-                  <div style="width:8px;height:8px;background:var(--orange);transform:rotate(45deg);flex-shrink:0;"></div>
-                  <span style="font-size:0.68rem;font-weight:700;color:var(--orange);white-space:nowrap;">${fmtData(p.go_live_data)}</span>
+                  <div style="width:9px;height:9px;background:var(--orange);transform:rotate(45deg);flex-shrink:0;"></div>
+                  <span style="font-size:0.72rem;font-weight:700;color:var(--orange);white-space:nowrap;">${fmtData(gLive)}</span>
                 </div>` : ''}
             </div>
           </div>
