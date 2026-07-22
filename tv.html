@@ -626,14 +626,16 @@ function renderTimelineHelpdesk(projetos){
   const fmtData = d => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-  // Marcações de mês no topo
-  if (contMeses) {
-    const marcas = [];
+  // Marcações de mês (usadas tanto pros rótulos quanto pras linhas de grade)
+  const marcas = [];
+  {
     let d = new Date(minD.getFullYear(), minD.getMonth(), 1);
     while (d <= maxD) {
       marcas.push(new Date(d));
       d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
     }
+  }
+  if (contMeses) {
     contMeses.innerHTML = marcas.map(m => `
       <div style="position:absolute;left:${pct(m)}%;top:0;">${MESES[m.getMonth()]}</div>
     `).join('');
@@ -642,12 +644,14 @@ function renderTimelineHelpdesk(projetos){
   const hoje = new Date();
   const hojePct = pct(hoje);
   const comAssistida = projetos.filter(p => p.tem_operacao_assistida).length;
+  const gridLinhas = marcas.map(m => `<div style="position:absolute;left:${pct(m)}%;top:0;bottom:0;width:1px;background:var(--border);opacity:.8;z-index:0;"></div>`).join('');
 
   cont.innerHTML = `
     <div style="background:var(--ink);color:#fff;border-radius:8px;padding:8px 14px;font-size:0.85rem;font-weight:600;margin-bottom:12px;">
       Helpdesk · ${projetos.length} projeto${projetos.length > 1 ? 's' : ''} · ${comAssistida} c/ operação assistida
     </div>
     <div style="position:relative;padding-top:20px;">
+      ${gridLinhas}
       <div style="position:absolute;left:${hojePct}%;top:0;bottom:0;width:2px;background:var(--orange);opacity:.45;z-index:0;"></div>
       <div style="position:absolute;left:${hojePct}%;top:0;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:0.62rem;font-weight:700;padding:2px 7px;border-radius:5px;white-space:nowrap;z-index:2;">HOJE · ${fmtData(hoje)}</div>
       ${projetos.map(p => {
