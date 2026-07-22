@@ -178,16 +178,16 @@
   <div class="kpi-row">
     <div class="kpi-card">
       <div class="kpi-label">Total de reuniões em 2026</div>
-      <div class="kpi-value" id="rank-total">—</div>
+      <div class="kpi-value" id="rank-total">···</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Média por dia útil</div>
-      <div class="kpi-value orange" id="rank-media">—</div>
+      <div class="kpi-value orange" id="rank-media">···</div>
     </div>
   </div>
 
   <div class="section-label" style="margin-top:20px;">Total de reuniões por sala</div>
-  <div class="bars" id="ranking-salas"><!-- preenchido via JS --></div>
+  <div class="bars" id="ranking-salas"><div style="opacity:.55;font-size:0.95rem;grid-column:1/-1;">Carregando dados do ano (pode levar alguns segundos, são 17 salas)...</div></div>
 </div>
 
 <!-- SLIDE 3 — HELP DESK (placeholder até termos acesso aos dados) -->
@@ -283,8 +283,22 @@ function animarNumero(elId, valorFinal, sufixo){
 
 function renderDots(){
   const dotsEl = document.getElementById('dots');
-  dotsEl.innerHTML = SLIDE_IDS.map((_,i) => `<div class="dot${i===cur?' active':''}"></div>`).join('');
+  dotsEl.innerHTML = SLIDE_IDS.map((_,i) => `<div class="dot${i===cur?' active':''}" data-i="${i}" style="cursor:pointer;pointer-events:auto;"></div>`).join('');
+  dotsEl.querySelectorAll('.dot').forEach(dot => {
+    dot.addEventListener('click', () => irParaSlide(parseInt(dot.dataset.i)));
+  });
 }
+
+function irParaSlide(i){
+  cur = ((i % SLIDE_IDS.length) + SLIDE_IDS.length) % SLIDE_IDS.length;
+  showSlide(cur);
+}
+
+// Navegação manual pelo teclado (só funciona quando visto no computador, sem efeito na TV)
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ') irParaSlide(cur + 1);
+  if (e.key === 'ArrowLeft') irParaSlide(cur - 1);
+});
 
 function showSlide(i){
   SLIDE_IDS.forEach((id,idx) => {
@@ -666,7 +680,7 @@ function renderTimelineHelpdesk(projetos){
         const diasProjeto = (p.data_inicio && p.data_fim) ? diasEntre(p.data_inicio, p.data_fim) : null;
         const diasAssistida = (p.assistida_inicio && p.assistida_fim) ? diasEntre(p.assistida_inicio, p.assistida_fim) : null;
         return `
-          <div style="margin-bottom:18px;position:relative;z-index:1;">
+          <div style="margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);position:relative;z-index:1;">
             <div style="font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:6px;">${p.nome}</div>
             <div style="position:relative;height:32px;">
               ${(inicioPct !== null && fimPct !== null) ? `
