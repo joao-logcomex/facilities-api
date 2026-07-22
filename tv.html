@@ -373,7 +373,7 @@ async function loadRankingSalas(){
 
     const totalGeral = resultados.reduce((s, r) => s + r.qtd, 0);
     const diasUteis = Math.max(1, Math.round(diasDesdeInicioAno * 5/7)); // aproximação seg-sex
-    const media = (totalGeral / diasUteis).toFixed(1);
+    const media = Math.round(totalGeral / diasUteis);
 
     animarNumero('rank-total', totalGeral);
     document.getElementById('rank-media').textContent = media;
