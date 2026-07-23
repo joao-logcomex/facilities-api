@@ -1320,7 +1320,7 @@ async function processarMensagemDM(evt) {
     // interferir em pedidos normais de outras pessoas que por acaso comecem parecido.
     const SLACK_ID_ADMIN_DELEGACAO = 'U09MEN4BS0N'; // João — expandir aqui se liberar pra outros admins
     const matchDelegacao = (userId === SLACK_ID_ADMIN_DELEGACAO)
-      ? texto.match(/abrir\s+(?:um\s+)?chamado\s+(?:pra|para|no\s+nome\s+de|em\s+nome\s+de)\s+(?:a\s+|o\s+)?(.+)/i)
+      ? texto.match(/abrir\s+(?:um\s+)?chamado\s+(?:pra|para|no\s+nome\s+d[aeo]|em\s+nome\s+d[aeo])\s+(?:a\s+|o\s+)?(.+)/i)
       : null;
     if (matchDelegacao) {
       await log('delegacao_tentativa', { alvo: matchDelegacao[1].substring(0, 40) });
@@ -1482,6 +1482,21 @@ async function processarMensagemDM(evt) {
       analise.pergunta_adicional = null;
     }
 
+    // ── TRAVA DE SEGURANÇA: envio/expedição sempre precisa de endereço ──
+    // Sem isso o time nem consegue fazer a postagem. Vale independente da
+    // categoria que a IA escolheu (às vezes marca "brindes" quando devia
+    // ser "logística" — mas se fala em enviar/expedir, o endereço é obrigatório).
+    if (analise.pronto_para_abrir) {
+      const textoTotal = `${estado?.texto_original || ''} ${texto}`.toLowerCase();
+      const pareceEnvio = /\b(envia|enviar|envio|expedi[çc][ãa]o|expedir|via\s+correio|via\s+correios|via\s+dhl|via\s+sedex|via\s+uber|transportadora)\b/.test(textoTotal);
+      const temEndereco = /\b(cep|endere[çc]o|\brua\b|\bav\.|avenida|bairro)\b/.test(textoTotal);
+      if (pareceEnvio && !temEndereco) {
+        analise.pronto_para_abrir = false;
+        analise.categoria = 'logistica';
+        analise.resposta_usuario = 'Antes de abrir, preciso do *endereço completo* de entrega (rua, número, bairro, cidade, CEP) e o *nome do destinatário*. Pode me passar?';
+      }
+    }
+
     // Caso 2: Saudação sem resposta_usuario (fallback)
     if (analise.saudacao_apenas && !analise.resposta_usuario) {
       await enviarMensagem(channel, 'Oi! 👋 Como posso te ajudar hoje?');
@@ -1573,6 +1588,13 @@ async function processarMensagemDM(evt) {
         if (itensComuns.test(tLow)) return { valido: true };
       }
 
+      if (categoria === 'logistica') {
+        // Envio precisa de endereço completo — sem isso o time não consegue postar
+        const temEndereco = /\b(cep|endere[çc]o|\brua\b|\bav\.|avenida|bairro)\b/i.test(tLow);
+        if (!temEndereco) return { valido: false, motivo: 'sem_endereco' };
+        return { valido: true };
+      }
+
       // Palavras muito vagas que indicam pedido ruim
       const padroesVagos = [
         /^(uma|um) coisa\b/i,
@@ -1615,6 +1637,11 @@ async function processarMensagemDM(evt) {
           header: '⚠️ Preciso de mais detalhes',
           intro: 'Pra agilizar a compra, me passa:\n\n• *Item específico* (ex: mouse sem fio, fone com microfone)\n• *Modelo/marca* preferida (se tiver)\n• *Quantidade* que precisa\n• *Link* do produto (opcional)',
           exemplos: 'Exemplos do que eu aceito:\n• _"Preciso de 1 mouse sem fio Logitech M170"_\n• _"2 fones de ouvido com microfone para call center"_\n• _"Carregador USB-C 65W, link: amzn.to/xxx"_'
+        },
+        logistica: {
+          header: '⚠️ Preciso do endereço completo',
+          intro: 'Sem o endereço o time não consegue fazer a postagem. Me passa:\n\n• *O que vai ser enviado* (item, quantidade)\n• *Nome completo do destinatário*\n• *Endereço completo* (rua, número, bairro, cidade/UF, CEP)',
+          exemplos: 'Exemplo do que eu aceito:\n• _"Enviar 1 notebook Dell para Maria Silva, Rua das Flores, 123, Centro, São Paulo/SP, CEP 01234-000"_'
         }
       };
       const m = bases[categoria];
@@ -1785,6 +1812,17 @@ async function processarMensagemDM(evt) {
         'aguardando_detalhes_reforma',
         '🔨 Detalhes da reforma',
         'Me passa em uma mensagem:\n\n• *Local* da reforma/melhoria\n• *O que precisa ser feito* (pintura, troca de piso, novo layout, móvel novo)\n• *Justificativa* da reforma\n• *Prazo desejado*, se houver\n• *Orçamento aproximado*, se souber'
+      );
+      if (bloqueia) return;
+    }
+
+    // ═══ 📦 LOGÍSTICA ═════════════════════════════════════
+    // Sempre exige endereço completo — sem isso o time não consegue postar
+    if (cat === 'logistica') {
+      const bloqueia = await pedirDetalhes(
+        'aguardando_detalhes_logistica',
+        '📦 Detalhes do envio',
+        'Me passa em uma mensagem:\n\n• *O que será enviado* (item, quantidade)\n• *Nome completo do destinatário*\n• *Endereço completo* (rua, número, bairro, cidade/UF, CEP)\n• *Transportadora*, se já souber (DHL, Correios, Uber Flash)'
       );
       if (bloqueia) return;
     }
