@@ -1438,6 +1438,21 @@ async function processarMensagemDM(evt) {
         return { valido: false, motivo: 'curto' };
       }
 
+      // Primeiro checa se a categoria tem um sinal específico e claro (local/objeto/item).
+      // Se tiver, o pedido é válido de cara — não importa como a frase começa.
+      // (Isso evita rejeitar "Preciso de um ar condicionado pra sala 5" só porque
+      // começa com "Preciso de um", mesmo mencionando objeto E local claramente.)
+      if (categoria === 'manutencao') {
+        const temLocal = /\b(sala|andar|sede|piso|cozinha|banheiro|escrit[oó]rio|mesa|baia|recep[cç][aã]o|coworking|copa|casa|home[\s-]?office)\b/i.test(tLow);
+        const temObjeto = /\b(ar[\s-]?condicionado|l[aâ]mpada|porta|fechadura|tomada|janela|mesa|cadeira|bebedouro|telefone|computador|notebook|note[\s-]?book|desktop|impressora|monitor|teto|piso|parede|torneira|pia|vazamento|chuveiro|geladeira|micro-?ondas|cafeteira|caixa|som|proj?etor|roteador|wi[\s-]?fi|internet|rede)\b/i.test(tLow);
+        if (temLocal || temObjeto) return { valido: true };
+      }
+
+      if (categoria === 'suprimentos') {
+        const itensComuns = /\b(mouse|teclado|fone|headset|microfone|webcam|cabo|adaptador|caneta|papel|caderno|folha|grampeador|clipe|cl[ií]pe|cart[uú]lina|envelope|grampe|hub|usb|hdmi|monitor|carregador|bateria|pilha|tinta|cartucho|toner|pasta|fichario|capa|mochila|copo|x[íi]cara|caf[ée]|a[cç][uú]car|filtro|celular|smartphone|notebook|note[\s-]?book|tablet|aparelho|chip|sim[\s-]?card)\b/i;
+        if (itensComuns.test(tLow)) return { valido: true };
+      }
+
       // Palavras muito vagas que indicam pedido ruim
       const padroesVagos = [
         /^(uma|um) coisa\b/i,
@@ -1455,22 +1470,14 @@ async function processarMensagemDM(evt) {
         return { valido: false, motivo: 'vago' };
       }
 
-      // Validações específicas por categoria
+      // Chegou até aqui sem achar sinal específico nem bater em padrão vago —
+      // pra manutenção/suprimentos, ainda falta local/objeto/item; pra outras
+      // categorias (sem checagem específica), consideramos válido.
       if (categoria === 'manutencao') {
-        // Precisa mencionar algum local OU objeto
-        const temLocal = /\b(sala|andar|sede|piso|cozinha|banheiro|escrit[oó]rio|mesa|baia|recep[cç][aã]o|coworking|copa)\b/i.test(tLow);
-        const temObjeto = /\b(ar[\s-]?condicionado|l[aâ]mpada|porta|fechadura|tomada|janela|mesa|cadeira|bebedouro|telefone|computador|teto|piso|parede|torneira|pia|vazamento|chuveiro|geladeira|micro-?ondas|cafeteira|caixa|som|proj?etor)\b/i.test(tLow);
-        if (!temLocal && !temObjeto) {
-          return { valido: false, motivo: 'sem_local_ou_objeto' };
-        }
+        return { valido: false, motivo: 'sem_local_ou_objeto' };
       }
-
       if (categoria === 'suprimentos') {
-        // Precisa mencionar algum item específico (não só "preciso de material")
-        const itensComuns = /\b(mouse|teclado|fone|headset|microfone|webcam|cabo|adaptador|caneta|papel|caderno|folha|grampeador|clipe|cl[ií]pe|cart[uú]lina|envelope|grampe|hub|usb|hdmi|monitor|carregador|bateria|pilha|tinta|cartucho|toner|pasta|fichario|capa|mochila|copo|x[íi]cara|caf[ée]|a[cç][uú]car|filtro)\b/i;
-        if (!itensComuns.test(tLow)) {
-          return { valido: false, motivo: 'sem_item_especifico' };
-        }
+        return { valido: false, motivo: 'sem_item_especifico' };
       }
 
       return { valido: true };
