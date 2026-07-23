@@ -61,11 +61,18 @@ module.exports = async (req, res) => {
         .map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 
+      // SLA — mesma regra do dashboard admin: só considera tickets com dentroSLA
+      // definido (true/false); Cancelado fica de fora naturalmente (dentroSLA null)
+      const comSLA = doAno.filter(t => t.dentroSLA === true || t.dentroSLA === false);
+      const dentroSLAqtd = doAno.filter(t => t.dentroSLA === true).length;
+      const slaPct = comSLA.length > 0 ? Math.round((dentroSLAqtd / comSLA.length) * 100) : null;
+
       return res.status(200).json({
         ok: true,
         ano: anoAlvo,
         total: doAno.length,
         abertos, concluidos, cancelados,
+        sla_pct: slaPct,
         por_categoria: porCategoria,
         projetos,
         atualizado_em: new Date().toISOString(),
