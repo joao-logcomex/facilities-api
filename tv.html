@@ -162,6 +162,10 @@
       <div class="kpi-value orange" id="sal-pico" style="font-size:2.4rem;">—</div>
     </div>
     <div class="kpi-card">
+      <div class="kpi-label">Dia c/ mais reuniões</div>
+      <div class="kpi-value orange" id="sal-diapico" style="font-size:2.1rem;">—</div>
+    </div>
+    <div class="kpi-card">
       <div class="kpi-label">Sala mais usada (ano)</div>
       <div class="kpi-value" style="font-size:2.1rem;" id="sal-maisusada">—</div>
     </div>
@@ -467,9 +471,12 @@ async function loadRankingSalas(){
           const h = new Date(ev.start).getUTCHours() - 3;
           return ((h % 24) + 24) % 24;
         });
-        return { nome: room.name, qtd: doAno.length, ultimos30, horas };
+        // Dia da semana em horário local (Brasília) — desloca 3h antes de ler o dia,
+        // pra não errar quando o horário UTC já virou o dia seguinte
+        const diasSemana = doAno.map(ev => new Date(new Date(ev.start).getTime() - 3*3600000).getUTCDay());
+        return { nome: room.name, qtd: doAno.length, ultimos30, horas, diasSemana };
       }catch(e){
-        return { nome: room.name, qtd: 0, ultimos30: 0, horas: [] };
+        return { nome: room.name, qtd: 0, ultimos30: 0, horas: [], diasSemana: [] };
       }
     }));
 
@@ -486,6 +493,17 @@ async function loadRankingSalas(){
     const picoEl = document.getElementById('sal-pico');
     if (picoEl && contagemHoras.some(c => c > 0)) {
       picoEl.textContent = `${horaPico}h–${horaPico + 1}h`;
+    }
+
+    // Dia da semana com mais reuniões, somando todas as salas (só seg-sex, já filtrado em doAno)
+    const NOMES_DIA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    const contagemDias = new Array(7).fill(0);
+    resultados.forEach(r => (r.diasSemana || []).forEach(d => contagemDias[d]++));
+    let diaPico = 1;
+    for (let dd = 0; dd < 7; dd++) if (contagemDias[dd] > contagemDias[diaPico]) diaPico = dd;
+    const diaPicoEl = document.getElementById('sal-diapico');
+    if (diaPicoEl && contagemDias.some(c => c > 0)) {
+      diaPicoEl.textContent = NOMES_DIA[diaPico];
     }
 
     const totalGeral = resultados.reduce((s, r) => s + r.qtd, 0);
