@@ -158,8 +158,8 @@
       <div class="kpi-value" id="sal-total">—</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Check-in (salas c/ tablet)</div>
-      <div class="kpi-value orange" id="sal-checkin">—</div>
+      <div class="kpi-label">Horário de pico</div>
+      <div class="kpi-value orange" id="sal-pico" style="font-size:2.4rem;">—</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Sala mais usada (ano)</div>
@@ -393,28 +393,13 @@ window.renderFacilitiesProjetos = function(projetos){
   }));
 };
 
-// ── SALAS — KPIs de check-in (dados do tablet, últimos 30 dias) ──
+// ── SALAS — Sala mais usada (ano) ──
 async function loadSalasKPI(){
-  try{
-    const r = await fetch(`${SALAS_BACKEND}?action=relatorio`);
-    const d = await r.json();
-    const trintaDiasAtras = Date.now() - 30*24*60*60*1000;
-    const regs = (d.registros || []).filter(x => new Date(x.ts).getTime() >= trintaDiasAtras);
-    const totalCheckin = regs.length;
-    const comCheckin = regs.filter(x => x.checkin).length;
-    const taxa = totalCheckin > 0 ? Math.round((comCheckin/totalCheckin)*100) : 0;
-
-    // "Reservas (30 dias)" agora vem do calendário real (todas as 19 salas),
-    // calculado em loadRankingSalas() — aqui só cuidamos da taxa de check-in,
-    // que só existe fisicamente nas salas com tablet (PHP, XGH, War Room, Fullstack).
-    animarNumero('sal-checkin', taxa, '%');
-
-    // "Sala mais usada" vem do ranking real do calendário (ano), não do log de
-    // check-in do tablet — esse só existe pra 4 salas e distorcia o resultado.
-    const ranking = window._rankingSalasAno;
-    const salaTopEl = document.getElementById('sal-maisusada');
-    if (salaTopEl) salaTopEl.textContent = (ranking && ranking.length) ? ranking[0].nome : '—';
-  }catch(e){ console.warn('Erro ao carregar KPI salas:', e); }
+  // "Sala mais usada" vem do ranking real do calendário (ano), calculado em
+  // loadRankingSalas() — não precisamos mais buscar o log de check-in aqui.
+  const ranking = window._rankingSalasAno;
+  const salaTopEl = document.getElementById('sal-maisusada');
+  if (salaTopEl) salaTopEl.textContent = (ranking && ranking.length) ? ranking[0].nome : '—';
 }
 
 // ── SALAS — ranking real de uso em 2026, direto do Google Agenda ──
@@ -477,9 +462,14 @@ async function loadRankingSalas(){
         );
         // Últimos 30 dias corridos, sem filtro de dia útil (é uma contagem simples de reservas reais)
         const ultimos30 = eventos.filter(ev => new Date(ev.start).getTime() >= trintaDiasAtras).length;
-        return { nome: room.name, qtd: doAno.length, ultimos30 };
+        // Hora local (Brasília, UTC-3, sem horário de verão) de cada reunião — pra achar o horário de pico
+        const horas = doAno.map(ev => {
+          const h = new Date(ev.start).getUTCHours() - 3;
+          return ((h % 24) + 24) % 24;
+        });
+        return { nome: room.name, qtd: doAno.length, ultimos30, horas };
       }catch(e){
-        return { nome: room.name, qtd: 0, ultimos30: 0 };
+        return { nome: room.name, qtd: 0, ultimos30: 0, horas: [] };
       }
     }));
 
@@ -487,6 +477,16 @@ async function loadRankingSalas(){
     window._reservas30dias = resultados.reduce((s, r) => s + r.ultimos30, 0);
     const reservasEl = document.getElementById('sal-total');
     if (reservasEl) animarNumero('sal-total', window._reservas30dias);
+
+    // Horário de pico — conta em qual hora do dia mais reuniões começam, somando todas as salas
+    const contagemHoras = new Array(24).fill(0);
+    resultados.forEach(r => (r.horas || []).forEach(h => contagemHoras[h]++));
+    let horaPico = 0;
+    for (let h = 0; h < 24; h++) if (contagemHoras[h] > contagemHoras[horaPico]) horaPico = h;
+    const picoEl = document.getElementById('sal-pico');
+    if (picoEl && contagemHoras.some(c => c > 0)) {
+      picoEl.textContent = `${horaPico}h–${horaPico + 1}h`;
+    }
 
     const totalGeral = resultados.reduce((s, r) => s + r.qtd, 0);
     const diasUteis = Math.max(1, contarDiasUteisNoAno(ANO_ALVO));
