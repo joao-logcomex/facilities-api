@@ -1821,6 +1821,30 @@ async function processarMensagemDM(evt) {
         'Me passa em uma mensagem:\n\n• *O que será enviado* (item, quantidade)\n• *Nome completo do destinatário*\n• *Endereço completo* (rua, número, bairro, cidade/UF, CEP)\n• *Transportadora*, se já souber (DHL, Correios, Uber Flash)'
       );
       if (bloqueia) return;
+
+      // Transportadora: tenta detectar automaticamente do que já foi escrito.
+      // Se não achar, pergunta direto (fica registrado em Subcategoria no admin).
+      if (!dados.transportadora) {
+        const mapaTransportadoras = [
+          { rx: /\bdhl\b/i, nome: 'DHL' },
+          { rx: /\bsedex\b|\bcorreios?\b/i, nome: 'Correios' },
+          { rx: /\buber\s*flash\b/i, nome: 'Uber Flash' },
+          { rx: /\bmotoboy\b/i, nome: 'Motoboy' },
+        ];
+        const textoCompleto = `${dados.detalhes_extras || ''} ${dados.texto_original || ''}`;
+        const achouNoTexto = mapaTransportadoras.find(m => m.rx.test(textoCompleto));
+        if (achouNoTexto) {
+          dados.transportadora = achouNoTexto.nome;
+        } else if (estado?.etapa === 'aguardando_transportadora_logistica') {
+          // Está respondendo à pergunta de transportadora feita abaixo
+          const achouNaResposta = mapaTransportadoras.find(m => m.rx.test(texto));
+          dados.transportadora = achouNaResposta ? achouNaResposta.nome : texto.trim();
+        } else {
+          await setEstado(userId, { etapa: 'aguardando_transportadora_logistica', ...dados });
+          await enviarMensagem(channel, '📦 Só falta a transportadora! Qual vai ser usada — DHL, Correios ou Uber Flash?');
+          return;
+        }
+      }
     }
 
     // ═══ ❓ OUTROS ════════════════════════════════════════
