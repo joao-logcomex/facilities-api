@@ -521,6 +521,8 @@ function statusAgora(busyList){
   if (proximos.length) {
     const minutos = (proximos[0].ini - now) / 60000;
     if (minutos <= 15) return { status:'em_breve', em: proximos[0].ini };
+    // Livre agora, mas tem reunião mais tarde no mesmo dia — não é "o dia todo"
+    return { status:'livre', proximaHoje: proximos[0].ini };
   }
   return { status:'livre' };
 }
@@ -536,7 +538,7 @@ function renderRoomsGrid(elId, items){
         <div class="room-dot ${CLASSE[info.status]}"></div>
         ${LABELS[info.status]}
       </div>
-      <div class="room-time">${info.status==='ocupada' ? 'até '+hora(info.ate) : info.status==='em_breve' ? 'às '+hora(info.em) : 'o dia todo'}</div>
+      <div class="room-time">${info.status==='ocupada' ? 'até '+hora(info.ate) : info.status==='em_breve' ? 'às '+hora(info.em) : info.proximaHoje ? 'livre até '+hora(info.proximaHoje) : 'o dia todo'}</div>
     </div>
   `).join('');
 }
