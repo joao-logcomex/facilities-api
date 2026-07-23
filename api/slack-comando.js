@@ -976,7 +976,6 @@ module.exports = async function handler(req, res) {
   // ROTA 7b: app_home_opened → publicar Home Tab + boas-vindas no chat
   if (body.type === 'event_callback' && body.event?.type === 'app_home_opened') {
     const userId = body.event.user;
-    res.status(200).send('');
     try {
       await publishHome(userId);
       // Boas-vindas no chat apenas na primeira vez
@@ -1025,7 +1024,7 @@ module.exports = async function handler(req, res) {
         }
       }
     } catch(e) { console.error('home tab:', e.message); }
-    return;
+    return res.status(200).send('');
   }
 
   // ROTA 7b1: confirmação de chamado
@@ -1035,12 +1034,11 @@ module.exports = async function handler(req, res) {
     const channel2 = body.channel?.id;
 
     if (actionId === 'confirmar_chamado') {
-      res.status(200).send('');
       try {
         const estado2 = await getEstado(userId2);
         if (!estado2 || estado2.etapa !== 'aguardando_confirmacao') {
           await enviarMensagem(channel2, 'Não encontrei o chamado pendente. Tente novamente.');
-          return;
+          return res.status(200).send('');
         }
         await limparEstado(userId2);
         // Buscar dados do colaborador pelo Slack User ID
@@ -1070,21 +1068,19 @@ module.exports = async function handler(req, res) {
           { type: 'section', text: { type: 'mrkdwn', text: `✅ *Chamado aberto com sucesso!*\n\n*Protocolo:* #${ticket.id}\n*Título:* ${estado2.titulo || estado2.texto_original}${estado2.pessoa_alvo ? `\n*Em nome de:* ${estado2.pessoa_alvo.nome}` : ''}\n\n${estado2.pessoa_alvo ? 'A pessoa foi avisada por DM.' : 'Você receberá atualizações por aqui.'} Qualquer dúvida é só chamar! 👍` } }
         ]);
       } catch(e) { console.error('confirmar_chamado:', e.message); await enviarMensagem(channel2, 'Erro ao abrir chamado: ' + e.message); }
-      return;
+      return res.status(200).send('');
     }
 
     if (actionId === 'editar_chamado') {
-      res.status(200).send('');
       await limparEstado(body.user?.id);
       await enviarMensagem(channel2, 'Tudo bem! Me conta de novo o que você precisa e eu refaço o chamado. 😊');
-      return;
+      return res.status(200).send('');
     }
 
     if (actionId === 'cancelar_chamado') {
-      res.status(200).send('');
       await limparEstado(body.user?.id);
       await enviarMensagem(channel2, 'Cancelado! Se precisar de algo é só falar. 👋');
-      return;
+      return res.status(200).send('');
     }
   }
 
@@ -1092,8 +1088,7 @@ module.exports = async function handler(req, res) {
   if (body.type === 'block_actions' && (body.view?.type === 'home' || ['bv_brinde','bv_logistica','bv_manutencao','bv_suprimentos','bv_acessos','bv_outros','home_brinde','home_logistica','home_manutencao','home_suprimentos','home_acessos','home_outros'].includes(body.actions?.[0]?.action_id))) {
     const userId = body.user?.id;
     const categoria = body.actions?.[0]?.value;
-    res.status(200).send('');
-    if (!userId || !categoria) return;
+    if (!userId || !categoria) return res.status(200).send('');
     const LABELS = {brindes:'🎁 Brindes',logistica:'📦 Logística',manutencao:'🔧 Manutenção',suprimentos:'📎 Suprimentos',acessos:'🔑 Acessos',outros:'📝 Outros'};
     try {
       const dmResp = await fetch('https://slack.com/api/conversations.open', {
@@ -1101,14 +1096,14 @@ module.exports = async function handler(req, res) {
         body: JSON.stringify({users: userId})
       });
       const channel = (await dmResp.json()).channel?.id;
-      if (!channel) return;
+      if (!channel) return res.status(200).send('');
       await db.collection('slack_conversas').doc(userId).set({etapa:'aguardando_descricao',categoria,updatedAt:new Date()}, {merge:true});
       await fetch('https://slack.com/api/chat.postMessage', {
         method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${SLACK_BOT_TOKEN}`},
         body: JSON.stringify({channel, text:`Ótimo! Você escolheu *${LABELS[categoria]||categoria}*. Me conta com mais detalhes o que você precisa — pode falar à vontade! 😊`})
       });
     } catch(e) { console.error('home action:', e.message); }
-    return;
+    return res.status(200).send('');
   }
 
   // ROTA 7: event_callback → mensagens recebidas em DM
