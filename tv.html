@@ -154,11 +154,11 @@
 
   <div class="kpi-row">
     <div class="kpi-card">
-      <div class="kpi-label">Reservas (30 dias)</div>
+      <div class="kpi-label">Reuniões (30 dias)</div>
       <div class="kpi-value" id="sal-total">—</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Taxa de check-in</div>
+      <div class="kpi-label">Check-in (salas c/ tablet)</div>
       <div class="kpi-value orange" id="sal-checkin">—</div>
     </div>
     <div class="kpi-card">
@@ -400,15 +400,17 @@ async function loadSalasKPI(){
     const d = await r.json();
     const trintaDiasAtras = Date.now() - 30*24*60*60*1000;
     const regs = (d.registros || []).filter(x => new Date(x.ts).getTime() >= trintaDiasAtras);
-    const total = regs.length;
+    const totalCheckin = regs.length;
     const comCheckin = regs.filter(x => x.checkin).length;
-    const taxa = total > 0 ? Math.round((comCheckin/total)*100) : 0;
+    const taxa = totalCheckin > 0 ? Math.round((comCheckin/totalCheckin)*100) : 0;
 
-    animarNumero('sal-total', total);
+    // "Reservas (30 dias)" agora vem do calendário real (todas as 19 salas),
+    // calculado em loadRankingSalas() — aqui só cuidamos da taxa de check-in,
+    // que só existe fisicamente nas salas com tablet (PHP, XGH, War Room, Fullstack).
     animarNumero('sal-checkin', taxa, '%');
 
     // "Sala mais usada" vem do ranking real do calendário (ano), não do log de
-    // check-in do tablet — esse só existe pra 3 salas e distorcia o resultado.
+    // check-in do tablet — esse só existe pra 4 salas e distorcia o resultado.
     const ranking = window._rankingSalasAno;
     const salaTopEl = document.getElementById('sal-maisusada');
     if (salaTopEl) salaTopEl.textContent = (ranking && ranking.length) ? ranking[0].nome : '—';
@@ -462,20 +464,29 @@ async function loadRankingSalas(){
   try{
     const ANO_ALVO = 2026;
     const diasDesdeInicioAno = Math.ceil((Date.now() - new Date(`${ANO_ALVO}-01-01T00:00:00Z`).getTime()) / 86400000) + 1;
+    const trintaDiasAtras = Date.now() - 30*24*60*60*1000;
 
     const resultados = await Promise.all(ROOMS.map(async room => {
       try{
         const r = await fetch(`${SALAS_BACKEND}?action=historico&roomEmail=${encodeURIComponent(room.email)}&dias=${diasDesdeInicioAno}`);
         const d = await r.json();
-        // Só conta reunião de segunda a sexta, fora feriados nacionais
-        const doAno = (d.eventos || []).filter(ev =>
+        const eventos = d.eventos || [];
+        // Só conta reunião de segunda a sexta, fora feriados nacionais (ranking anual)
+        const doAno = eventos.filter(ev =>
           new Date(ev.start).getFullYear() === ANO_ALVO && ehDiaUtil(ev.start)
         );
-        return { nome: room.name, qtd: doAno.length };
+        // Últimos 30 dias corridos, sem filtro de dia útil (é uma contagem simples de reservas reais)
+        const ultimos30 = eventos.filter(ev => new Date(ev.start).getTime() >= trintaDiasAtras).length;
+        return { nome: room.name, qtd: doAno.length, ultimos30 };
       }catch(e){
-        return { nome: room.name, qtd: 0 };
+        return { nome: room.name, qtd: 0, ultimos30: 0 };
       }
     }));
+
+    // Exposto pra tela "Disponibilidade agora" reaproveitar (evita nova chamada pesada)
+    window._reservas30dias = resultados.reduce((s, r) => s + r.ultimos30, 0);
+    const reservasEl = document.getElementById('sal-total');
+    if (reservasEl) animarNumero('sal-total', window._reservas30dias);
 
     const totalGeral = resultados.reduce((s, r) => s + r.qtd, 0);
     const diasUteis = Math.max(1, contarDiasUteisNoAno(ANO_ALVO));
