@@ -213,6 +213,14 @@
       <div class="kpi-label">Total no ano</div>
       <div class="kpi-value" id="hd-total">—</div>
     </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Tempo médio</div>
+      <div class="kpi-value" id="hd-tempomedio">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">SLA cumprido</div>
+      <div class="kpi-value green" id="hd-sla">—</div>
+    </div>
   </div>
 
   <div class="section-label">Projetos da área — Helpdesk</div>
@@ -577,7 +585,19 @@ async function loadHelpdesk(){
     animarNumero('hd-concluidos', d.concluidos || 0);
     animarNumero('hd-recusados', d.recusados || 0);
     animarNumero('hd-total', d.total || 0);
-    // Tempo médio e SLA cumprido: pendente — aguardando fórmula exata (dias úteis/feriados/exceções) do Christian
+
+    const tempoEl = document.getElementById('hd-tempomedio');
+    const slaEl = document.getElementById('hd-sla');
+    if (tempoEl) {
+      tempoEl.textContent = (d.tempo_medio_dias !== null && d.tempo_medio_dias !== undefined)
+        ? d.tempo_medio_dias.toString().replace('.', ',') + 'd'
+        : '—';
+    }
+    if (slaEl) {
+      slaEl.textContent = (d.pct_dentro_sla !== null && d.pct_dentro_sla !== undefined)
+        ? Math.round(d.pct_dentro_sla) + '%'
+        : '—';
+    }
   }catch(e){ console.warn('Erro ao carregar Helpdesk:', e); }
 }
 
