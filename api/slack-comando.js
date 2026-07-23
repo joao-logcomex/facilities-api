@@ -470,6 +470,7 @@ async function criarTicketNoFirebase(payload) {
     nome: slackUser?.nome || null,
     email: slackUser?.email || null,
     centroCusto: slackUser?.centroCusto || null,
+    departamento: slackUser?.centroCusto || null, // admin.html exibe/exporta por este nome de campo
     cargo: slackUser?.cargo || null,
     slack_user_id: slackUser?.slackId || null,
     // Auditoria: se um admin abriu em nome de outra pessoa, guarda quem foi
