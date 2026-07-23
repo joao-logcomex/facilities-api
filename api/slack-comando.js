@@ -1320,23 +1320,30 @@ async function processarMensagemDM(evt) {
     // interferir em pedidos normais de outras pessoas que por acaso comecem parecido.
     const SLACK_ID_ADMIN_DELEGACAO = 'U09MEN4BS0N'; // João — expandir aqui se liberar pra outros admins
     const matchDelegacao = (userId === SLACK_ID_ADMIN_DELEGACAO)
-      ? texto.match(/^abrir\s+(?:um\s+)?chamado\s+(?:pra|para|no\s+nome\s+de|em\s+nome\s+de)\s+(.+)/i)
+      ? texto.match(/abrir\s+(?:um\s+)?chamado\s+(?:pra|para|no\s+nome\s+de|em\s+nome\s+de)\s+(?:a\s+|o\s+)?(.+)/i)
       : null;
     if (matchDelegacao) {
       await log('delegacao_tentativa', { alvo: matchDelegacao[1].substring(0, 40) });
       const solicitante = await getUserInfo(userId);
-      const nomeOuEmailAlvo = matchDelegacao[1].trim().replace(/[.!?]+$/, '');
+      const nomeOuEmailAlvo = matchDelegacao[1].trim().replace(/[.!?]+$/, '').split(/[,;]|\s+(?:ela|ele|que|pediu|precisa)\s+/i)[0].trim();
       let pessoa = null;
       const matchMencao = nomeOuEmailAlvo.match(/^<@([A-Z0-9]+)>$/);
+      const matchEmailCompleto = nomeOuEmailAlvo.match(/^@?([\w.-]+@[\w.-]+\.\w+)$/i);
+      const matchUsuarioSemDominio = nomeOuEmailAlvo.match(/^@([\w.-]+)$/i);
       if (matchMencao) {
         // Menção direta do Slack (@pessoa) — mais confiável, busca a info direto na API do Slack
         const infoMencao = await getUserInfo(matchMencao[1]);
         if (infoMencao?.email) {
           pessoa = { nome: infoMencao.nome, email: infoMencao.email, slackId: matchMencao[1], centroCusto: infoMencao.centroCusto, cargo: infoMencao.cargo };
         }
-      } else if (nomeOuEmailAlvo.includes('@')) {
-        const snapE = await db.collection('colaboradores').where('email', '==', nomeOuEmailAlvo.toLowerCase()).limit(1).get();
+      } else if (matchEmailCompleto) {
+        const snapE = await db.collection('colaboradores').where('email', '==', matchEmailCompleto[1].toLowerCase()).limit(1).get();
         if (!snapE.empty) pessoa = snapE.docs[0].data();
+      } else if (matchUsuarioSemDominio) {
+        // "@bruna.souza" sem domínio — monta o e-mail padrão da empresa e tenta
+        const emailTentativa = `${matchUsuarioSemDominio[1].toLowerCase()}@logcomex.com`;
+        const snapU = await db.collection('colaboradores').where('email', '==', emailTentativa).limit(1).get();
+        if (!snapU.empty) pessoa = snapU.docs[0].data();
       } else {
         const snapTodos = await db.collection('colaboradores').get();
         const candidatos = snapTodos.docs
