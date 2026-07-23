@@ -1320,14 +1320,21 @@ async function processarMensagemDM(evt) {
     // interferir em pedidos normais de outras pessoas que por acaso comecem parecido.
     const SLACK_ID_ADMIN_DELEGACAO = 'U09MEN4BS0N'; // João — expandir aqui se liberar pra outros admins
     const matchDelegacao = (userId === SLACK_ID_ADMIN_DELEGACAO)
-      ? texto.match(/^abrir\s+(?:um\s+)?chamado\s+(?:pra|para)\s+(.+)/i)
+      ? texto.match(/^abrir\s+(?:um\s+)?chamado\s+(?:pra|para|no\s+nome\s+de|em\s+nome\s+de)\s+(.+)/i)
       : null;
     if (matchDelegacao) {
       await log('delegacao_tentativa', { alvo: matchDelegacao[1].substring(0, 40) });
       const solicitante = await getUserInfo(userId);
       const nomeOuEmailAlvo = matchDelegacao[1].trim().replace(/[.!?]+$/, '');
       let pessoa = null;
-      if (nomeOuEmailAlvo.includes('@')) {
+      const matchMencao = nomeOuEmailAlvo.match(/^<@([A-Z0-9]+)>$/);
+      if (matchMencao) {
+        // Menção direta do Slack (@pessoa) — mais confiável, busca a info direto na API do Slack
+        const infoMencao = await getUserInfo(matchMencao[1]);
+        if (infoMencao?.email) {
+          pessoa = { nome: infoMencao.nome, email: infoMencao.email, slackId: matchMencao[1], centroCusto: infoMencao.centroCusto, cargo: infoMencao.cargo };
+        }
+      } else if (nomeOuEmailAlvo.includes('@')) {
         const snapE = await db.collection('colaboradores').where('email', '==', nomeOuEmailAlvo.toLowerCase()).limit(1).get();
         if (!snapE.empty) pessoa = snapE.docs[0].data();
       } else {
