@@ -116,7 +116,7 @@
 <!-- SLIDE 1 — FACILITIES -->
 <div class="slide" id="slide-facilities">
   <div class="eyebrow">Facilities · 2026</div>
-  <div class="title">Chamados do ano</div>
+  <div class="title">Chamados de Facilities · 2026</div>
   <div class="subtitle">Atualizado em tempo real</div>
 
   <div class="kpi-row">
@@ -135,6 +135,10 @@
     <div class="kpi-card">
       <div class="kpi-label">Total no ano</div>
       <div class="kpi-value" id="fac-total">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">SLA cumprido</div>
+      <div class="kpi-value green" id="fac-sla">—</div>
     </div>
   </div>
 
@@ -172,7 +176,7 @@
 <!-- SLIDE 2b — RANKING DE USO DAS SALAS -->
 <div class="slide" id="slide-ranking-salas">
   <div class="eyebrow">Salas de Reunião</div>
-  <div class="title">Reuniões por sala</div>
+  <div class="title">Reuniões por sala · 2026</div>
   <div class="subtitle" id="ranking-sub">2026 · Seg-sex, exceto feriados · Direto do Google Agenda</div>
 
   <div class="kpi-row">
@@ -341,6 +345,8 @@ async function loadFacilities(){
     animarNumero('fac-concluidos', d.concluidos);
     animarNumero('fac-cancelados', d.cancelados);
     animarNumero('fac-total', d.total);
+    const slaEl = document.getElementById('fac-sla');
+    if (slaEl) slaEl.textContent = (d.sla_pct !== null && d.sla_pct !== undefined) ? d.sla_pct + '%' : '—';
   }catch(e){ console.warn('Erro ao carregar Facilities:', e); }
 }
 
