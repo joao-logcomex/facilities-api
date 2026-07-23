@@ -362,6 +362,19 @@ function modalCamposPorCategoria(categoria, dadosUser = {}) {
 // Lookup de usuário e criação de ticket
 // ============================================================================
 
+// Busca o Slack ID de alguém pelo e-mail (funciona mesmo que a pessoa nunca tenha
+// conversado com o bot antes — usa a API do Slack, não depende de cache no Firestore)
+async function buscarSlackIdPorEmail(email) {
+  if (!email) return null;
+  try {
+    const r = await fetch(`https://slack.com/api/users.lookupByEmail?email=${encodeURIComponent(email)}`, {
+      headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` },
+    });
+    const d = await r.json();
+    return d.ok ? (d.user?.id || null) : null;
+  } catch (e) { console.warn('buscarSlackIdPorEmail falhou:', e.message); return null; }
+}
+
 async function getUserInfo(userId) {
   try {
     const r = await fetch(`https://slack.com/api/users.info?user=${userId}`, {
@@ -427,8 +440,20 @@ async function gerarIdSequencial() {
 }
 
 async function criarTicketNoFirebase(payload) {
-  const { categoria, titulo, descricao, prioridade, slackUser, dadosExtras } = payload;
+  const { categoria, titulo, descricao, prioridade, slackUser, dadosExtras, abertoPorAdmin } = payload;
   const id = await gerarIdSequencial();
+
+  const historicoInicial = abertoPorAdmin
+    ? {
+        acao: `Chamado aberto via Slack por ${abertoPorAdmin.nome || abertoPorAdmin.email} em nome de ${slackUser?.nome || slackUser?.email || 'colaborador'}`,
+        data: new Date().toISOString(),
+        usuario: abertoPorAdmin.email || abertoPorAdmin.slackId,
+      }
+    : {
+        acao: `Chamado aberto via Slack por ${slackUser?.nome || slackUser?.email || 'usuário'}`,
+        data: new Date().toISOString(),
+        usuario: slackUser?.email || slackUser?.slackId,
+      };
 
   const docData = {
     id,
@@ -447,16 +472,35 @@ async function criarTicketNoFirebase(payload) {
     centroCusto: slackUser?.centroCusto || null,
     cargo: slackUser?.cargo || null,
     slack_user_id: slackUser?.slackId || null,
-    historico: [{
-      acao: `Chamado aberto via Slack por ${slackUser?.nome || slackUser?.email || 'usuário'}`,
-      data: new Date().toISOString(),
-      usuario: slackUser?.email || slackUser?.slackId,
-    }],
+    // Auditoria: se um admin abriu em nome de outra pessoa, guarda quem foi
+    aberto_por_admin: abertoPorAdmin ? { nome: abertoPorAdmin.nome, email: abertoPorAdmin.email, slackId: abertoPorAdmin.slackId } : null,
+    historico: [historicoInicial],
     ...dadosExtras,
   };
 
   const docRef = await db.collection('tickets').add(docData);
   return { docId: docRef.id, id, ...docData };
+}
+
+// Notifica a pessoa em nome de quem um admin abriu um chamado (delegação)
+async function dmNotificarDelegacao(pessoaAlvo, abertoPorAdmin, ticket) {
+  try {
+    const slackId = pessoaAlvo?.slackId || await buscarSlackIdPorEmail(pessoaAlvo?.email);
+    if (!slackId) return; // não achou de nenhum jeito — não tem como avisar por DM
+
+    const dmResp = await fetch('https://slack.com/api/conversations.open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SLACK_BOT_TOKEN}` },
+      body: JSON.stringify({ users: slackId }),
+    });
+    const channel = (await dmResp.json()).channel?.id;
+    if (!channel) return;
+    await enviarMensagem(channel, `📋 Um chamado foi aberto em seu nome`, [
+      { type: 'section', text: { type: 'mrkdwn', text: `Oi, ${pessoaAlvo.nome}! 👋\n\n*${abertoPorAdmin?.nome || 'Um administrador'}* abriu um chamado em seu nome no Facilities, referente a algo que você pediu pessoalmente.` } },
+      { type: 'section', text: { type: 'mrkdwn', text: `*Protocolo:* #${ticket.id}\n*Título:* ${ticket.titulo}` } },
+      { type: 'context', elements: [{ type: 'mrkdwn', text: 'Você vai receber atualizações sobre esse chamado por aqui.' }] },
+    ]);
+  } catch (e) { console.warn('dmNotificarDelegacao falhou:', e.message); }
 }
 
 // ============================================================================
@@ -1001,13 +1045,16 @@ module.exports = async function handler(req, res) {
         // Buscar dados do colaborador pelo Slack User ID
         const colabSnap2 = await db.collection('colaboradores').where('slackId', '==', userId2).limit(1).get();
         const colab2 = colabSnap2.docs[0]?.data() || {};
-        const slackUser2 = {
+        const remetente2 = {
           slackId: userId2,
           nome: colab2.nome || body.user?.real_name || body.user?.name || 'Colaborador',
           email: colab2.email || (body.user?.name ? body.user.name + '@logcomex.com' : ''),
           centroCusto: colab2.centroCusto || '',
           cargo: colab2.cargo || '',
         };
+        // Se é uma delegação (admin abrindo em nome de outra pessoa), o "dono"
+        // do chamado é a pessoa_alvo, não quem está clicando no botão.
+        const slackUser2 = estado2.pessoa_alvo || remetente2;
         const ticket = await criarTicketNoFirebase({
           categoria: estado2.categoria,
           titulo: estado2.titulo || estado2.texto_original,
@@ -1015,9 +1062,11 @@ module.exports = async function handler(req, res) {
           prioridade: estado2.prioridade || 'media',
           slackUser: slackUser2,
           dadosExtras: {},
+          abertoPorAdmin: estado2.pessoa_alvo ? estado2.aberto_por_admin : null,
         });
+        if (estado2.pessoa_alvo) await dmNotificarDelegacao(estado2.pessoa_alvo, estado2.aberto_por_admin, ticket);
         await enviarMensagem(channel2, '✅ Chamado aberto!', [
-          { type: 'section', text: { type: 'mrkdwn', text: `✅ *Chamado aberto com sucesso!*\n\n*Protocolo:* #${ticket.id}\n*Título:* ${estado2.titulo || estado2.texto_original}\n\nVocê receberá atualizações por aqui. Qualquer dúvida é só chamar! 👍` } }
+          { type: 'section', text: { type: 'mrkdwn', text: `✅ *Chamado aberto com sucesso!*\n\n*Protocolo:* #${ticket.id}\n*Título:* ${estado2.titulo || estado2.texto_original}${estado2.pessoa_alvo ? `\n*Em nome de:* ${estado2.pessoa_alvo.nome}` : ''}\n\n${estado2.pessoa_alvo ? 'A pessoa foi avisada por DM.' : 'Você receberá atualizações por aqui.'} Qualquer dúvida é só chamar! 👍` } }
         ]);
       } catch(e) { console.error('confirmar_chamado:', e.message); await enviarMensagem(channel2, 'Erro ao abrir chamado: ' + e.message); }
       return;
@@ -1052,7 +1101,7 @@ module.exports = async function handler(req, res) {
       });
       const channel = (await dmResp.json()).channel?.id;
       if (!channel) return;
-      await db.collection('slack_conversas').doc(userId).set({etapa:'aguardando_descricao',categoria,updatedAt:new Date()});
+      await db.collection('slack_conversas').doc(userId).set({etapa:'aguardando_descricao',categoria,updatedAt:new Date()}, {merge:true});
       await fetch('https://slack.com/api/chat.postMessage', {
         method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${SLACK_BOT_TOKEN}`},
         body: JSON.stringify({channel, text:`Ótimo! Você escolheu *${LABELS[categoria]||categoria}*. Me conta com mais detalhes o que você precisa — pode falar à vontade! 😊`})
@@ -1264,6 +1313,59 @@ async function processarMensagemDM(evt) {
       return;
     }
 
+    // ⚡ ABRIR CHAMADO EM NOME DE OUTRA PESSOA (delegação — só admin autorizado por enquanto)
+    // Ex: "abrir chamado pra Maria Silva" ou "abrir chamado para joao@logcomex.com"
+    // Checa o Slack ID direto (sem custo de API) ANTES de tentar o regex, pra nunca
+    // interferir em pedidos normais de outras pessoas que por acaso comecem parecido.
+    const SLACK_ID_ADMIN_DELEGACAO = 'U09MEN4BS0N'; // João — expandir aqui se liberar pra outros admins
+    const matchDelegacao = (userId === SLACK_ID_ADMIN_DELEGACAO)
+      ? texto.match(/^abrir\s+(?:um\s+)?chamado\s+(?:pra|para)\s+(.+)/i)
+      : null;
+    if (matchDelegacao) {
+      await log('delegacao_tentativa', { alvo: matchDelegacao[1].substring(0, 40) });
+      const solicitante = await getUserInfo(userId);
+      const nomeOuEmailAlvo = matchDelegacao[1].trim().replace(/[.!?]+$/, '');
+      let pessoa = null;
+      if (nomeOuEmailAlvo.includes('@')) {
+        const snapE = await db.collection('colaboradores').where('email', '==', nomeOuEmailAlvo.toLowerCase()).limit(1).get();
+        if (!snapE.empty) pessoa = snapE.docs[0].data();
+      } else {
+        const snapTodos = await db.collection('colaboradores').get();
+        const candidatos = snapTodos.docs
+          .map(d => d.data())
+          .filter(c => (c.nome || '').toLowerCase().includes(nomeOuEmailAlvo.toLowerCase()));
+        if (candidatos.length === 1) {
+          pessoa = candidatos[0];
+        } else if (candidatos.length > 1) {
+          const lista = candidatos.slice(0, 8).map((c, i) => `${i + 1}. ${c.nome} (${c.email})`).join('\n');
+          await enviarMensagem(channel, `Encontrei ${candidatos.length} pessoas com esse nome. Me manda o *e-mail* certinho da pessoa:\n\n${lista}`);
+          return;
+        }
+      }
+      if (!pessoa) {
+        await enviarMensagem(channel, `❌ Não encontrei "${nomeOuEmailAlvo}" nos colaboradores. Confere o nome/e-mail e tenta de novo — ex: "abrir chamado pra Maria Silva".`);
+        return;
+      }
+      await setEstado(userId, {
+        etapa: 'aguardando_categoria_delegacao',
+        pessoa_alvo: { nome: pessoa.nome, email: pessoa.email, slackId: pessoa.slackId || await buscarSlackIdPorEmail(pessoa.email), centroCusto: pessoa.centroCusto || null, cargo: pessoa.cargo || null },
+        aberto_por_admin: { nome: solicitante.nome, email: solicitante.email, slackId: userId },
+      });
+      await enviarMensagem(channel, `✅ Vou abrir um chamado em nome de *${pessoa.nome}*. Qual categoria?`, [
+        { type: 'actions', elements: [
+          { type: 'button', text: { type: 'plain_text', text: '🎁 Brinde', emoji: true }, style: 'primary', action_id: 'bv_brinde', value: 'brindes' },
+          { type: 'button', text: { type: 'plain_text', text: '📦 Logística', emoji: true }, action_id: 'bv_logistica', value: 'logistica' },
+          { type: 'button', text: { type: 'plain_text', text: '🔧 Manutenção', emoji: true }, action_id: 'bv_manutencao', value: 'manutencao' },
+        ]},
+        { type: 'actions', elements: [
+          { type: 'button', text: { type: 'plain_text', text: '📎 Suprimentos', emoji: true }, action_id: 'bv_suprimentos', value: 'suprimentos' },
+          { type: 'button', text: { type: 'plain_text', text: '🔑 Acessos', emoji: true }, action_id: 'bv_acessos', value: 'acessos' },
+          { type: 'button', text: { type: 'plain_text', text: '📝 Outro assunto', emoji: true }, action_id: 'bv_outros', value: 'outros' },
+        ]}
+      ]);
+      return;
+    }
+
     // ⚡ DETECÇÃO DE PRIMEIRA MENSAGEM
     // Se é a primeira vez que a pessoa escreve, checar se é saudação ou pedido real
     const flagRef2 = db.collection('slack_home_welcomed').doc(userId);
@@ -1407,6 +1509,9 @@ async function processarMensagemDM(evt) {
       descricao: analise.descricao,
       prioridade: analise.prioridade,
       texto_original: estado?.texto_original ? `${estado.texto_original}\n\n${texto}` : texto,
+      // Preserva delegação (admin abrindo em nome de outra pessoa), se houver
+      pessoa_alvo: estado?.pessoa_alvo || null,
+      aberto_por_admin: estado?.aberto_por_admin || null,
     };
 
     // ════════════════════════════════════════════════════
@@ -1861,8 +1966,11 @@ async function tratarBotaoFluxoConversacional(body, action) {
     await log('confirmar_dados', { cat: dados.categoria, titulo: (dados.titulo || '').substring(0, 40) });
 
     // Buscar info do usuário
-    const slackUser = await getUserInfo(userId);
-    await log('confirmar_user', { email: slackUser?.email, nome: slackUser?.nome });
+    const remetente = await getUserInfo(userId);
+    await log('confirmar_user', { email: remetente?.email, nome: remetente?.nome });
+    // Se é delegação (admin abrindo em nome de outra pessoa), o "dono" do
+    // chamado é a pessoa_alvo salva no estado, não quem está confirmando.
+    const slackUser = dados.pessoa_alvo || remetente;
 
     try {
       const dadosExtras = {};
@@ -1910,8 +2018,10 @@ async function tratarBotaoFluxoConversacional(body, action) {
         prioridade: dados.prioridade || 'media',
         slackUser: slackUser || { slackId: userId },
         dadosExtras,
+        abertoPorAdmin: dados.pessoa_alvo ? dados.aberto_por_admin : null,
       });
       await log('confirmar_ticket_criado', { id: ticket.id });
+      if (dados.pessoa_alvo) await dmNotificarDelegacao(dados.pessoa_alvo, dados.aberto_por_admin, ticket);
 
       // ── BAIXA AUTOMÁTICA DE ESTOQUE (brindes pelo bot) ──
       if (dados.categoria === 'brindes' && dados.brindes_solicitados) {
@@ -1947,19 +2057,18 @@ async function tratarBotaoFluxoConversacional(body, action) {
 
       // Atualiza a mensagem com confirmação final
       const catLabel = CATEGORIAS.find(c => c.value === ticket.categoria)?.label || ticket.categoria;
+      const camposFinal = [
+        { type: 'mrkdwn', text: `*Chamado:*\n${ticket.id}` },
+        { type: 'mrkdwn', text: `*Status:*\n🔵 Aberto` },
+        { type: 'mrkdwn', text: `*Categoria:*\n${catLabel}` },
+        { type: 'mrkdwn', text: `*Solicitação:*\n${ticket.titulo}` },
+      ];
+      if (dados.pessoa_alvo) camposFinal.push({ type: 'mrkdwn', text: `*Em nome de:*\n${dados.pessoa_alvo.nome}` });
       await atualizarMensagem(channel, body.message?.ts, `✅ Chamado ${ticket.id} aberto!`, [
         { type: 'header', text: { type: 'plain_text', text: '✅ Chamado registrado!', emoji: true } },
-        { type: 'section', text: { type: 'mrkdwn', text: `Tudo certo! Seu chamado foi registrado e já está na fila do time. 📥${avisoFluxo}` } },
+        { type: 'section', text: { type: 'mrkdwn', text: `Tudo certo! ${dados.pessoa_alvo ? `O chamado foi registrado em nome de *${dados.pessoa_alvo.nome}* e ela foi avisada por DM.` : 'Seu chamado foi registrado e já está na fila do time.'} 📥${avisoFluxo}` } },
         { type: 'divider' },
-        {
-          type: 'section',
-          fields: [
-            { type: 'mrkdwn', text: `*Chamado:*\n${ticket.id}` },
-            { type: 'mrkdwn', text: `*Status:*\n🔵 Aberto` },
-            { type: 'mrkdwn', text: `*Categoria:*\n${catLabel}` },
-            { type: 'mrkdwn', text: `*Solicitação:*\n${ticket.titulo}` },
-          ]
-        },
+        { type: 'section', fields: camposFinal },
         { type: 'context', elements: [{ type: 'mrkdwn', text: '🏢 *Facilities LogComex* • Você receberá atualizações de cada fase aqui mesmo.' }] }
       ]);
       await log('confirmar_msg_atualizada');
