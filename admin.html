@@ -1528,7 +1528,7 @@ const isAdminOrViewer = (email) => {
       if (s === 'Concluído') {
         const agora = new Date();
         updates.data_conclusao = agora;
-        const PRAZOS_SLA = { brindes: 5, seguranca: 2, manutencao: 60, suprimentos: 7, outros: 30 };
+        const PRAZOS_SLA = { brindes: 5, seguranca: 2, manutencao: 60, suprimentos: 7, outros: 30, plataformas: 1, infraestrutura: 7 };
         const SLA_LOGISTICA = { 'DHL': 2, 'Correio': 7, 'Uber Flash': 1 };
         let prazo = t.categoria === 'logistica'
           ? (SLA_LOGISTICA[t.transportadora] ?? SLA_LOGISTICA[t.subcategoria])
@@ -1538,8 +1538,8 @@ const isAdminOrViewer = (email) => {
           const diasCorridos = (agora - abertura) / 86400000;
           updates.dentroSLA = diasCorridos <= prazo;
         }
-        // categorias sem prazo definido (infraestrutura, plataformas) ficam sem dentroSLA,
-        // igual já era — não existe política de SLA estabelecida pra elas ainda.
+        // plataformas: 1 dia corrido (24h exatas desde a abertura)
+        // infraestrutura: 7 dias corridos (manutenção de escritório)
       }
 
       await updateDoc(doc(db, 'tickets', currentDocId), updates);
