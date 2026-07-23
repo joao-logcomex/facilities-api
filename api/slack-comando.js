@@ -961,7 +961,8 @@ module.exports = async function handler(req, res) {
       return res.status(200).send('');
     }
 
-    return res.status(200).send('');
+    // Não é brinde nem fac_* — deixa passar pra frente (não retorna aqui!).
+    // Outras rotas mais abaixo tratam confirmar_chamado, bv_*, etc.
   }
 
   // ============================================================
