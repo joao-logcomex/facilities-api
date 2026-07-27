@@ -1166,7 +1166,17 @@ module.exports.config = {
 // Estado da conversação armazenado no Firestore (uma doc por usuário Slack)
 async function getEstado(slackUserId) {
   const doc = await db.collection('slack_conversas').doc(slackUserId).get();
-  return doc.exists ? doc.data() : null;
+  if (!doc.exists) return null;
+  const dados = doc.data();
+  // Conversa parada há mais de 2h é descartada — evita que uma solicitação
+  // antiga e esquecida (às vezes dias!) contamine uma conversa nova.
+  const atualizadoEm = dados.updatedAt?.toDate ? dados.updatedAt.toDate() : new Date(dados.updatedAt || 0);
+  const duasHorasMs = 2 * 60 * 60 * 1000;
+  if (Date.now() - atualizadoEm.getTime() > duasHorasMs) {
+    await limparEstado(slackUserId);
+    return null;
+  }
+  return dados;
 }
 async function setEstado(slackUserId, dados) {
   await db.collection('slack_conversas').doc(slackUserId).set({
