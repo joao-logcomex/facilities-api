@@ -705,23 +705,23 @@ function renderGanttGenerico(elIdTimeline, elIdMeses, projetos, agruparPorCampo)
     const diasAssistida = (p.assistida_inicio && p.assistida_fim) ? diasEntre(p.assistida_inicio, p.assistida_fim) : null;
     const concluido = p.percentual === 100;
     return `
-      <div style="margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);position:relative;z-index:1;">
-        <div style="font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+      <div style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);position:relative;z-index:1;">
+        <div style="font-size:0.88rem;font-weight:600;color:var(--ink);margin-bottom:3px;display:flex;align-items:center;gap:6px;">
           ${concluido ? '<span style="color:var(--green);">✓</span>' : ''}${p.nome}
         </div>
-        <div style="position:relative;height:32px;">
+        <div style="position:relative;height:24px;">
           ${(inicioPct !== null && fimPct !== null) ? `
-            <div style="position:absolute;left:${inicioPct}%;width:${Math.max(1.5, fimPct - inicioPct)}%;top:0;height:14px;background:var(--purple);border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
-              <span style="font-size:0.64rem;color:#fff;font-weight:700;white-space:nowrap;">${diasProjeto !== null ? diasProjeto + 'd' : ''}</span>
+            <div style="position:absolute;left:${inicioPct}%;width:${Math.max(1.5, fimPct - inicioPct)}%;top:0;height:10px;background:var(--purple);border-radius:4px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
+              <span style="font-size:0.58rem;color:#fff;font-weight:700;white-space:nowrap;">${diasProjeto !== null ? diasProjeto + 'd' : ''}</span>
             </div>` : ''}
           ${(assIniPct !== null && assFimPct !== null) ? `
-            <div style="position:absolute;left:${assIniPct}%;width:${Math.max(1.5, assFimPct - assIniPct)}%;top:17px;height:14px;background:#0FBFA8;border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
-              <span style="font-size:0.64rem;color:#fff;font-weight:700;white-space:nowrap;">${diasAssistida !== null ? diasAssistida + 'd' : ''}</span>
+            <div style="position:absolute;left:${assIniPct}%;width:${Math.max(1.5, assFimPct - assIniPct)}%;top:12px;height:10px;background:#0FBFA8;border-radius:4px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
+              <span style="font-size:0.58rem;color:#fff;font-weight:700;white-space:nowrap;">${diasAssistida !== null ? diasAssistida + 'd' : ''}</span>
             </div>` : ''}
           ${goLivePct !== null ? `
-            <div style="position:absolute;left:${goLivePct}%;top:-1px;display:flex;align-items:center;gap:4px;">
-              <div style="width:9px;height:9px;background:var(--orange);transform:rotate(45deg);flex-shrink:0;"></div>
-              <span style="font-size:0.72rem;font-weight:700;color:var(--orange);white-space:nowrap;">${fmtData(gLive)}</span>
+            <div style="position:absolute;left:${goLivePct}%;top:-1px;display:flex;align-items:center;gap:3px;">
+              <div style="width:7px;height:7px;background:var(--orange);transform:rotate(45deg);flex-shrink:0;"></div>
+              <span style="font-size:0.64rem;font-weight:700;color:var(--orange);white-space:nowrap;">${fmtData(gLive)}</span>
             </div>` : ''}
         </div>
       </div>
@@ -738,14 +738,14 @@ function renderGanttGenerico(elIdTimeline, elIdMeses, projetos, agruparPorCampo)
   });
 
   cont.innerHTML = `
-    <div style="position:relative;padding-top:20px;">
+    <div style="position:relative;padding-top:16px;">
       ${gridLinhas}
       <div style="position:absolute;left:${hojePct}%;top:0;bottom:0;width:2px;background:var(--orange);opacity:.45;z-index:0;"></div>
-      <div style="position:absolute;left:${hojePct}%;top:0;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:0.62rem;font-weight:700;padding:2px 7px;border-radius:5px;white-space:nowrap;z-index:2;">HOJE · ${fmtData(hoje)}</div>
+      <div style="position:absolute;left:${hojePct}%;top:0;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;z-index:2;">HOJE · ${fmtData(hoje)}</div>
       ${grupos.map(g => {
         const comAssistida = g.itens.filter(p => p.tem_operacao_assistida).length;
         return `
-          <div style="background:var(--ink);color:#fff;border-radius:8px;padding:8px 14px;font-size:0.85rem;font-weight:600;margin-bottom:12px;position:relative;z-index:1;">
+          <div style="background:var(--ink);color:#fff;border-radius:6px;padding:5px 12px;font-size:0.76rem;font-weight:600;margin-bottom:7px;position:relative;z-index:1;">
             ${g.titulo} · ${g.itens.length} projeto${g.itens.length > 1 ? 's' : ''}${comAssistida ? ` · ${comAssistida} c/ operação assistida` : ''}
           </div>
           ${g.itens.map(linhaProjeto).join('')}
