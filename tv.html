@@ -143,6 +143,12 @@
   </div>
 
   <div class="section-label">Progresso dos projetos</div>
+  <div style="display:flex;gap:22px;font-size:0.8rem;color:var(--ink2);margin:2px 0 10px 0;">
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:11px;height:11px;background:var(--purple);border-radius:3px;flex-shrink:0;"></div>Tempo de projeto</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:11px;height:11px;background:#0FBFA8;border-radius:3px;flex-shrink:0;"></div>Operação assistida</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;background:var(--orange);transform:rotate(45deg);flex-shrink:0;"></div>Go live</div>
+  </div>
+  <div id="fac-meses" style="position:relative;height:16px;font-size:0.72rem;color:var(--ink2);margin-bottom:2px;"></div>
   <div id="fac-projetos"><!-- preenchido via JS --></div>
 </div>
 
@@ -354,47 +360,9 @@ async function loadFacilities(){
   }catch(e){ console.warn('Erro ao carregar Facilities:', e); }
 }
 
-// ── FACILITIES — Projetos (%) — atualizado ao vivo via Firestore (ver script type=module abaixo) ──
+// ── FACILITIES — Projetos — atualizado ao vivo via Firestore (ver script type=module abaixo) ──
 window.renderFacilitiesProjetos = function(projetos){
-  const cont = document.getElementById('fac-projetos');
-  if (!cont) return;
-  if (!projetos.length) {
-    cont.innerHTML = '<div style="opacity:.6;font-size:1rem;">Nenhum projeto cadastrado ainda.</div>';
-    return;
-  }
-  // Agrupa por 'grupo' (itens sem grupo viram grupo próprio, usando o nome)
-  const grupos = {};
-  projetos.forEach(p => {
-    const chave = p.grupo || p.nome;
-    if (!grupos[chave]) grupos[chave] = { titulo: chave, status: null, itens: [] };
-    grupos[chave].itens.push(p);
-    if (p.status_texto && !grupos[chave].status) grupos[chave].status = p.status_texto;
-  });
-  cont.innerHTML = Object.values(grupos).map(g => `
-    <div style="margin-bottom:6px;">
-      ${g.titulo !== g.itens[0].nome || g.itens.length > 1 ? `
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-          <div style="font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;color:var(--purple);">${g.titulo}</div>
-          ${g.status ? `<div style="font-size:0.92rem;color:var(--ink2);">${g.status}</div>` : ''}
-        </div>
-      ` : ''}
-      <div class="bars">
-        ${g.itens.map(p => `
-          <div class="bar-row">
-            <div class="bar-name">${p.nome}</div>
-            <div class="bar-track"><div class="bar-fill" data-pct="${Math.min(100,Math.max(0,p.percentual||0))}" style="width:0%;"></div></div>
-            <div class="bar-pct">${p.percentual ?? 0}%</div>
-          </div>
-        `).join('')}
-      </div>
-      ${(g.titulo === g.itens[0].nome && g.itens.length === 1 && g.status) ? `<div style="font-size:0.92rem;color:var(--ink2);margin-top:6px;">${g.status}</div>` : ''}
-    </div>
-  `).join('');
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    cont.querySelectorAll('.bar-fill').forEach(el => {
-      el.style.width = (el.dataset.pct || 0) + '%';
-    });
-  }));
+  renderGanttGenerico('fac-projetos', 'fac-meses', projetos, 'grupo');
 };
 
 // ── SALAS — Sala mais usada (ano) ──
@@ -661,12 +629,15 @@ async function loadHelpdeskProjetos(){
   }catch(e){ console.warn('Erro ao carregar projetos helpdesk:', e); }
 }
 
-function renderTimelineHelpdesk(projetos){
-  const cont = document.getElementById('hd-timeline');
-  const contMeses = document.getElementById('hd-meses');
+// ── Cronograma tipo Gantt genérico — usado tanto por Facilities quanto Help Desk ──
+// Se agruparPorCampo for informado, mostra um cabeçalho escuro por grupo
+// (ex: "Salas · 4 projetos"), como no painel "Projetos da Área" de referência.
+function renderGanttGenerico(elIdTimeline, elIdMeses, projetos, agruparPorCampo){
+  const cont = document.getElementById(elIdTimeline);
+  const contMeses = document.getElementById(elIdMeses);
   if (!cont) return;
   if (!projetos.length) {
-    cont.innerHTML = '<div style="opacity:.6;font-size:1rem;">Nenhum projeto em andamento.</div>';
+    cont.innerHTML = '<div style="opacity:.6;font-size:1rem;">Nenhum projeto cadastrado ainda.</div>';
     if (contMeses) contMeses.innerHTML = '';
     return;
   }
@@ -685,7 +656,11 @@ function renderTimelineHelpdesk(projetos){
     if (p.data_fim) todasDatas.push(parseData(p.data_fim));
     if (p.go_live_data) todasDatas.push(parseData(p.go_live_data));
   });
-  if (!todasDatas.length) { cont.innerHTML = ''; return; }
+  if (!todasDatas.length) {
+    cont.innerHTML = '<div style="opacity:.6;font-size:1rem;">Nenhuma data cadastrada ainda.</div>';
+    if (contMeses) contMeses.innerHTML = '';
+    return;
+  }
 
   let minD = new Date(Math.min(...todasDatas));
   let maxD = new Date(Math.max(...todasDatas));
@@ -699,7 +674,6 @@ function renderTimelineHelpdesk(projetos){
   const fmtData = d => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-  // Marcações de mês (usadas tanto pros rótulos quanto pras linhas de grade)
   const marcas = [];
   {
     let d = new Date(minD.getFullYear(), minD.getMonth(), 1);
@@ -716,51 +690,74 @@ function renderTimelineHelpdesk(projetos){
 
   const hoje = new Date();
   const hojePct = pct(hoje);
-  const comAssistida = projetos.filter(p => p.tem_operacao_assistida).length;
   const gridLinhas = marcas.map(m => `<div style="position:absolute;left:${pct(m)}%;top:0;bottom:0;width:1px;background:var(--border);opacity:.8;z-index:0;"></div>`).join('');
 
+  function linhaProjeto(p){
+    const dIni = parseData(p.data_inicio), dFim = parseData(p.data_fim);
+    const aIni = parseData(p.assistida_inicio), aFim = parseData(p.assistida_fim);
+    const gLive = parseData(p.go_live_data);
+    const inicioPct = dIni ? pct(dIni) : null;
+    const fimPct = dFim ? pct(dFim) : null;
+    const assIniPct = aIni ? pct(aIni) : null;
+    const assFimPct = aFim ? pct(aFim) : null;
+    const goLivePct = gLive ? pct(gLive) : null;
+    const diasProjeto = (p.data_inicio && p.data_fim) ? diasEntre(p.data_inicio, p.data_fim) : null;
+    const diasAssistida = (p.assistida_inicio && p.assistida_fim) ? diasEntre(p.assistida_inicio, p.assistida_fim) : null;
+    const concluido = p.percentual === 100;
+    return `
+      <div style="margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);position:relative;z-index:1;">
+        <div style="font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+          ${concluido ? '<span style="color:var(--green);">✓</span>' : ''}${p.nome}
+        </div>
+        <div style="position:relative;height:32px;">
+          ${(inicioPct !== null && fimPct !== null) ? `
+            <div style="position:absolute;left:${inicioPct}%;width:${Math.max(1.5, fimPct - inicioPct)}%;top:0;height:14px;background:var(--purple);border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
+              <span style="font-size:0.64rem;color:#fff;font-weight:700;white-space:nowrap;">${diasProjeto !== null ? diasProjeto + 'd' : ''}</span>
+            </div>` : ''}
+          ${(assIniPct !== null && assFimPct !== null) ? `
+            <div style="position:absolute;left:${assIniPct}%;width:${Math.max(1.5, assFimPct - assIniPct)}%;top:17px;height:14px;background:#0FBFA8;border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
+              <span style="font-size:0.64rem;color:#fff;font-weight:700;white-space:nowrap;">${diasAssistida !== null ? diasAssistida + 'd' : ''}</span>
+            </div>` : ''}
+          ${goLivePct !== null ? `
+            <div style="position:absolute;left:${goLivePct}%;top:-1px;display:flex;align-items:center;gap:4px;">
+              <div style="width:9px;height:9px;background:var(--orange);transform:rotate(45deg);flex-shrink:0;"></div>
+              <span style="font-size:0.72rem;font-weight:700;color:var(--orange);white-space:nowrap;">${fmtData(gLive)}</span>
+            </div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  // Agrupa (preservando a ordem de primeira aparição)
+  const grupos = [];
+  const gruposMap = {};
+  projetos.forEach(p => {
+    const chave = agruparPorCampo ? (p[agruparPorCampo] || p.nome) : '__todos__';
+    if (!gruposMap[chave]) { gruposMap[chave] = { titulo: chave, itens: [] }; grupos.push(gruposMap[chave]); }
+    gruposMap[chave].itens.push(p);
+  });
+
   cont.innerHTML = `
-    <div style="background:var(--ink);color:#fff;border-radius:8px;padding:8px 14px;font-size:0.85rem;font-weight:600;margin-bottom:12px;">
-      Helpdesk · ${projetos.length} projeto${projetos.length > 1 ? 's' : ''} · ${comAssistida} c/ operação assistida
-    </div>
     <div style="position:relative;padding-top:20px;">
       ${gridLinhas}
       <div style="position:absolute;left:${hojePct}%;top:0;bottom:0;width:2px;background:var(--orange);opacity:.45;z-index:0;"></div>
       <div style="position:absolute;left:${hojePct}%;top:0;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:0.62rem;font-weight:700;padding:2px 7px;border-radius:5px;white-space:nowrap;z-index:2;">HOJE · ${fmtData(hoje)}</div>
-      ${projetos.map(p => {
-        const dIni = parseData(p.data_inicio), dFim = parseData(p.data_fim);
-        const aIni = parseData(p.assistida_inicio), aFim = parseData(p.assistida_fim);
-        const gLive = parseData(p.go_live_data);
-        const inicioPct = dIni ? pct(dIni) : null;
-        const fimPct = dFim ? pct(dFim) : null;
-        const assIniPct = aIni ? pct(aIni) : null;
-        const assFimPct = aFim ? pct(aFim) : null;
-        const goLivePct = gLive ? pct(gLive) : null;
-        const diasProjeto = (p.data_inicio && p.data_fim) ? diasEntre(p.data_inicio, p.data_fim) : null;
-        const diasAssistida = (p.assistida_inicio && p.assistida_fim) ? diasEntre(p.assistida_inicio, p.assistida_fim) : null;
+      ${grupos.map(g => {
+        const comAssistida = g.itens.filter(p => p.tem_operacao_assistida).length;
         return `
-          <div style="margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);position:relative;z-index:1;">
-            <div style="font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:6px;">${p.nome}</div>
-            <div style="position:relative;height:32px;">
-              ${(inicioPct !== null && fimPct !== null) ? `
-                <div style="position:absolute;left:${inicioPct}%;width:${Math.max(1.5, fimPct - inicioPct)}%;top:0;height:14px;background:var(--purple);border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
-                  <span style="font-size:0.64rem;color:#fff;font-weight:700;white-space:nowrap;">${diasProjeto !== null ? diasProjeto + 'd' : ''}</span>
-                </div>` : ''}
-              ${(assIniPct !== null && assFimPct !== null) ? `
-                <div style="position:absolute;left:${assIniPct}%;width:${Math.max(1.5, assFimPct - assIniPct)}%;top:17px;height:14px;background:#0FBFA8;border-radius:5px;display:flex;align-items:center;padding-left:5px;overflow:hidden;">
-                  <span style="font-size:0.64rem;color:#fff;font-weight:700;white-space:nowrap;">${diasAssistida !== null ? diasAssistida + 'd' : ''}</span>
-                </div>` : ''}
-              ${goLivePct !== null ? `
-                <div style="position:absolute;left:${goLivePct}%;top:-1px;display:flex;align-items:center;gap:4px;">
-                  <div style="width:9px;height:9px;background:var(--orange);transform:rotate(45deg);flex-shrink:0;"></div>
-                  <span style="font-size:0.72rem;font-weight:700;color:var(--orange);white-space:nowrap;">${fmtData(gLive)}</span>
-                </div>` : ''}
-            </div>
+          <div style="background:var(--ink);color:#fff;border-radius:8px;padding:8px 14px;font-size:0.85rem;font-weight:600;margin-bottom:12px;position:relative;z-index:1;">
+            ${g.titulo} · ${g.itens.length} projeto${g.itens.length > 1 ? 's' : ''}${comAssistida ? ` · ${comAssistida} c/ operação assistida` : ''}
           </div>
+          ${g.itens.map(linhaProjeto).join('')}
         `;
       }).join('')}
     </div>
   `;
+}
+
+function renderTimelineHelpdesk(projetos){
+  const comGrupo = projetos.map(p => ({ ...p, grupo: 'Helpdesk' }));
+  renderGanttGenerico('hd-timeline', 'hd-meses', comGrupo, 'grupo');
 }
 
 async function loadAll(){
