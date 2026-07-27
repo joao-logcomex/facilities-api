@@ -85,9 +85,13 @@
 
   .footer-clock{position:fixed;bottom:22px;right:40px;font-size:1rem;color:var(--ink2);font-weight:500;z-index:50;}
   .logo-badge{position:fixed;top:26px;right:40px;font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;color:var(--purple);z-index:50;}
+  .mascote{position:fixed;top:20px;left:24px;width:150px;z-index:55;pointer-events:none;animation:mascoteFloat 4.5s ease-in-out infinite;filter:drop-shadow(0 8px 16px rgba(45,8,93,0.25));}
+  @keyframes mascoteFloat{0%,100%{transform:translateY(0) rotate(-1deg);}50%{transform:translateY(-12px) rotate(1deg);}}
 </style>
 </head>
 <body>
+
+<img class="mascote" src="/mascote-coruja.png" alt="Mascote financeiro Logcomex">
 
 <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
 <div class="logo-badge">
