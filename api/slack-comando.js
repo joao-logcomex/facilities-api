@@ -1372,7 +1372,8 @@ async function processarMensagemDM(evt) {
         pessoa_alvo: { nome: pessoa.nome, email: pessoa.email, slackId: pessoa.slackId || await buscarSlackIdPorEmail(pessoa.email), centroCusto: pessoa.centroCusto || null, cargo: pessoa.cargo || null },
         aberto_por_admin: { nome: solicitante.nome, email: solicitante.email, slackId: userId },
       });
-      await enviarMensagem(channel, `✅ Vou abrir um chamado em nome de *${pessoa.nome}*. Qual categoria?`, [
+      await enviarMensagem(channel, `✅ Vou abrir um chamado em nome de ${pessoa.nome}. Qual categoria?`, [
+        { type: 'section', text: { type: 'mrkdwn', text: `✅ Vou abrir um chamado em nome de *${pessoa.nome}*. Qual categoria?` } },
         { type: 'actions', elements: [
           { type: 'button', text: { type: 'plain_text', text: '🎁 Brinde', emoji: true }, style: 'primary', action_id: 'bv_brinde', value: 'brindes' },
           { type: 'button', text: { type: 'plain_text', text: '📦 Logística', emoji: true }, action_id: 'bv_logistica', value: 'logistica' },
