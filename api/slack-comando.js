@@ -1330,6 +1330,8 @@ async function processarMensagemDM(evt) {
   const textoLower = texto.toLowerCase();
 
   const log = async (etapa, extra = {}) => {
+    const importante = /erro/i.test(etapa);
+    if (!importante && process.env.SLACK_DEBUG_VERBOSE !== 'true') return;
     try {
       await db.collection('slack_debug_logs').add({
         at: new Date(), user: userId, texto: texto.substring(0, 80), etapa, ...extra,
@@ -1994,6 +1996,8 @@ async function tratarBotaoFluxoConversacional(body, action) {
   const actionId = action.action_id;
 
   const log = async (etapa, extra = {}) => {
+    const importante = /erro/i.test(etapa);
+    if (!importante && process.env.SLACK_DEBUG_VERBOSE !== 'true') return;
     try {
       await db.collection('slack_debug_logs').add({
         at: new Date(), user: userId, etapa: `btn_${etapa}`, action_id: actionId, ...extra,
