@@ -251,15 +251,27 @@
 <script>
 const SLIDE_IDS = ['slide-facilities','slide-salas','slide-ranking-salas','slide-helpdesk'];
 const SLIDE_MS = 22000;
-const FACILITIES_REFRESH_MS = 60000;    // chamados/KPIs — 1 min (limitado pela cota do Firebase)
-const SALAS_LIVE_REFRESH_MS = 10000;    // disponibilidade agora — 10s (sem risco de cota, é outro sistema)
-const SALAS_KPI_REFRESH_MS = 60000;     // check-in do tablet — 1 min
-const RANKING_REFRESH_MS = 300000;      // ranking anual (pesado, 17 salas x histórico) — 5 min
+const FACILITIES_REFRESH_MS = 7200000;  // chamados/KPIs — 2h (horário de expediente, ver dentroDoExpediente())
+const SALAS_LIVE_REFRESH_MS = 7200000;  // disponibilidade agora — 2h
+const SALAS_KPI_REFRESH_MS = 7200000;   // check-in do tablet — 2h
+const RANKING_REFRESH_MS = 7200000;     // ranking anual — 2h
 const SALAS_BACKEND = 'https://script.google.com/macros/s/AKfycbyDgucsB17Z1Al0_15ZJ1WaPvJHkapmyxITLDHE9WBGl3DHmXNnMJET9xRNLzn-aov7/exec';
-const HD_REFRESH_MS = 60000; // 1 min — mesmo cuidado de cota do outro lado (Supabase)
+const HD_REFRESH_MS = 7200000; // 2h
 const SUPABASE_URL = 'https://mtsuojqakutjnjakmbef.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10c3VvanFha3V0am5qYWttYmVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MTg5MzEsImV4cCI6MjA5MDE5NDkzMX0.wHnSf3Zq9jdAtWreQh1h5ZtcON1dOjMN9STEgTYhXIU';
 const TOKEN_DASHBOARD = 'adcfb16ee8236511890dc1597ba3a22a98adf89b07f60066';
+
+// Só atualiza dados em horário de expediente: seg-sex, 8h30-19h (horário local
+// do navegador — a TV física já roda no fuso de Curitiba). Fora disso, os
+// updates ficam pausados e a tela mantém os últimos números carregados —
+// evita gastar cota/chamadas a noite inteira e fim de semana sem necessidade.
+function dentroDoExpediente(){
+  const agora = new Date();
+  const dia = agora.getDay(); // 0=dom .. 6=sáb
+  if (dia === 0 || dia === 6) return false;
+  const minutos = agora.getHours() * 60 + agora.getMinutes();
+  return minutos >= (8 * 60 + 30) && minutos < (19 * 60);
+}
 
 const ROOMS = [
   {name:'PHP',capacity:5,floor:1,email:'c_1884rp7puo7gejdji3bfro291a05i@resource.calendar.google.com'},
@@ -348,6 +360,7 @@ function tickClock(){
 
 // ── FACILITIES — KPIs de chamados ──
 async function loadFacilities(){
+  if (!dentroDoExpediente()) return;
   try{
     const r = await fetch('/api/relatorio-imobiliario?tv=facilities&ano=2026');
     const d = await r.json();
@@ -419,6 +432,7 @@ function contarDiasUteisNoAno(anoAlvo){
 }
 
 async function loadRankingSalas(){
+  if (!dentroDoExpediente()) return;
   try{
     const ANO_ALVO = 2026;
     const diasDesdeInicioAno = Math.ceil((Date.now() - new Date(`${ANO_ALVO}-01-01T00:00:00Z`).getTime()) / 86400000) + 1;
@@ -542,6 +556,7 @@ function renderRoomsGrid(elId, items){
 }
 
 async function loadSalasLive(){
+  if (!dentroDoExpediente()) return;
   const results = await Promise.all(ROOMS.map(async room => {
     try{
       const r = await fetch(`${SALAS_BACKEND}?email=${encodeURIComponent(room.email)}`);
@@ -575,6 +590,7 @@ function barRowHTML(nome, qtd, max){
 
 // ── HELP DESK · TI — via Supabase (Ativos Logcomex, RPC somente leitura) ──
 async function loadHelpdesk(){
+  if (!dentroDoExpediente()) return;
   if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.startsWith('COLE_AQUI')) return; // aguardando a chave
   try{
     const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_helpdesk_dashboard_stats`, {
@@ -611,6 +627,7 @@ async function loadHelpdesk(){
 
 // ── HELP DESK · TI — cronograma de projetos da área ──
 async function loadHelpdeskProjetos(){
+  if (!dentroDoExpediente()) return;
   if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.startsWith('COLE_AQUI')) return;
   try{
     const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_projetos_area_public`, {
