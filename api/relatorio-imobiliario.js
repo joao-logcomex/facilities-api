@@ -32,49 +32,46 @@ module.exports = async (req, res) => {
   // ── Endpoint público (sem login) para a TV do setor — "Go Live" ──
   // Ativado com ?tv=facilities. Devolve só números agregados de 2026,
   // nunca dados individuais de chamados (nome, e-mail etc).
-  // Cache de borda por 55s: alinhado com o polling do front-end (1min), garante
-  // que o número nunca fique defasado por mais de ~1min após qualquer mudança.
+  // Cache de borda por 2min: bom meio-termo entre atualização rápida e
+  // economia de cota — combinado com as consultas de agregação abaixo,
+  // o custo por atualização cai de centenas de leituras para ~5.
   if (req.query && req.query.tv === 'facilities') {
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=55, stale-while-revalidate=20');
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=110, stale-while-revalidate=30');
     try {
       const anoAlvo = parseInt(req.query.ano) || new Date().getFullYear();
       const inicioAno = new Date(`${anoAlvo}-01-01T00:00:00.000Z`);
       const inicioProxAno = new Date(`${anoAlvo + 1}-01-01T00:00:00.000Z`);
-      const [ticketsSnap, projetosSnap] = await Promise.all([
-        db.collection('tickets')
-          .where('data_abertura', '>=', inicioAno)
-          .where('data_abertura', '<', inicioProxAno)
-          .get(),
-        db.collection('projetos_ia').get(),
-      ]);
-      const doAno = ticketsSnap.docs.map(d => d.data());
-      const CATLABELS = {
-        manutencao: 'Manutenção', infraestrutura: 'Infraestrutura', limpeza: 'Limpeza',
-        seguranca: 'Segurança', brindes: 'Brindes', suprimentos: 'Suprimentos',
-        plataformas: 'Plataformas', outros: 'Outros', logistica: 'Logística', acessos: 'Acessos'
-      };
-      const abertos = doAno.filter(t => !['Concluído', 'Cancelado'].includes(t.status)).length;
-      const concluidos = doAno.filter(t => t.status === 'Concluído').length;
-      const cancelados = doAno.filter(t => t.status === 'Cancelado').length;
-      const porCategoria = contar(doAno, x => CATLABELS[x.categoria] || x.categoria || 'Outros');
-      const projetos = projetosSnap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+      const baseQuery = db.collection('tickets')
+        .where('data_abertura', '>=', inicioAno)
+        .where('data_abertura', '<', inicioProxAno);
 
-      // SLA — mesma regra do dashboard admin: só considera tickets com dentroSLA
-      // definido (true/false); Cancelado fica de fora naturalmente (dentroSLA null)
-      const comSLA = doAno.filter(t => t.dentroSLA === true || t.dentroSLA === false);
-      const dentroSLAqtd = doAno.filter(t => t.dentroSLA === true).length;
-      const slaPct = comSLA.length > 0 ? Math.round((dentroSLAqtd / comSLA.length) * 100) : null;
+      // Consultas de AGREGAÇÃO (.count()) em vez de buscar cada documento —
+      // isso é cobrado como ~1 leitura por até 1000 docs escaneados, não 1
+      // leitura POR documento. Pra ~1500 chamados/ano isso reduz o custo
+      // desta rota em ~99%. (projetos_ia não é lido aqui porque a TV já
+      // busca isso direto via listener próprio no navegador.)
+      const [totalAgg, concluidosAgg, canceladosAgg, slaTrueAgg, slaFalseAgg] = await Promise.all([
+        baseQuery.count().get(),
+        baseQuery.where('status', '==', 'Concluído').count().get(),
+        baseQuery.where('status', '==', 'Cancelado').count().get(),
+        baseQuery.where('dentroSLA', '==', true).count().get(),
+        baseQuery.where('dentroSLA', '==', false).count().get(),
+      ]);
+
+      const total = totalAgg.data().count;
+      const concluidos = concluidosAgg.data().count;
+      const cancelados = canceladosAgg.data().count;
+      const abertos = total - concluidos - cancelados;
+      const dentroSLAqtd = slaTrueAgg.data().count;
+      const comSLA = dentroSLAqtd + slaFalseAgg.data().count;
+      const slaPct = comSLA > 0 ? Math.round((dentroSLAqtd / comSLA) * 100) : null;
 
       return res.status(200).json({
         ok: true,
         ano: anoAlvo,
-        total: doAno.length,
+        total,
         abertos, concluidos, cancelados,
         sla_pct: slaPct,
-        por_categoria: porCategoria,
-        projetos,
         atualizado_em: new Date().toISOString(),
       });
     } catch (e) {
