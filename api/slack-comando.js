@@ -1122,13 +1122,29 @@ module.exports = async function handler(req, res) {
     if (!evt.text || !evt.user || !evt.channel) return res.status(200).send('');
 
     // Dedup (Slack pode retentar se demorar >3s)
+    // IMPORTANTE: se essa checagem falhar (ex: cota do Firestore esgotada),
+    // NÃO seguimos processando — isso é o que causava mensagens duplicadas
+    // exatamente quando o banco estava sob estresse (a rede de segurança
+    // se desligava silenciosamente bem quando mais precisava dela).
     if (eventId) {
       try {
         const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
         const exists = await dedupeDoc.get();
         if (exists.exists) return res.status(200).send('');
         await dedupeDoc.set({ at: new Date(), user: evt.user });
-      } catch (e) { console.warn('dedup:', e.message); }
+      } catch (e) {
+        console.warn('dedup falhou, abortando por segurança:', e.message);
+        // Evita spam de aviso: só manda o aviso se ainda não mandou um
+        // recentemente pra esse usuário (usa memória do processo, best-effort).
+        const agora = Date.now();
+        global.__ultimoAvisoCotaPorUser = global.__ultimoAvisoCotaPorUser || {};
+        const ultimoAviso = global.__ultimoAvisoCotaPorUser[evt.user] || 0;
+        if (agora - ultimoAviso > 30000) {
+          global.__ultimoAvisoCotaPorUser[evt.user] = agora;
+          await enviarMensagem(channel, '⚠️ Sistema temporariamente sobrecarregado. Tenta de novo em alguns minutos — se persistir, usa o formulário: facilities-api.vercel.app').catch(() => {});
+        }
+        return res.status(200).send('');
+      }
     }
 
     // Processa SÍNCRONO (Vercel mata a função após res.send, então precisa ser antes)
