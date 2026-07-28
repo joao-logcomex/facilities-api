@@ -1208,6 +1208,12 @@ FLUXO:
 3. Dúvida sobre o que precisa → faça UMA pergunta objetiva
 4. Confirmação → pronto_para_abrir: true
 
+REGRAS CRÍTICAS SOBRE OS CAMPOS FINAIS (quando pronto_para_abrir=true):
+- O campo "descricao" deve resumir TODA a necessidade da pessoa ao longo de TODA a conversa até aqui — nunca apenas a última mensagem isolada. Releia o histórico completo antes de escrever.
+- NUNCA pergunte por centro de custo, departamento ou setor administrativo da pessoa — essa informação já é obtida automaticamente pelo sistema a partir do cadastro dela, não precisa (e não deve) ser perguntada.
+- NUNCA inclua centro de custo/departamento dentro de "titulo" ou "descricao".
+- Se precisar saber uma localização física pra entrega (ex: qual sala/andar), pode perguntar isso normalmente, mas trate como detalhe do pedido, não como "centro de custo".
+
 CATEGORIAS (use internamente, não mencione):
 suprimentos, manutencao, reforma, acessos, brindes, logistica, outros
 
@@ -1236,6 +1242,13 @@ RESPONDA SEMPRE COM JSON:
         system: systemPrompt,
         messages: (() => {
           const msgs = [];
+          // Se é uma delegação (admin abrindo em nome de outra pessoa), avisa a IA
+          // desde já — o centro de custo/departamento dessa pessoa já é conhecido
+          // pelo sistema, então a IA nunca precisa perguntar por isso.
+          if (estadoAnterior?.pessoa_alvo) {
+            msgs.push({ role: 'user', content: `[Sistema] Este chamado está sendo aberto em nome de ${estadoAnterior.pessoa_alvo.nome}. O centro de custo dela (${estadoAnterior.pessoa_alvo.centroCusto || 'já cadastrado'}) já é conhecido automaticamente — não pergunte por isso.` });
+            msgs.push({ role: 'assistant', content: '{"resposta_usuario":"Entendido.","pronto_para_abrir":false,"saudacao_apenas":false}' });
+          }
           // Adicionar histórico de conversa se existir
           if (estadoAnterior?.historico_chat) {
             estadoAnterior.historico_chat.slice(-6).forEach(h => {
