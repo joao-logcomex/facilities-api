@@ -32,10 +32,10 @@ module.exports = async (req, res) => {
   // ── Endpoint público (sem login) para a TV do setor — "Go Live" ──
   // Ativado com ?tv=facilities. Devolve só números agregados de 2026,
   // nunca dados individuais de chamados (nome, e-mail etc).
-  // Cache de borda por 4min: reduz drasticamente as leituras no Firestore,
-  // já que não importa quantas TVs/abas estejam abertas ao mesmo tempo.
+  // Cache de borda por 55s: alinhado com o polling do front-end (1min), garante
+  // que o número nunca fique defasado por mais de ~1min após qualquer mudança.
   if (req.query && req.query.tv === 'facilities') {
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=240, stale-while-revalidate=120');
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=55, stale-while-revalidate=20');
     try {
       const anoAlvo = parseInt(req.query.ano) || new Date().getFullYear();
       const inicioAno = new Date(`${anoAlvo}-01-01T00:00:00.000Z`);
