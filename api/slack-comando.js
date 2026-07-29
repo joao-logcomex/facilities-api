@@ -1129,6 +1129,51 @@ module.exports = async function handler(req, res) {
     const userId2 = body.user?.id || body.message?.bot_id;
     const channel2 = body.channel?.id;
 
+// Extrai dados estruturados de envio a partir do texto livre — usado pelo
+// fluxo simples da IA, que hoje só gera descrição em texto corrido e perde
+// a chance de preencher os campos que o admin usa (Transportadora, Dados do
+// Envio). Sempre "best effort": só preenche o que conseguir reconhecer com
+// confiança, nunca inventa nada.
+function extrairDadosEnvio(texto) {
+  const t = texto || '';
+  const resultado = { transportadora: null, endereco_envio: null, tipo_entrega: null, destinatario: null };
+
+  // Transportadora
+  if (/\bdhl\b/i.test(t)) { resultado.transportadora = 'DHL'; resultado.tipo_entrega = 'Envio via DHL'; }
+  else if (/\bsedex\b|\bcorreios?\b/i.test(t)) { resultado.transportadora = 'Correio'; resultado.tipo_entrega = 'Envio pelos Correios'; }
+  else if (/\buber\s*flash\b/i.test(t)) { resultado.transportadora = 'Uber Flash'; resultado.tipo_entrega = 'Envio via Uber Flash'; }
+  else if (/\bmotoboy\b/i.test(t)) { resultado.transportadora = 'Motoboy'; resultado.tipo_entrega = 'Envio via Motoboy'; }
+
+  // Destinatário: "para Fulano de Tal" (até vírgula/ponto/"Endereço")
+  const matchDest = t.match(/\bpara\s+([A-ZÀ-Úa-zà-ú][A-ZÀ-Úa-zà-ú\s]{2,60}?)(?=[.,]|\s+[Ee]nder|\s*$)/);
+  if (matchDest) resultado.destinatario = matchDest[1].trim();
+
+  // CEP
+  const matchCep = t.match(/\b(\d{5}-?\d{3})\b/);
+  const cep = matchCep ? matchCep[1] : null;
+
+  // Cidade/UF (formato "Curitiba/PR" ou "Curitiba - PR")
+  const matchCidadeUf = t.match(/\b([A-ZÀ-Ú][a-zà-ú]+(?:\s[A-ZÀ-Ú][a-zà-ú]+)*)\s*[\/\-]\s*([A-Z]{2})\b/);
+
+  // Rua + número (formato "Rua Fulano, 123" ou "Av. Fulano 123")
+  const matchRua = t.match(/\b(Rua|Av\.?|Avenida|Alameda|Travessa|Rod\.?|Rodovia)\s+([^,]+?,?\s*\d+[A-Za-z0-9\s\/°ºapt.]*)/i);
+
+  if (cep || matchCidadeUf || matchRua) {
+    resultado.endereco_envio = {
+      nome: resultado.destinatario || '',
+      cpf_tel: '',
+      cep: cep || '',
+      rua: matchRua ? `${matchRua[1]} ${matchRua[2]}`.replace(/\s*,\s*$/, '') : '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidade: matchCidadeUf ? matchCidadeUf[1] : '',
+      estado: matchCidadeUf ? matchCidadeUf[2] : '',
+    };
+  }
+  return resultado;
+}
+
     if (actionId === 'confirmar_chamado') {
       try {
         const estado2 = await getEstado(userId2);
@@ -1149,13 +1194,24 @@ module.exports = async function handler(req, res) {
         // Se é uma delegação (admin abrindo em nome de outra pessoa), o "dono"
         // do chamado é a pessoa_alvo, não quem está clicando no botão.
         const slackUser2 = estado2.pessoa_alvo || remetente2;
+
+        // Extrai transportadora/endereço/destinatário do texto todo (título +
+        // descrição + texto original) — evita que essa informação fique só
+        // solta na descrição e nunca apareça nos campos estruturados do admin.
+        const textoCompleto2 = `${estado2.titulo || ''} ${estado2.descricao || ''} ${estado2.texto_original || ''}`;
+        const dadosEnvio2 = extrairDadosEnvio(textoCompleto2);
+        const dadosExtras2 = {};
+        if (dadosEnvio2.transportadora) dadosExtras2.transportadora = dadosEnvio2.transportadora;
+        if (dadosEnvio2.tipo_entrega) dadosExtras2.tipo_entrega = dadosEnvio2.tipo_entrega;
+        if (dadosEnvio2.endereco_envio) dadosExtras2.endereco_envio = dadosEnvio2.endereco_envio;
+
         const ticket = await criarTicketNoFirebase({
           categoria: estado2.categoria,
           titulo: estado2.titulo || estado2.texto_original,
           descricao: estado2.descricao || estado2.texto_original,
           prioridade: estado2.prioridade || 'media',
           slackUser: slackUser2,
-          dadosExtras: {},
+          dadosExtras: dadosExtras2,
           abertoPorAdmin: estado2.pessoa_alvo ? estado2.aberto_por_admin : null,
         });
         if (estado2.pessoa_alvo) await dmNotificarDelegacao(estado2.pessoa_alvo, estado2.aberto_por_admin, ticket);
@@ -2199,6 +2255,17 @@ async function tratarBotaoFluxoConversacional(body, action) {
       if (dados.item_envio) dadosExtras.item_envio = dados.item_envio;
       if (dados.destinatario_envio) dadosExtras.destinatario_envio = dados.destinatario_envio;
       if (dados.detalhes_extras) dadosExtras.detalhes_extras = dados.detalhes_extras;
+
+      // Tenta estruturar o endereço (pro card "Dados do Envio" do admin) a
+      // partir do que já foi coletado — sem isso, some tudo dentro do texto
+      // livre de destinatario_envio/detalhes_extras.
+      if (dados.categoria === 'logistica') {
+        const textoEndereco = `${dados.destinatario_envio || ''} ${dados.item_envio || ''} ${dados.detalhes_extras || ''}`;
+        const dadosEnvioExtraidos = extrairDadosEnvio(textoEndereco);
+        if (!dadosExtras.transportadora && dadosEnvioExtraidos.transportadora) dadosExtras.transportadora = dadosEnvioExtraidos.transportadora;
+        if (dadosEnvioExtraidos.tipo_entrega) dadosExtras.tipo_entrega = dadosEnvioExtraidos.tipo_entrega;
+        if (dadosEnvioExtraidos.endereco_envio) dadosExtras.endereco_envio = dadosEnvioExtraidos.endereco_envio;
+      }
 
       // Monta a descrição final limpa (SEM DUPLICAR informação)
       let descricaoFinal = '';
