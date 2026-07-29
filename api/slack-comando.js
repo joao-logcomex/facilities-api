@@ -1138,10 +1138,10 @@ function extrairDadosEnvio(texto) {
   const t = texto || '';
   const resultado = { transportadora: null, endereco_envio: null, tipo_entrega: null, destinatario: null };
 
-  // Transportadora
+  // Transportadora — mencionada explicitamente tem sempre prioridade
   if (/\bdhl\b/i.test(t)) { resultado.transportadora = 'DHL'; resultado.tipo_entrega = 'Envio via DHL'; }
   else if (/\bsedex\b|\bcorreios?\b/i.test(t)) { resultado.transportadora = 'Correio'; resultado.tipo_entrega = 'Envio pelos Correios'; }
-  else if (/\buber\s*flash\b/i.test(t)) { resultado.transportadora = 'Uber Flash'; resultado.tipo_entrega = 'Envio via Uber Flash'; }
+  else if (/\buber\s*flash\b|\buber\b/i.test(t)) { resultado.transportadora = 'Uber Flash'; resultado.tipo_entrega = 'Envio via Uber Flash'; }
   else if (/\bmotoboy\b/i.test(t)) { resultado.transportadora = 'Motoboy'; resultado.tipo_entrega = 'Envio via Motoboy'; }
 
   // Destinatário: "para Fulano de Tal" (até vírgula/ponto/"Endereço")
@@ -1154,6 +1154,20 @@ function extrairDadosEnvio(texto) {
 
   // Cidade/UF (formato "Curitiba/PR" ou "Curitiba - PR")
   const matchCidadeUf = t.match(/\b([A-ZÀ-Ú][a-zà-ú]+(?:\s[A-ZÀ-Ú][a-zà-ú]+)*)\s*[\/\-]\s*([A-Z]{2})\b/);
+  const cidade = matchCidadeUf ? matchCidadeUf[1] : null;
+
+  // Fallback: se ninguém mencionou a transportadora, decide pela cidade —
+  // Curitiba é onde fica a sede, entrega local sai via Uber Flash; fora
+  // de Curitiba vai pelos Correios por padrão (DHL só quando pedido).
+  if (!resultado.transportadora && cidade) {
+    if (/curitiba/i.test(cidade)) {
+      resultado.transportadora = 'Uber Flash';
+      resultado.tipo_entrega = 'Envio via Uber Flash';
+    } else {
+      resultado.transportadora = 'Correio';
+      resultado.tipo_entrega = 'Envio pelos Correios';
+    }
+  }
 
   // Rua + número (formato "Rua Fulano, 123" ou "Av. Fulano 123")
   const matchRua = t.match(/\b(Rua|Av\.?|Avenida|Alameda|Travessa|Rod\.?|Rodovia)\s+([^,]+?,?\s*\d+[A-Za-z0-9\s\/°ºapt.]*)/i);
@@ -1167,7 +1181,7 @@ function extrairDadosEnvio(texto) {
       numero: '',
       complemento: '',
       bairro: '',
-      cidade: matchCidadeUf ? matchCidadeUf[1] : '',
+      cidade: cidade || '',
       estado: matchCidadeUf ? matchCidadeUf[2] : '',
     };
   }
