@@ -26,6 +26,47 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 
+// ── Supabase (colaboradores já migrado — Fase 1 da migração Firestore → Supabase) ──
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+async function supabaseGet(path) {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    });
+    if (!r.ok) { console.warn('supabaseGet falhou:', r.status, await r.text()); return []; }
+    return await r.json();
+  } catch (e) { console.warn('supabaseGet erro:', e.message); return []; }
+}
+
+// Busca um colaborador por e-mail. Retorna no MESMO formato que o código
+// já espera (centroCusto, não centro_custo) pra não precisar mexer em
+// mais nada além do ponto da consulta.
+async function buscarColaboradorPorEmail(email) {
+  const rows = await supabaseGet(`colaboradores?email=eq.${encodeURIComponent(email.toLowerCase())}&limit=1`);
+  if (!rows.length) return null;
+  const c = rows[0];
+  return { nome: c.nome, email: c.email, centroCusto: c.centro_custo, cargo: c.cargo, slackId: c.slack_id };
+}
+
+async function buscarColaboradorPorSlackId(slackId) {
+  const rows = await supabaseGet(`colaboradores?slack_id=eq.${encodeURIComponent(slackId)}&limit=1`);
+  if (!rows.length) return null;
+  const c = rows[0];
+  return { nome: c.nome, email: c.email, centroCusto: c.centro_custo, cargo: c.cargo, slackId: c.slack_id };
+}
+
+// Busca por trecho do nome (case-insensitive) — usa ilike do Postgres em
+// vez de baixar a coleção inteira e filtrar em JS, como era no Firestore.
+async function buscarColaboradoresPorNome(trechoNome) {
+  const rows = await supabaseGet(`colaboradores?nome=ilike.*${encodeURIComponent(trechoNome)}*&limit=8`);
+  return rows.map(c => ({ nome: c.nome, email: c.email, centroCusto: c.centro_custo, cargo: c.cargo, slackId: c.slack_id }));
+}
+
 // Categorias suportadas (alinhadas com o sistema)
 const CATEGORIAS = [
   { value: 'suprimentos', label: '📎 Suprimentos de escritório', emoji: '📎' },
@@ -392,18 +433,14 @@ async function getUserInfo(userId) {
       cargo: null,
     };
 
-    // Buscar dados extras (centro de custo, cargo) na coleção colaboradores
+    // Buscar dados extras (centro de custo, cargo) — agora vem do Supabase
     if (email) {
-      try {
-        const snap = await db.collection('colaboradores')
-          .where('email', '==', email).limit(1).get();
-        if (!snap.empty) {
-          const colab = snap.docs[0].data();
-          result.centroCusto = colab.centroCusto || colab.centro_custo || null;
-          result.cargo = colab.cargo || null;
-          if (colab.nome) result.nome = colab.nome;
-        }
-      } catch (e) { console.warn('busca colaborador falhou:', e.message); }
+      const colab = await buscarColaboradorPorEmail(email);
+      if (colab) {
+        result.centroCusto = colab.centroCusto || null;
+        result.cargo = colab.cargo || null;
+        if (colab.nome) result.nome = colab.nome;
+      }
     }
     return result;
   } catch { return null; }
@@ -1042,9 +1079,8 @@ module.exports = async function handler(req, res) {
           return res.status(200).send('');
         }
         await limparEstado(userId2);
-        // Buscar dados do colaborador pelo Slack User ID
-        const colabSnap2 = await db.collection('colaboradores').where('slackId', '==', userId2).limit(1).get();
-        const colab2 = colabSnap2.docs[0]?.data() || {};
+        // Buscar dados do colaborador pelo Slack User ID — agora vem do Supabase
+        const colab2 = (await buscarColaboradorPorSlackId(userId2)) || {};
         const remetente2 = {
           slackId: userId2,
           nome: colab2.nome || body.user?.real_name || body.user?.name || 'Colaborador',
@@ -1374,18 +1410,13 @@ async function processarMensagemDM(evt) {
           pessoa = { nome: infoMencao.nome, email: infoMencao.email, slackId: matchMencao[1], centroCusto: infoMencao.centroCusto, cargo: infoMencao.cargo };
         }
       } else if (matchEmailCompleto) {
-        const snapE = await db.collection('colaboradores').where('email', '==', matchEmailCompleto[1].toLowerCase()).limit(1).get();
-        if (!snapE.empty) pessoa = snapE.docs[0].data();
+        pessoa = await buscarColaboradorPorEmail(matchEmailCompleto[1]);
       } else if (matchUsuarioSemDominio) {
         // "@bruna.souza" sem domínio — monta o e-mail padrão da empresa e tenta
         const emailTentativa = `${matchUsuarioSemDominio[1].toLowerCase()}@logcomex.com`;
-        const snapU = await db.collection('colaboradores').where('email', '==', emailTentativa).limit(1).get();
-        if (!snapU.empty) pessoa = snapU.docs[0].data();
+        pessoa = await buscarColaboradorPorEmail(emailTentativa);
       } else {
-        const snapTodos = await db.collection('colaboradores').get();
-        const candidatos = snapTodos.docs
-          .map(d => d.data())
-          .filter(c => (c.nome || '').toLowerCase().includes(nomeOuEmailAlvo.toLowerCase()));
+        const candidatos = await buscarColaboradoresPorNome(nomeOuEmailAlvo);
         if (candidatos.length === 1) {
           pessoa = candidatos[0];
         } else if (candidatos.length > 1) {
