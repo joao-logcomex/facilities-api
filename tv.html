@@ -844,6 +844,26 @@ function tickFrescor(){
   }
 }
 
+// ── AUTO-RELOAD: detecta quando eu subo uma atualização e recarrega sozinha ──
+// A TV fica ligada o dia inteiro sem ninguém pra apertar F5. Sem isso, ela
+// continua rodando o JS de quando a página abriu, mesmo que eu corrija algo
+// no servidor horas depois. Checa o ETag do próprio arquivo de tempos em
+// tempos; se mudou (== nova versão publicada), recarrega automaticamente.
+let _versaoAtualTV = null;
+async function checarNovaVersaoTV(){
+  try{
+    const r = await fetch('/tv.html', { method: 'HEAD', cache: 'no-store' });
+    const versao = r.headers.get('etag') || r.headers.get('last-modified');
+    if (!versao) return;
+    if (_versaoAtualTV === null) { _versaoAtualTV = versao; return; }
+    if (versao !== _versaoAtualTV) {
+      console.log('Nova versão da TV publicada — recarregando em 5s...');
+      setTimeout(() => location.reload(), 5000);
+    }
+  }catch(e){ /* falha silenciosa, tenta de novo no próximo ciclo */ }
+}
+setInterval(checarNovaVersaoTV, 120000); // checa a cada 2 minutos
+
 // ── boot ──
 showSlide(0);
 loadAll();
