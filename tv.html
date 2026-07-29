@@ -255,10 +255,10 @@
 <script>
 const SLIDE_IDS = ['slide-facilities','slide-salas','slide-ranking-salas','slide-helpdesk'];
 const SLIDE_MS = 22000;
-const FACILITIES_REFRESH_MS = 60000;    // chamados/KPIs — 1 min (já ficou muito mais barato com as consultas de agregação)
-const SALAS_LIVE_REFRESH_MS = 10000;    // disponibilidade agora — 10s (não usa nossa cota, é outro sistema)
-const SALAS_KPI_REFRESH_MS = 60000;     // check-in do tablet — 1 min
-const RANKING_REFRESH_MS = 300000;      // ranking anual — 5 min
+const FACILITIES_REFRESH_MS = 60000;    // chamados/KPIs — 1 min
+const SALAS_LIVE_REFRESH_MS = 5000;     // disponibilidade agora — 5s (prioridade máxima, não usa nossa cota)
+const SALAS_KPI_REFRESH_MS = 5000;      // check-in do tablet / KPIs da tela de salas — 5s, mesma prioridade
+const RANKING_REFRESH_MS = 30000;       // ranking anual — 30s (mais pesado por sala x sala, mas ainda bem perto de ao vivo)
 const SALAS_BACKEND = 'https://script.google.com/macros/s/AKfycbyDgucsB17Z1Al0_15ZJ1WaPvJHkapmyxITLDHE9WBGl3DHmXNnMJET9xRNLzn-aov7/exec';
 const HD_REFRESH_MS = 60000; // 1 min
 const SUPABASE_URL = 'https://mtsuojqakutjnjakmbef.supabase.co';
@@ -805,8 +805,8 @@ async function loadAll(){
 // vez de só congelar o número sem ninguém perceber.
 const LIMITES_FRESCOR = {
   facilities: { el: 'fac-frescor', atrasado: 180000, muitoAtrasado: 360000 },
-  salasLive:  { el: 'salas-frescor', atrasado: 30000, muitoAtrasado: 60000 },
-  ranking:    { el: 'rank-frescor', atrasado: 900000, muitoAtrasado: 1800000 },
+  salasLive:  { el: 'salas-frescor', atrasado: 15000, muitoAtrasado: 30000 },
+  ranking:    { el: 'rank-frescor', atrasado: 90000, muitoAtrasado: 180000 },
   helpdesk:   { el: 'hd-frescor', atrasado: 180000, muitoAtrasado: 360000 },
 };
 
