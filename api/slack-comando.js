@@ -67,6 +67,61 @@ async function buscarColaboradoresPorNome(trechoNome) {
   return rows.map(c => ({ nome: c.nome, email: c.email, centroCusto: c.centro_custo, cargo: c.cargo, slackId: c.slack_id }));
 }
 
+// ── ESCRITA DUPLA (fase de transição) ──
+// Firestore continua sendo a fonte de verdade; isso só espelha uma cópia
+// no Supabase pra validarmos antes de trocar de vez. Nunca deve derrubar
+// nem atrasar o fluxo principal — por isso sempre falha em silêncio (só loga).
+async function supabasePost(path, body, extraHeaders = {}) {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates',
+        ...extraHeaders,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) console.warn('supabasePost falhou:', path, r.status, await r.text());
+  } catch (e) { console.warn('supabasePost erro:', path, e.message); }
+}
+
+async function espelharTicketNoSupabase(docData) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+  const linha = {
+    id: docData.id,
+    titulo: docData.titulo,
+    descricao: docData.descricao,
+    categoria: docData.categoria,
+    subcategoria: docData.subcategoria,
+    prioridade: docData.prioridade,
+    status: docData.status,
+    origem: docData.origem,
+    user_email: docData.userEmail || docData.email,
+    nome: docData.nome,
+    centro_custo: docData.centroCusto,
+    departamento: docData.departamento,
+    cargo: docData.cargo,
+    slack_user_id: docData.slack_user_id,
+    aberto_por_admin: docData.aberto_por_admin,
+    itens_brinde: docData.itens_brinde,
+    tipo_entrega: docData.tipo_entrega,
+    data_desejada: docData.data_desejada || null,
+    plataformas: docData.plataformas,
+    dentro_sla: docData.dentroSLA ?? null,
+    data_abertura: (docData.data_abertura instanceof Date ? docData.data_abertura : new Date()).toISOString(),
+  };
+  await supabasePost('tickets?on_conflict=id', [linha]);
+  const historico = Array.isArray(docData.historico) ? docData.historico : [];
+  if (historico.length) {
+    await supabasePost('tickets_historico', historico.map(h => ({
+      ticket_id: docData.id, acao: h.acao, usuario: h.usuario, data: h.data,
+    })));
+  }
+}
+
 // Categorias suportadas (alinhadas com o sistema)
 const CATEGORIAS = [
   { value: 'suprimentos', label: '📎 Suprimentos de escritório', emoji: '📎' },
@@ -517,6 +572,9 @@ async function criarTicketNoFirebase(payload) {
   };
 
   const docRef = await db.collection('tickets').add(docData);
+  // escrita dupla — aguarda terminar (Vercel mata a função depois do res.send
+  // lá na frente), mas nunca deixa um erro aqui quebrar a criação do ticket
+  await espelharTicketNoSupabase(docData).catch(e => console.warn('espelho supabase falhou:', e.message));
   return { docId: docRef.id, id, ...docData };
 }
 
