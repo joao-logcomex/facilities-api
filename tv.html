@@ -45,6 +45,9 @@
   .eyebrow{font-size:1.05rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--purple);font-weight:600;}
   .title{font-family:'Funnel Display',sans-serif;font-size:3rem;font-weight:600;margin-top:4px;color:var(--ink);}
   .subtitle{font-size:1.05rem;color:var(--ink2);margin-top:2px;}
+  .frescor{display:inline-block;margin-left:10px;font-size:0.9rem;font-weight:600;color:var(--green);}
+  .frescor.atrasado{color:var(--yellow);}
+  .frescor.muito-atrasado{color:var(--red);animation:blink 1.2s ease-in-out infinite;}
 
   .kpi-row{display:flex;gap:20px;margin-top:22px;}
   .kpi-card{flex:1;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px 28px;box-shadow:0 2px 12px rgba(45,8,93,0.04);}
@@ -119,7 +122,7 @@
 <div class="slide" id="slide-facilities">
   <div class="eyebrow">Facilities · 2026</div>
   <div class="title">Chamados de Facilities · 2026</div>
-  <div class="subtitle">Atualizado em tempo real</div>
+  <div class="subtitle">Atualizado em tempo real<span class="frescor" id="fac-frescor"></span></div>
 
   <div class="kpi-row">
     <div class="kpi-card">
@@ -158,7 +161,7 @@
 <div class="slide" id="slide-salas">
   <div class="eyebrow">Salas de Reunião</div>
   <div class="title">Disponibilidade agora</div>
-  <div class="subtitle" id="salas-sub">Atualizado em tempo real</div>
+  <div class="subtitle" id="salas-sub">Atualizado em tempo real<span class="frescor" id="salas-frescor"></span></div>
 
   <div class="kpi-row">
     <div class="kpi-card">
@@ -189,7 +192,7 @@
 <div class="slide" id="slide-ranking-salas">
   <div class="eyebrow">Salas de Reunião</div>
   <div class="title">Reuniões por sala · 2026</div>
-  <div class="subtitle" id="ranking-sub">2026 · Seg-sex, exceto feriados · Direto do Google Agenda</div>
+  <div class="subtitle" id="ranking-sub">2026 · Seg-sex, exceto feriados · Direto do Google Agenda<span class="frescor" id="rank-frescor"></span></div>
 
   <div class="kpi-row">
     <div class="kpi-card">
@@ -210,7 +213,7 @@
 <div class="slide" id="slide-helpdesk">
   <div class="eyebrow">Help Desk · TI</div>
   <div class="title">Chamados de TI · 2026</div>
-  <div class="subtitle">Atualizado em tempo real</div>
+  <div class="subtitle">Atualizado em tempo real<span class="frescor" id="hd-frescor"></span></div>
 
   <div class="kpi-row">
     <div class="kpi-card">
@@ -372,6 +375,8 @@ async function loadFacilities(){
     animarNumero('fac-total', d.total);
     const slaEl = document.getElementById('fac-sla');
     if (slaEl) slaEl.textContent = (d.sla_pct !== null && d.sla_pct !== undefined) ? d.sla_pct + '%' : '—';
+    window._ultimaOk = window._ultimaOk || {};
+    window._ultimaOk.facilities = Date.now();
   }catch(e){ console.warn('Erro ao carregar Facilities:', e); }
 }
 
@@ -515,6 +520,8 @@ async function loadRankingSalas(){
         cont.querySelectorAll('.bar-fill').forEach(el => { el.style.width = (el.dataset.pct || 0) + '%'; });
       }));
     }
+    window._ultimaOk = window._ultimaOk || {};
+    window._ultimaOk.ranking = Date.now();
   }catch(e){ console.warn('Erro ao carregar ranking de salas:', e); }
 }
 
@@ -577,6 +584,8 @@ async function loadSalasLive(){
 
   renderRoomsGrid('rooms-grid-1', andar1);
   renderRoomsGrid('rooms-grid-2', andar2);
+  window._ultimaOk = window._ultimaOk || {};
+  window._ultimaOk.salasLive = Date.now();
 }
 
 function barRowHTML(nome, qtd, max){
@@ -623,6 +632,8 @@ async function loadHelpdesk(){
         ? Math.round(d.pct_dentro_sla) + '%'
         : '—';
     }
+    window._ultimaOk = window._ultimaOk || {};
+    window._ultimaOk.helpdesk = Date.now();
   }catch(e){ console.warn('Erro ao carregar Helpdesk:', e); }
 }
 
@@ -788,11 +799,57 @@ async function loadAll(){
   loadHelpdeskProjetos();
 }
 
+// ── Indicador de frescor: mostra "atualizado há Xmin" em cada tela e
+// avisa visualmente (laranja/vermelho piscando) se passar do esperado
+// sem sucesso — assim uma falha silenciosa fica visível na hora, em
+// vez de só congelar o número sem ninguém perceber.
+const LIMITES_FRESCOR = {
+  facilities: { el: 'fac-frescor', atrasado: 180000, muitoAtrasado: 360000 },
+  salasLive:  { el: 'salas-frescor', atrasado: 30000, muitoAtrasado: 60000 },
+  ranking:    { el: 'rank-frescor', atrasado: 900000, muitoAtrasado: 1800000 },
+  helpdesk:   { el: 'hd-frescor', atrasado: 180000, muitoAtrasado: 360000 },
+};
+
+function formatarTempoAtras(ms){
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return 'agora';
+  const min = Math.floor(s / 60);
+  if (min < 60) return `há ${min}min`;
+  const h = Math.floor(min / 60);
+  return `há ${h}h${min % 60 ? (min % 60) + 'min' : ''}`;
+}
+
+function tickFrescor(){
+  window._ultimaOk = window._ultimaOk || {};
+  const foraDoExpediente = !dentroDoExpediente();
+  for (const chave in LIMITES_FRESCOR) {
+    const cfg = LIMITES_FRESCOR[chave];
+    const el = document.getElementById(cfg.el);
+    if (!el) continue;
+    const ultima = window._ultimaOk[chave];
+    if (foraDoExpediente) {
+      // Fora do expediente é esperado não atualizar — não é erro, não assusta
+      el.textContent = ultima ? `· atualizado ${formatarTempoAtras(Date.now() - ultima)}` : '';
+      el.className = 'frescor';
+      continue;
+    }
+    if (!ultima) {
+      el.textContent = '· aguardando 1ª atualização';
+      el.className = 'frescor atrasado';
+      continue;
+    }
+    const decorrido = Date.now() - ultima;
+    el.textContent = `· atualizado ${formatarTempoAtras(decorrido)}`;
+    el.className = 'frescor' + (decorrido > cfg.muitoAtrasado ? ' muito-atrasado' : decorrido > cfg.atrasado ? ' atrasado' : '');
+  }
+}
+
 // ── boot ──
 showSlide(0);
 loadAll();
 setInterval(tickProgress, 200);
 setInterval(tickClock, 1000);
+setInterval(tickFrescor, 5000);
 setInterval(loadFacilities, FACILITIES_REFRESH_MS);
 setInterval(loadSalasKPI, SALAS_KPI_REFRESH_MS);
 setInterval(loadSalasLive, SALAS_LIVE_REFRESH_MS);
