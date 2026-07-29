@@ -18,6 +18,40 @@ function getDB() {
   return getFirestore();
 }
 
+// ── ESCRITA DUPLA (fase de transição) — espelha no Supabase, nunca bloqueia ──
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+async function espelharTicketNoSupabase(docData) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+  try {
+    const linha = {
+      id: docData.id,
+      titulo: docData.titulo,
+      descricao: docData.descricao,
+      categoria: docData.categoria,
+      status: docData.status,
+      prioridade: docData.prioridade,
+      origem: docData.origem,
+      user_email: docData.userEmail,
+      dentro_sla: docData.dentroSLA ?? null,
+      data_abertura: (docData.data_abertura instanceof Date ? docData.data_abertura : new Date(docData.data_abertura || Date.now())).toISOString(),
+      data_conclusao: docData.data_conclusao instanceof Date ? docData.data_conclusao.toISOString() : (docData.data_conclusao || null),
+    };
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/tickets?on_conflict=id`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify([linha]),
+    });
+    if (!r.ok) console.warn('espelho supabase (pipefy) falhou:', r.status, await r.text());
+  } catch (e) { console.warn('espelho supabase (pipefy) erro:', e.message); }
+}
+
 // Mapeamento de tipo → categoria (igual ao admin.html)
 const CAT_MAP = {
   'Suprimentos de escritório': 'suprimentos',
@@ -108,6 +142,7 @@ export default async function handler(req, res) {
     const statusAnterior = snapAntes.exists ? (snapAntes.data().status || null) : null;
 
     await docRef.set(docData, { merge: true });
+    await espelharTicketNoSupabase(docData).catch(e => console.warn('espelho falhou:', e.message));
 
     console.log(`✅ Card ${docId} salvo — ação: ${action}, status: ${status}`);
 
