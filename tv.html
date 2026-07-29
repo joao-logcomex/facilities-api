@@ -68,20 +68,20 @@
   .bar-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--purple-mid),var(--orange));}
   .bar-pct{width:64px;text-align:right;font-family:'Funnel Display',sans-serif;font-weight:600;font-size:1.15rem;flex-shrink:0;color:var(--ink);}
 
-  .rooms-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px;}
-  .room-card{border-radius:10px;padding:8px 8px;text-align:center;border:1.5px solid var(--border);background:var(--card);transition:all .2s;}
+  .rooms-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:16px;margin-top:22px;}
+  .room-card{border-radius:14px;padding:22px 14px;text-align:center;border:1.5px solid var(--border);background:var(--card);transition:all .2s;}
   .room-card.free{background:var(--green-bg);border-color:var(--green-border);transform:scale(1.04);box-shadow:0 4px 16px rgba(22,219,106,0.12);}
   .room-card.soon{background:var(--yellow-bg);border-color:var(--yellow-border);}
   .room-card.busy{background:var(--red-bg);border-color:var(--red-border);}
-  .room-name{font-size:0.86rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);}
+  .room-name{font-size:1.1rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);}
   .room-card.free .room-name{font-weight:700;}
-  .room-status{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:4px;font-size:0.76rem;font-weight:600;}
-  .room-card.free .room-status{font-size:0.9rem;}
+  .room-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:0.95rem;font-weight:600;}
+  .room-card.free .room-status{font-size:1.1rem;}
   .room-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
   .room-dot.free{background:var(--green);animation:blink 2s ease-in-out infinite;}
   .room-dot.soon{background:var(--yellow);}
   .room-dot.busy{background:var(--red);}
-  .room-time{font-size:0.68rem;opacity:.7;margin-top:1px;color:var(--ink2);}
+  .room-time{font-size:0.82rem;opacity:.7;margin-top:4px;color:var(--ink2);}
 
   .placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;}
   .placeholder-emoji{font-size:4rem;}
