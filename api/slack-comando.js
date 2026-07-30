@@ -1865,7 +1865,12 @@ async function processarMensagemDM(evt) {
     async function pedirDetalhes(etapaName, header, instrucao) {
       // Se já está aguardando esses detalhes, valida a resposta
       if (estado?.etapa === etapaName) {
-        const validacao = validarQualidadeDetalhes(texto, cat);
+        // Valida o texto ACUMULADO (tudo que já foi dito + a mensagem atual),
+        // não só a última mensagem isolada — senão perde informação já dada
+        // em mensagens anteriores (ex: endereço completo dado antes, e a
+        // pessoa só respondendo "isso"/"sim" na mensagem mais recente).
+        const textoParaValidar = dados.texto_original || texto;
+        const validacao = validarQualidadeDetalhes(textoParaValidar, cat);
         if (!validacao.valido) {
           // Resposta vaga — re-pergunta com aviso mais claro
           await log(`${cat}_resposta_vaga`, { motivo: validacao.motivo });
