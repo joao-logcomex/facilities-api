@@ -1136,7 +1136,7 @@ module.exports = async function handler(req, res) {
 // confiança, nunca inventa nada.
 function extrairDadosEnvio(texto) {
   const t = texto || '';
-  const resultado = { transportadora: null, endereco_envio: null, tipo_entrega: null, destinatario: null };
+  const resultado = { transportadora: null, endereco_envio: null, tipo_entrega: null, destinatario: null, temCpf: false };
 
   // Transportadora — mencionada explicitamente tem sempre prioridade
   if (/\bdhl\b/i.test(t)) { resultado.transportadora = 'DHL'; resultado.tipo_entrega = 'Envio via DHL'; }
@@ -1151,6 +1151,15 @@ function extrairDadosEnvio(texto) {
   // CEP
   const matchCep = t.match(/\b(\d{5}-?\d{3})\b/);
   const cep = matchCep ? matchCep[1] : null;
+
+  // CPF (obrigatório pra envios via DHL) — aceita com ou sem pontuação
+  const matchCpf = t.match(/\bcpf\s*:?\s*(\d{3}\.?\d{3}\.?\d{3}-?\d{2})\b/i) || t.match(/\b(\d{3}\.\d{3}\.\d{3}-\d{2})\b/);
+  const cpf = matchCpf ? matchCpf[1] : null;
+  resultado.temCpf = !!cpf;
+
+  // Telefone (formato BR, com ou sem +55/DDD entre parênteses)
+  const matchTel = t.match(/(\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}-?\d{4}\b/);
+  const telefone = matchTel ? matchTel[0].trim() : null;
 
   // Cidade/UF (formato "Curitiba/PR" ou "Curitiba - PR")
   const matchCidadeUf = t.match(/\b([A-ZÀ-Ú][a-zà-ú]+(?:\s[A-ZÀ-Ú][a-zà-ú]+)*)\s*[\/\-]\s*([A-Z]{2})\b/);
@@ -1173,9 +1182,12 @@ function extrairDadosEnvio(texto) {
   const matchRua = t.match(/\b(Rua|Av\.?|Avenida|Alameda|Travessa|Rod\.?|Rodovia)\s+([^,]+?,?\s*\d+[A-Za-z0-9\s\/°ºapt.]*)/i);
 
   if (cep || matchCidadeUf || matchRua) {
+    const partesCpfTel = [];
+    if (cpf) partesCpfTel.push(`CPF: ${cpf}`);
+    if (telefone) partesCpfTel.push(`Tel: ${telefone}`);
     resultado.endereco_envio = {
       nome: resultado.destinatario || '',
-      cpf_tel: '',
+      cpf_tel: partesCpfTel.join(' | '),
       cep: cep || '',
       rua: matchRua ? `${matchRua[1]} ${matchRua[2]}`.replace(/\s*,\s*$/, '') : '',
       numero: '',
@@ -1696,10 +1708,18 @@ async function processarMensagemDM(evt) {
       // palavra "endereço" solta (ex: "enviar para um endereço") não conta,
       // isso enganava a checagem e deixava passar sem coletar o endereço real.
       const temEndereco = /\b\d{5}-?\d{3}\b/.test(textoTotal) || /\b(rua|av\.?|avenida|alameda|travessa|rodovia)\s+[a-zà-ú]{3,}/i.test(textoTotal);
+      // DHL exige CPF do destinatário pra conseguir postar — sem isso a
+      // transportadora rejeita a etiqueta.
+      const ehDHL = /\bdhl\b/.test(textoTotal);
+      const temCpf = /\bcpf\s*:?\s*\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/.test(textoTotal) || /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/.test(textoTotal);
       if (pareceEnvio && !temEndereco) {
         analise.pronto_para_abrir = false;
         analise.categoria = 'logistica';
         analise.resposta_usuario = 'Antes de abrir, preciso do *endereço completo* de entrega (rua, número, bairro, cidade, CEP) e o *nome do destinatário*. Pode me passar?';
+      } else if (ehDHL && !temCpf) {
+        analise.pronto_para_abrir = false;
+        analise.categoria = 'logistica';
+        analise.resposta_usuario = 'Envios via *DHL* exigem o *CPF* do destinatário pra conseguir postar. Pode me passar o CPF dele(a)?';
       }
     }
 
@@ -1799,6 +1819,10 @@ async function processarMensagemDM(evt) {
         // Exige um DADO real (CEP ou "Rua/Av + nome"), não só a palavra "endereço" solta.
         const temEndereco = /\b\d{5}-?\d{3}\b/.test(tLow) || /\b(rua|av\.?|avenida|alameda|travessa|rodovia)\s+[a-zà-ú]{3,}/i.test(tLow);
         if (!temEndereco) return { valido: false, motivo: 'sem_endereco' };
+        // DHL exige CPF do destinatário — sem isso a transportadora rejeita a etiqueta
+        const ehDHL = /\bdhl\b/.test(tLow);
+        const temCpf = /\bcpf\s*:?\s*\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/.test(tLow) || /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/.test(tLow);
+        if (ehDHL && !temCpf) return { valido: false, motivo: 'sem_cpf_dhl' };
         return { valido: true };
       }
 
@@ -1834,6 +1858,13 @@ async function processarMensagemDM(evt) {
 
     // Texto da mensagem quando o pedido é vago (por categoria)
     function mensagemPedidoVago(categoria, motivo) {
+      if (motivo === 'sem_cpf_dhl') {
+        return [
+          { type: 'header', text: { type: 'plain_text', text: '⚠️ Preciso do CPF (envio via DHL)', emoji: true } },
+          { type: 'section', text: { type: 'mrkdwn', text: 'Envios pela *DHL* exigem o *CPF* do destinatário pra conseguir gerar a etiqueta de postagem. Me passa o CPF dele(a)?' } },
+          { type: 'context', elements: [{ type: 'mrkdwn', text: 'Digite "cancelar" para reiniciar.' }] }
+        ];
+      }
       const bases = {
         manutencao: {
           header: '⚠️ Preciso de mais detalhes',
@@ -1847,8 +1878,8 @@ async function processarMensagemDM(evt) {
         },
         logistica: {
           header: '⚠️ Preciso do endereço completo',
-          intro: 'Sem o endereço o time não consegue fazer a postagem. Me passa:\n\n• *O que vai ser enviado* (item, quantidade)\n• *Nome completo do destinatário*\n• *Endereço completo* (rua, número, bairro, cidade/UF, CEP)',
-          exemplos: 'Exemplo do que eu aceito:\n• _"Enviar 1 notebook Dell para Maria Silva, Rua das Flores, 123, Centro, São Paulo/SP, CEP 01234-000"_'
+          intro: 'Sem o endereço o time não consegue fazer a postagem. Me passa:\n\n• *O que vai ser enviado* (item, quantidade)\n• *Nome completo do destinatário*\n• *Endereço completo* (rua, número, bairro, cidade/UF, CEP)\n• *CPF do destinatário*, se for via DHL (obrigatório pra gerar a etiqueta)',
+          exemplos: 'Exemplo do que eu aceito:\n• _"Enviar 1 notebook Dell para Maria Silva, Rua das Flores, 123, Centro, São Paulo/SP, CEP 01234-000, via DHL, CPF 123.456.789-00"_'
         }
       };
       const m = bases[categoria];
@@ -2034,7 +2065,7 @@ async function processarMensagemDM(evt) {
       const bloqueia = await pedirDetalhes(
         'aguardando_detalhes_logistica',
         '📦 Detalhes do envio',
-        'Me passa em uma mensagem:\n\n• *O que será enviado* (item, quantidade)\n• *Nome completo do destinatário*\n• *Endereço completo* (rua, número, bairro, cidade/UF, CEP)\n• *Transportadora*, se já souber (DHL, Correios, Uber Flash)'
+        'Me passa em uma mensagem:\n\n• *O que será enviado* (item, quantidade)\n• *Nome completo do destinatário*\n• *Endereço completo* (rua, número, bairro, cidade/UF, CEP)\n• *Transportadora*, se já souber (DHL, Correios, Uber Flash)\n• *CPF do destinatário*, se for via DHL (obrigatório pra gerar a etiqueta)'
       );
       if (bloqueia) return;
 
