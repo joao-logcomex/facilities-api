@@ -256,9 +256,9 @@
 const SLIDE_IDS = ['slide-facilities','slide-salas','slide-ranking-salas','slide-helpdesk'];
 const SLIDE_MS = 22000;
 const FACILITIES_REFRESH_MS = 60000;    // chamados/KPIs — 1 min
-const SALAS_LIVE_REFRESH_MS = 5000;     // disponibilidade agora — 5s (prioridade máxima, não usa nossa cota)
-const SALAS_KPI_REFRESH_MS = 5000;      // check-in do tablet / KPIs da tela de salas — 5s, mesma prioridade
-const RANKING_REFRESH_MS = 30000;       // ranking anual — 30s (mais pesado por sala x sala, mas ainda bem perto de ao vivo)
+const SALAS_LIVE_REFRESH_MS = 10000;    // disponibilidade agora — 10s (bem rápido, sem forçar limite do Google)
+const SALAS_KPI_REFRESH_MS = 10000;     // check-in do tablet / KPIs da tela de salas — 10s
+const RANKING_REFRESH_MS = 60000;       // ranking anual — 1min (mais pesado por sala x sala)
 const SALAS_BACKEND = 'https://script.google.com/macros/s/AKfycbyDgucsB17Z1Al0_15ZJ1WaPvJHkapmyxITLDHE9WBGl3DHmXNnMJET9xRNLzn-aov7/exec';
 const HD_REFRESH_MS = 60000; // 1 min
 const SUPABASE_URL = 'https://mtsuojqakutjnjakmbef.supabase.co';
@@ -444,6 +444,7 @@ async function loadRankingSalas(){
     const diasDesdeInicioAno = Math.ceil((Date.now() - new Date(`${ANO_ALVO}-01-01T00:00:00Z`).getTime()) / 86400000) + 1;
     const trintaDiasAtras = Date.now() - 30*24*60*60*1000;
 
+    window._ultimoRankingPorSala = window._ultimoRankingPorSala || {};
     const resultados = await Promise.all(ROOMS.map(async room => {
       try{
         const r = await fetch(`${SALAS_BACKEND}?action=historico&roomEmail=${encodeURIComponent(room.email)}&dias=${diasDesdeInicioAno}`);
@@ -463,9 +464,13 @@ async function loadRankingSalas(){
         // Dia da semana em horário local (Brasília) — desloca 3h antes de ler o dia,
         // pra não errar quando o horário UTC já virou o dia seguinte
         const diasSemana = doAno.map(ev => new Date(new Date(ev.start).getTime() - 3*3600000).getUTCDay());
-        return { nome: room.name, qtd: doAno.length, ultimos30, horas, diasSemana };
+        const resultado = { nome: room.name, qtd: doAno.length, ultimos30, horas, diasSemana };
+        window._ultimoRankingPorSala[room.email] = resultado; // guarda pra usar se a próxima falhar
+        return resultado;
       }catch(e){
-        return { nome: room.name, qtd: 0, ultimos30: 0, horas: [], diasSemana: [] };
+        // Falhou (ex: limite do Google Apps Script) — mantém o último valor
+        // bom conhecido dessa sala em vez de zerar e fazer o total "cair".
+        return window._ultimoRankingPorSala[room.email] || { nome: room.name, qtd: 0, ultimos30: 0, horas: [], diasSemana: [] };
       }
     }));
 
@@ -565,13 +570,18 @@ function renderRoomsGrid(elId, items){
 
 async function loadSalasLive(){
   if (!dentroDoExpediente()) return;
+  window._ultimoStatusPorSala = window._ultimoStatusPorSala || {};
   const results = await Promise.all(ROOMS.map(async room => {
     try{
       const r = await fetch(`${SALAS_BACKEND}?email=${encodeURIComponent(room.email)}`);
       const d = await r.json();
-      return { room, info: statusAgora(d.busy) };
+      const info = statusAgora(d.busy);
+      window._ultimoStatusPorSala[room.email] = info; // guarda pra usar se a próxima falhar
+      return { room, info };
     }catch(e){
-      return { room, info: { status:'livre' } };
+      // Falhou (ex: limite do Google Apps Script) — mantém o último status
+      // bom conhecido em vez de assumir "livre" por padrão (pode estar errado).
+      return { room, info: window._ultimoStatusPorSala[room.email] || { status:'livre' } };
     }
   }));
 
@@ -805,8 +815,8 @@ async function loadAll(){
 // vez de só congelar o número sem ninguém perceber.
 const LIMITES_FRESCOR = {
   facilities: { el: 'fac-frescor', atrasado: 180000, muitoAtrasado: 360000 },
-  salasLive:  { el: 'salas-frescor', atrasado: 15000, muitoAtrasado: 30000 },
-  ranking:    { el: 'rank-frescor', atrasado: 90000, muitoAtrasado: 180000 },
+  salasLive:  { el: 'salas-frescor', atrasado: 30000, muitoAtrasado: 60000 },
+  ranking:    { el: 'rank-frescor', atrasado: 180000, muitoAtrasado: 360000 },
   helpdesk:   { el: 'hd-frescor', atrasado: 180000, muitoAtrasado: 360000 },
 };
 
