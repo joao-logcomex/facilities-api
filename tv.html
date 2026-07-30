@@ -256,9 +256,9 @@
 const SLIDE_IDS = ['slide-facilities','slide-salas','slide-ranking-salas','slide-helpdesk'];
 const SLIDE_MS = 22000;
 const FACILITIES_REFRESH_MS = 60000;    // chamados/KPIs — 1 min
-const SALAS_LIVE_REFRESH_MS = 10000;    // disponibilidade agora — 10s (bem rápido, sem forçar limite do Google)
-const SALAS_KPI_REFRESH_MS = 10000;     // check-in do tablet / KPIs da tela de salas — 10s
-const RANKING_REFRESH_MS = 60000;       // ranking anual — 1min (mais pesado por sala x sala)
+const SALAS_LIVE_REFRESH_MS = 5000;     // disponibilidade agora — 5s (agora é 1 chamada em lote, não 19)
+const SALAS_KPI_REFRESH_MS = 5000;      // check-in do tablet / KPIs da tela de salas — 5s
+const RANKING_REFRESH_MS = 30000;       // ranking anual — 30s (idem, 1 chamada em lote)
 const SALAS_BACKEND = 'https://script.google.com/macros/s/AKfycbyDgucsB17Z1Al0_15ZJ1WaPvJHkapmyxITLDHE9WBGl3DHmXNnMJET9xRNLzn-aov7/exec';
 const HD_REFRESH_MS = 60000; // 1 min
 const SUPABASE_URL = 'https://mtsuojqakutjnjakmbef.supabase.co';
@@ -445,11 +445,18 @@ async function loadRankingSalas(){
     const trintaDiasAtras = Date.now() - 30*24*60*60*1000;
 
     window._ultimoRankingPorSala = window._ultimoRankingPorSala || {};
-    const resultados = await Promise.all(ROOMS.map(async room => {
+    const roomEmails = ROOMS.map(r => r.email).join(',');
+    let dadosLote = null;
+    try {
+      const r = await fetch(`${SALAS_BACKEND}?action=historico_lote&roomEmails=${encodeURIComponent(roomEmails)}&dias=${diasDesdeInicioAno}`);
+      dadosLote = await r.json();
+    } catch(e) { dadosLote = null; }
+
+    const resultados = ROOMS.map(room => {
       try{
-        const r = await fetch(`${SALAS_BACKEND}?action=historico&roomEmail=${encodeURIComponent(room.email)}&dias=${diasDesdeInicioAno}`);
-        const d = await r.json();
-        const eventos = d.eventos || [];
+        const porSala = dadosLote ? dadosLote[room.email] : null;
+        if (!porSala || porSala.error) throw new Error('sem dados');
+        const eventos = porSala.eventos || [];
         // Só conta reunião de segunda a sexta, fora feriados nacionais (ranking anual)
         const doAno = eventos.filter(ev =>
           new Date(ev.start).getFullYear() === ANO_ALVO && ehDiaUtil(ev.start)
@@ -472,7 +479,7 @@ async function loadRankingSalas(){
         // bom conhecido dessa sala em vez de zerar e fazer o total "cair".
         return window._ultimoRankingPorSala[room.email] || { nome: room.name, qtd: 0, ultimos30: 0, horas: [], diasSemana: [] };
       }
-    }));
+    });
 
     // Exposto pra tela "Disponibilidade agora" reaproveitar (evita nova chamada pesada)
     window._reservas30dias = resultados.reduce((s, r) => s + r.ultimos30, 0);
@@ -571,11 +578,18 @@ function renderRoomsGrid(elId, items){
 async function loadSalasLive(){
   if (!dentroDoExpediente()) return;
   window._ultimoStatusPorSala = window._ultimoStatusPorSala || {};
-  const results = await Promise.all(ROOMS.map(async room => {
+  const roomEmails = ROOMS.map(r => r.email).join(',');
+  let dadosLote = null;
+  try {
+    const r = await fetch(`${SALAS_BACKEND}?action=status_lote&roomEmails=${encodeURIComponent(roomEmails)}`);
+    dadosLote = await r.json();
+  } catch(e) { dadosLote = null; }
+
+  const results = ROOMS.map(room => {
     try{
-      const r = await fetch(`${SALAS_BACKEND}?email=${encodeURIComponent(room.email)}`);
-      const d = await r.json();
-      const info = statusAgora(d.busy);
+      const porSala = dadosLote ? dadosLote[room.email] : null;
+      if (!porSala || porSala.error) throw new Error('sem dados');
+      const info = statusAgora(porSala.busy);
       window._ultimoStatusPorSala[room.email] = info; // guarda pra usar se a próxima falhar
       return { room, info };
     }catch(e){
@@ -583,7 +597,7 @@ async function loadSalasLive(){
       // bom conhecido em vez de assumir "livre" por padrão (pode estar errado).
       return { room, info: window._ultimoStatusPorSala[room.email] || { status:'livre' } };
     }
-  }));
+  });
 
   // Livres primeiro dentro de cada andar
   const ORDEM = { livre: 0, em_breve: 1, ocupada: 2 };
@@ -815,8 +829,8 @@ async function loadAll(){
 // vez de só congelar o número sem ninguém perceber.
 const LIMITES_FRESCOR = {
   facilities: { el: 'fac-frescor', atrasado: 180000, muitoAtrasado: 360000 },
-  salasLive:  { el: 'salas-frescor', atrasado: 30000, muitoAtrasado: 60000 },
-  ranking:    { el: 'rank-frescor', atrasado: 180000, muitoAtrasado: 360000 },
+  salasLive:  { el: 'salas-frescor', atrasado: 15000, muitoAtrasado: 30000 },
+  ranking:    { el: 'rank-frescor', atrasado: 90000, muitoAtrasado: 180000 },
   helpdesk:   { el: 'hd-frescor', atrasado: 180000, muitoAtrasado: 360000 },
 };
 
