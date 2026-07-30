@@ -1532,7 +1532,7 @@ async function processarMensagemDM(evt) {
     if (matchDelegacao) {
       await log('delegacao_tentativa', { alvo: matchDelegacao[1].substring(0, 40) });
       const solicitante = await getUserInfo(userId);
-      const nomeOuEmailAlvo = matchDelegacao[1].trim().replace(/[.!?]+$/, '').split(/[,;]|\s+(?:ela|ele|que|pediu|precisa)\s+/i)[0].trim();
+      const nomeOuEmailAlvo = matchDelegacao[1].trim().replace(/[.!?]+$/, '').split(/[,;]|\s+(?:ela|ele|que|pediu|precisa)\s+/i)[0].trim().replace(/[.!?,;]+$/, '').trim();
       let pessoa = null;
       const matchMencao = nomeOuEmailAlvo.match(/^<@([A-Z0-9]+)>$/);
       const matchEmailCompleto = nomeOuEmailAlvo.match(/^@?([\w.-]+@[\w.-]+\.\w+)$/i);
