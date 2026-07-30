@@ -1692,7 +1692,10 @@ async function processarMensagemDM(evt) {
     if (analise.pronto_para_abrir) {
       const textoTotal = `${estado?.texto_original || ''} ${texto}`.toLowerCase();
       const pareceEnvio = /\b(envia|enviar|envio|expedi[çc][ãa]o|expedir|via\s+correio|via\s+correios|via\s+dhl|via\s+sedex|via\s+uber|transportadora)\b/.test(textoTotal);
-      const temEndereco = /\b(cep|endere[çc]o|\brua\b|\bav\.|avenida|bairro)\b/.test(textoTotal);
+      // Exige um DADO real de endereço (CEP ou "Rua/Av + nome da rua") — só a
+      // palavra "endereço" solta (ex: "enviar para um endereço") não conta,
+      // isso enganava a checagem e deixava passar sem coletar o endereço real.
+      const temEndereco = /\b\d{5}-?\d{3}\b/.test(textoTotal) || /\b(rua|av\.?|avenida|alameda|travessa|rodovia)\s+[a-zà-ú]{3,}/i.test(textoTotal);
       if (pareceEnvio && !temEndereco) {
         analise.pronto_para_abrir = false;
         analise.categoria = 'logistica';
@@ -1792,8 +1795,9 @@ async function processarMensagemDM(evt) {
       }
 
       if (categoria === 'logistica') {
-        // Envio precisa de endereço completo — sem isso o time não consegue postar
-        const temEndereco = /\b(cep|endere[çc]o|\brua\b|\bav\.|avenida|bairro)\b/i.test(tLow);
+        // Envio precisa de endereço completo — sem isso o time não consegue postar.
+        // Exige um DADO real (CEP ou "Rua/Av + nome"), não só a palavra "endereço" solta.
+        const temEndereco = /\b\d{5}-?\d{3}\b/.test(tLow) || /\b(rua|av\.?|avenida|alameda|travessa|rodovia)\s+[a-zà-ú]{3,}/i.test(tLow);
         if (!temEndereco) return { valido: false, motivo: 'sem_endereco' };
         return { valido: true };
       }
