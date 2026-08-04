@@ -1187,15 +1187,29 @@
     }
   };
 
-  window.cancelarMeuChamado = async (docId, ticketId) => {
+  window.cancelarMeuChamado = async (ticketId) => {
     if (!confirm(`Tem certeza que deseja cancelar o chamado #${ticketId}?`)) return;
     try {
       const user = auth.currentUser;
-      const tRef = doc(db, 'tickets', docId);
-      const snap = await getDoc(tRef);
-      const hist = [...(snap.data()?.historico || [])];
+      // Busca o doc no Firestore pelo ID do chamado (não pelo docId interno,
+      // já que a lista agora vem do Supabase e não expõe esse ID interno)
+      const q = query(collection(db, 'tickets'), where('id', '==', ticketId));
+      const snap = await getDocs(q);
+      if (snap.empty) { alert('Chamado não encontrado.'); return; }
+      const docSnap = snap.docs[0];
+      const hist = [...(docSnap.data()?.historico || [])];
       hist.push({ acao: 'Chamado cancelado pelo solicitante', data: new Date().toISOString(), usuario: user.email });
-      await setDoc(tRef, { status: 'Cancelado', historico: hist }, { merge: true });
+      await setDoc(doc(db, 'tickets', docSnap.id), { status: 'Cancelado', historico: hist }, { merge: true });
+      // Espelha no Supabase também
+      fetch('/api/supabase-sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'tickets', conflict: 'id', rows: [{ id: ticketId, status: 'Cancelado' }] })
+      }).catch(() => {});
+      fetch('/api/supabase-sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'tickets_historico', rows: [{ ticket_id: ticketId, acao: 'Chamado cancelado pelo solicitante', usuario: user.email, data: new Date().toISOString() }] })
+      }).catch(() => {});
+      loadMeusChamados(); // recarrega a lista pra refletir o cancelamento na hora
     } catch(e) { alert('Erro ao cancelar chamado.'); }
   };
 
@@ -1204,24 +1218,10 @@
     if (!user) return;
     const CATLABELS = { manutencao:'🔧 Manutenção', reforma:'🏗️ Reforma & Melhoria', infraestrutura:'🪑 Infraestrutura', limpeza:'🧹 Limpeza', seguranca:'🔐 Segurança', brindes:'🎁 Brindes', suprimentos:'📦 Suprimentos', plataformas:'📱 Plataformas', logistica:'📦 Logística', acessos:'🔑 Acessos', outros:'📋 Outros' };
     const userEmail = user.email;
-    const userUid = user.uid;
     const list = document.getElementById('mc-list');
 
-    // Dedup por _docId — combina resultados das 2 queries
-    const docsById = new Map();
-    let receivedFromUid = false;
-    let receivedFromEmail = false;
-    let timeoutFired = false;
-
-    function render() {
-      if (timeoutFired) return; // já mostrou estado vazio por timeout
-      if (!receivedFromUid || !receivedFromEmail) return; // espera as 2
-
-      const all = Array.from(docsById.values()).sort((a, b) => {
-        const ta = a.data_abertura?.toDate ? a.data_abertura.toDate().getTime() : 0;
-        const tb = b.data_abertura?.toDate ? b.data_abertura.toDate().getTime() : 0;
-        return tb - ta;
-      });
+    function render(all) {
+      all = all.sort((a, b) => new Date(b.data_abertura || 0).getTime() - new Date(a.data_abertura || 0).getTime());
 
       if (all.length === 0) {
         list.innerHTML = '<div class="mc-empty"><div>📭</div><p>Você ainda não abriu nenhum chamado.</p></div>';
@@ -1229,9 +1229,12 @@
       }
 
       list.innerHTML = all.map(t => {
-        const dt = t.data_abertura?.toDate ? t.data_abertura.toDate().toLocaleDateString('pt-BR') : '-';
+        const dt = t.data_abertura ? new Date(t.data_abertura).toLocaleDateString('pt-BR') : '-';
         const statusClass = 'mc-' + (t.status||'').replace(' ','').replace(' ','');
         let extraInfo = '';
+        const enderecoTexto = t.endereco_envio && typeof t.endereco_envio === 'object'
+          ? [t.endereco_envio.rua, t.endereco_envio.bairro, t.endereco_envio.cidade, t.endereco_envio.estado, t.endereco_envio.cep].filter(Boolean).join(', ')
+          : (typeof t.endereco_envio === 'string' ? t.endereco_envio : '');
         if (t.categoria === 'logistica') {
           let rows = '';
           if (t.transportadora) rows += '<div><span class="mc-lbl">Transportadora</span><br><b style="color:var(--purple);">' + t.transportadora + '</b></div>';
@@ -1239,7 +1242,7 @@
           if (t.item_enviado) rows += '<div style="grid-column:1/-1"><span class="mc-lbl">Item</span><br>' + t.item_enviado + '</div>';
           if (t.item_envio) rows += '<div style="grid-column:1/-1"><span class="mc-lbl">Item</span><br>' + t.item_envio + '</div>';
           if (t.destinatario_envio) rows += '<div style="grid-column:1/-1"><span class="mc-lbl">Destinatário</span><br><span style="color:var(--ink2);">' + t.destinatario_envio + '</span></div>';
-          if (t.endereco_envio && typeof t.endereco_envio === 'string') rows += '<div style="grid-column:1/-1"><span class="mc-lbl">Endereco</span><br><span style="color:var(--ink2);">' + t.endereco_envio + '</span></div>';
+          if (enderecoTexto) rows += '<div style="grid-column:1/-1"><span class="mc-lbl">Endereco</span><br><span style="color:var(--ink2);">' + enderecoTexto + '</span></div>';
           if (t.data_envio_desejada) rows += '<div><span class="mc-lbl">Data desejada</span><br>' + t.data_envio_desejada + '</div>';
           if (t.rastreio) rows += '<div style="grid-column:1/-1;background:rgba(102,19,208,0.06);border-radius:6px;padding:6px 8px;"><span class="mc-lbl">Codigo de Rastreio</span><br><b style="color:var(--purple);font-size:0.9rem;letter-spacing:0.08em;">' + t.rastreio + '</b></div>';
           if (rows) extraInfo = '<div style="margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:0.78rem;">' + rows + '</div>';
@@ -1264,83 +1267,40 @@
             <span>${CATLABELS[t.categoria]||t.categoria||''}</span>
             <span>·</span><span>${dt}</span>
             ${t.prioridade ? `<span>·</span><span>${t.prioridade}</span>` : ''}
-            ${t.historico?.length > 1 ? `<span>·</span><span style="color:var(--purple);font-weight:600;">Atualizado</span>` : ''}
+            ${t._temAtualizacao ? `<span>·</span><span style="color:var(--purple);font-weight:600;">Atualizado</span>` : ''}
           </div>
           ${extraInfo}
-          ${t.historico?.length > 0 ? `<div style="margin-top:8px;font-size:0.78rem;color:var(--ink3);background:var(--surface2);padding:6px 10px;border-radius:6px;">Ultima atualizacao: ${t.historico[t.historico.length-1].acao}</div>` : ''}
+          ${t._ultimaAcao ? `<div style="margin-top:8px;font-size:0.78rem;color:var(--ink3);background:var(--surface2);padding:6px 10px;border-radius:6px;">Ultima atualizacao: ${t._ultimaAcao}</div>` : ''}
           ${!['Cancelado','Concluído'].includes(t.status) ? `
           <div style="margin-top:10px;">
-            <button onclick="cancelarMeuChamado('${t._docId}','${t.id||''}')" style="background:none;border:1.5px solid #e8e4f5;border-radius:6px;padding:5px 12px;font-family:'Poppins',sans-serif;font-size:0.78rem;font-weight:600;color:var(--ink3);cursor:pointer;">X Cancelar chamado</button>
+            <button onclick="cancelarMeuChamado('${t.id||''}')" style="background:none;border:1.5px solid #e8e4f5;border-radius:6px;padding:5px 12px;font-family:'Poppins',sans-serif;font-size:0.78rem;font-weight:600;color:var(--ink3);cursor:pointer;">X Cancelar chamado</button>
           </div>` : ''}
         </div>`;
       }).join('');
     }
 
-    // Timeout de segurança: se em 10s não veio nada, mostra estado vazio
-    const timeoutId = setTimeout(() => {
-      if (!receivedFromUid || !receivedFromEmail) {
-        console.warn('Timeout carregando chamados - mostrando vazio');
-        timeoutFired = true;
+    // Busca no Supabase (fonte de leitura pra "Meus chamados") por e-mail.
+    // Atualiza a cada 20s enquanto a tela ficar aberta — não é tempo real
+    // "de verdade" (isso viria depois com Postgres Realtime), mas cobre bem
+    // o caso de uso de alguém acompanhando o próprio chamado.
+    let pollTimer = null;
+    async function carregarDoSupabase() {
+      try {
+        const r = await fetch(`/api/relatorio-imobiliario?meus_chamados=1&email=${encodeURIComponent(userEmail)}`);
+        const data = await r.json();
+        if (!data.ok) { list.innerHTML = '<div class="mc-empty"><div>📭</div><p>Você ainda não abriu nenhum chamado.</p></div>'; return; }
+        render(data.tickets || []);
+      } catch (e) {
+        console.warn('Erro ao carregar meus chamados:', e);
         if (list.innerHTML.includes('Carregando')) {
-          list.innerHTML = '<div class="mc-empty"><div>📭</div><p>Você ainda não abriu nenhum chamado.</p></div>';
+          list.innerHTML = '<div class="mc-empty"><div>📭</div><p>Não foi possível carregar seus chamados agora.</p></div>';
         }
       }
-    }, 10000);
-
-    // QUERY 1: por userId (chamados abertos pelo site logado)
-    try {
-      const q1 = query(collection(db, 'tickets'), where('userId', '==', userUid));
-      const unsub1 = onSnapshot(q1,
-        (snap) => {
-          snap.docs.forEach(d => {
-            docsById.set(d.id, { ...d.data(), _docId: d.id });
-          });
-          receivedFromUid = true;
-          clearTimeout(timeoutId);
-          render();
-        },
-        (err) => {
-          console.warn('Query por userId falhou:', err.message);
-          receivedFromUid = true;
-          render();
-        }
-      );
-      window._unsubMC1 = unsub1;
-    } catch (e) {
-      console.warn('Erro ao montar query userId:', e);
-      receivedFromUid = true;
     }
+    carregarDoSupabase();
+    pollTimer = setInterval(carregarDoSupabase, 20000);
 
-    // QUERY 2: por email (chamados abertos pelo Slack)
-    try {
-      const q2 = query(collection(db, 'tickets'), where('email', '==', userEmail));
-      const unsub2 = onSnapshot(q2,
-        (snap) => {
-          snap.docs.forEach(d => {
-            docsById.set(d.id, { ...d.data(), _docId: d.id });
-          });
-          receivedFromEmail = true;
-          clearTimeout(timeoutId);
-          render();
-        },
-        (err) => {
-          console.warn('Query por email falhou:', err.message);
-          receivedFromEmail = true;
-          render();
-        }
-      );
-      window._unsubMC2 = unsub2;
-    } catch (e) {
-      console.warn('Erro ao montar query email:', e);
-      receivedFromEmail = true;
-    }
-
-    // Para parar de escutar quando sair da tela
-    unsubMeusChamados = () => {
-      if (window._unsubMC1) { try { window._unsubMC1(); } catch(e){} }
-      if (window._unsubMC2) { try { window._unsubMC2(); } catch(e){} }
-      clearTimeout(timeoutId);
-    };
+    unsubMeusChamados = () => { if (pollTimer) clearInterval(pollTimer); };
   }
 
   window.forgotPassword = async () => {
