@@ -1420,6 +1420,34 @@
         }]
       });
       document.getElementById('ticket-num').textContent = '#' + id;
+      // Espelha no Supabase (fase de transição) — nunca bloqueia a tela de sucesso
+      fetch('/api/supabase-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          table: 'tickets',
+          conflict: 'id',
+          rows: [{
+            id,
+            titulo: document.getElementById('titulo').value,
+            descricao: document.getElementById('descricao').value,
+            categoria: cat,
+            subcategoria: document.getElementById('subcategoria').value,
+            prioridade: prio.value,
+            status: cat === 'brindes' ? (ehCS ? 'Aguardando aprovação' : 'Aberto') : 'Aberto',
+            origem: 'web',
+            user_email: document.getElementById('email').value,
+            nome: document.getElementById('nome').value,
+            centro_custo: document.getElementById('departamento').value,
+            departamento: document.getElementById('departamento').value,
+            itens_brinde: itensBrinde.join(', '),
+            tipo_entrega: entrega?.value || '',
+            endereco_envio: enderecoEnvio,
+            data_desejada: document.getElementById('data-desejada').value || null,
+            plataformas: plats.join(', '),
+          }],
+        }),
+      }).catch(() => {});
       document.getElementById('form-wrapper').style.display = 'none';
       document.getElementById('category-grid').style.display = 'none';
       document.getElementById('cat-label').style.display = 'none';
@@ -1933,6 +1961,46 @@ window.submitLogistica = async () => {
       historico: [{ acao: 'Chamado de logística aberto', data: new Date().toISOString(), usuario: document.getElementById('nome').value }]
     });
     document.getElementById('ticket-num').textContent = '#' + id;
+    // Espelha no Supabase (fase de transição) — nunca bloqueia a tela de sucesso.
+    // Reconstrói o endereço lendo os campos de novo (as variáveis rua/num/etc
+    // só existem dentro do bloco if/else de cada transportadora, lá em cima).
+    const prefixoCampo = transp === 'DHL' ? 'dhl' : transp === 'Correio' ? 'cor' : null;
+    const enderecoParaSupabase = prefixoCampo ? {
+      nome: dest,
+      cpf_tel: emailDest || '',
+      cep: document.getElementById(`${prefixoCampo}-cep`)?.value.trim() || '',
+      rua: document.getElementById(`${prefixoCampo}-rua`)?.value.trim() || '',
+      numero: document.getElementById(`${prefixoCampo}-numero`)?.value.trim() || '',
+      complemento: document.getElementById(`${prefixoCampo}-complemento`)?.value.trim() || '',
+      bairro: document.getElementById(`${prefixoCampo}-bairro`)?.value.trim() || '',
+      cidade: document.getElementById(`${prefixoCampo}-cidade`)?.value.trim() || '',
+      estado: document.getElementById(`${prefixoCampo}-estado`)?.value || '',
+    } : { nome: dest, cpf_tel: '', cep: '', rua: end, numero: '', complemento: '', bairro: '', cidade: '', estado: '' };
+    fetch('/api/supabase-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        table: 'tickets',
+        conflict: 'id',
+        rows: [{
+          id,
+          titulo: 'Envio ' + document.getElementById('log-tipo-envio').value + ' via ' + transp,
+          descricao: 'Item: ' + item + '\nDestinatário: ' + dest + '\nEndereço: ' + end,
+          categoria: 'logistica',
+          subcategoria: transp,
+          prioridade: transp === 'Uber Flash' ? 'Urgente' : 'Média',
+          status: 'Aberto',
+          origem: 'web',
+          user_email: document.getElementById('email').value,
+          nome: document.getElementById('nome').value,
+          centro_custo: document.getElementById('departamento').value,
+          departamento: document.getElementById('departamento').value,
+          transportadora: transp,
+          tipo_entrega: 'Envio via ' + transp,
+          endereco_envio: enderecoParaSupabase,
+        }],
+      }),
+    }).catch(() => {});
     ['logistica-form','form-wrapper','category-grid','cat-label'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
     document.getElementById('success-screen').style.display = 'block';
     document.getElementById('success-screen').scrollIntoView({behavior:'smooth', block:'start'});
