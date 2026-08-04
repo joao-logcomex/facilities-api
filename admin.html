@@ -1531,6 +1531,21 @@ const isAdminOrViewer = (email) => {
       }
 
       await updateDoc(doc(db, 'tickets', currentDocId), updates);
+      // Espelha no Supabase (fase de transição) — nunca bloqueia a UI
+      fetch('/api/supabase-sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'tickets', conflict: 'id', rows: [{
+          id: t.id, status: updates.status,
+          dentro_sla: updates.dentroSLA ?? null,
+          data_conclusao: updates.data_conclusao ? updates.data_conclusao.toISOString() : undefined,
+        }] })
+      }).catch(() => {});
+      fetch('/api/supabase-sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'tickets_historico', rows: [{
+          ticket_id: t.id, acao: histAcao, usuario: user.email, data: new Date().toISOString(),
+        }] })
+      }).catch(() => {});
       document.querySelectorAll('.status-btn').forEach(b => b.classList.toggle('active-s', b.textContent === s));
 
       // Notifica colaborador (DM rica) — exceto se for brinde indo pra "Aguardando aprovação"
@@ -1577,6 +1592,13 @@ const isAdminOrViewer = (email) => {
       const hist = [...(t?.historico || [])];
       hist.push({ acao: '💬 ' + txt, data: new Date().toISOString(), usuario: user.email });
       await updateDoc(doc(db, 'tickets', currentDocId), { historico: hist });
+      // Espelha o comentário no Supabase (fase de transição) — nunca bloqueia a UI
+      fetch('/api/supabase-sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'tickets_historico', rows: [{
+          ticket_id: t?.id, acao: '💬 ' + txt, usuario: user.email, data: new Date().toISOString(),
+        }] })
+      }).catch(() => {});
 
       // Verifica se admin marcou pra notificar colaborador
       const notifChk = document.getElementById('cmt-notify');
@@ -1614,7 +1636,14 @@ const isAdminOrViewer = (email) => {
       if (!currentDocId) return;
       const t = allTickets.find(x => x._docId === currentDocId);
       if (!confirm(`Tem certeza que deseja EXCLUIR permanentemente o chamado #${t?.id}?\n\nEsta ação não pode ser desfeita.`)) return;
-      try { await deleteDoc(doc(db, 'tickets', currentDocId)); closeMd(); showToast('Chamado excluído!'); }
+      try {
+        await deleteDoc(doc(db, 'tickets', currentDocId));
+        fetch('/api/supabase-sync', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table: 'tickets', action: 'delete', id: t?.id })
+        }).catch(() => {});
+        closeMd(); showToast('Chamado excluído!');
+      }
       catch(e) { showToast('Erro ao excluir chamado.'); }
     };
 
@@ -2141,6 +2170,12 @@ function updateBadge() {
         updatedAt: new Date(),
         historico: [...(t.historico||[]), { acao: 'Codigo de rastreio adicionado: ' + codigo, data: new Date().toISOString(), usuario: 'Admin' }]
       });
+      fetch('/api/supabase-sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'tickets_historico', rows: [{
+          ticket_id: t.id, acao: 'Codigo de rastreio adicionado: ' + codigo, usuario: 'Admin', data: new Date().toISOString(),
+        }] })
+      }).catch(() => {});
       // Atualiza objeto local pra refletir o novo código se admin concluir em seguida
       t.rastreio = codigo;
 
@@ -2186,6 +2221,17 @@ function updateBadge() {
           usuario: auth.currentUser?.email || 'Admin'
         }]
       });
+      fetch('/api/supabase-sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'tickets', conflict: 'id', rows: [{ id: t.id, status: 'Em andamento' }] })
+      }).catch(() => {});
+      fetch('/api/supabase-sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'tickets_historico', rows: [{
+          ticket_id: t.id, acao: 'Brinde aprovado pelo gestor — encaminhado para Facilities',
+          usuario: auth.currentUser?.email || 'Admin', data: new Date().toISOString(),
+        }] })
+      }).catch(() => {});
       // Notificar colaborador via Slack
       if (t.email) {
         fetch('/api/notify-slack', {
@@ -2239,6 +2285,17 @@ function updateBadge() {
           usuario: auth.currentUser?.email || 'Admin'
         }]
       });
+      fetch('/api/supabase-sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'tickets', conflict: 'id', rows: [{ id: t.id, status: 'Cancelado' }] })
+      }).catch(() => {});
+      fetch('/api/supabase-sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'tickets_historico', rows: [{
+          ticket_id: t.id, acao: `Brinde recusado pelo gestor${motivo ? ': ' + motivo : ''}`,
+          usuario: auth.currentUser?.email || 'Admin', data: new Date().toISOString(),
+        }] })
+      }).catch(() => {});
       // Notificar colaborador via Slack
       if (t.email) {
         fetch('/api/notify-slack', {
