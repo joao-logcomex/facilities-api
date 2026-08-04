@@ -29,6 +29,46 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
+  // ── "Meus chamados" (index.html) — lê do Supabase por e-mail ──
+  // Só devolve os campos que a tela usa, nunca dados de outras pessoas
+  // (o e-mail vem do usuário logado no Firebase Auth, no próprio front).
+  if (req.query && req.query.meus_chamados === '1') {
+    const email = (req.query.email || '').trim().toLowerCase();
+    if (!email) return res.status(400).json({ ok: false, error: 'email obrigatório' });
+    try {
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const rTickets = await fetch(
+        `${SUPABASE_URL}/rest/v1/tickets?user_email=eq.${encodeURIComponent(email)}&order=data_abertura.desc&limit=100`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+      );
+      const tickets = await rTickets.json();
+      const ids = tickets.map(t => t.id);
+      let historicoPorTicket = {};
+      if (ids.length) {
+        const filtroIds = ids.map(id => `"${id}"`).join(',');
+        const rHist = await fetch(
+          `${SUPABASE_URL}/rest/v1/tickets_historico?ticket_id=in.(${filtroIds})&order=data.desc`,
+          { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+        );
+        const historico = await rHist.json();
+        for (const h of historico) {
+          if (!historicoPorTicket[h.ticket_id]) historicoPorTicket[h.ticket_id] = { ultima: h.acao, total: 0 };
+          historicoPorTicket[h.ticket_id].total++;
+        }
+      }
+      const resultado = tickets.map(t => ({
+        ...t,
+        _ultimaAcao: historicoPorTicket[t.id]?.ultima || null,
+        _temAtualizacao: (historicoPorTicket[t.id]?.total || 0) > 1,
+      }));
+      return res.status(200).json({ ok: true, tickets: resultado });
+    } catch (e) {
+      console.error('meus_chamados erro:', e);
+      return res.status(200).json({ ok: false, error: e.message });
+    }
+  }
+
   // ── Endpoint público (sem login) para a TV do setor — "Go Live" ──
   // Ativado com ?tv=facilities. Devolve só números agregados de 2026,
   // nunca dados individuais de chamados (nome, e-mail etc).
