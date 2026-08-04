@@ -39,32 +39,39 @@ module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=110, stale-while-revalidate=30');
     try {
       const anoAlvo = parseInt(req.query.ano) || new Date().getFullYear();
-      const inicioAno = new Date(`${anoAlvo}-01-01T00:00:00.000Z`);
-      const inicioProxAno = new Date(`${anoAlvo + 1}-01-01T00:00:00.000Z`);
-      const baseQuery = db.collection('tickets')
-        .where('data_abertura', '>=', inicioAno)
-        .where('data_abertura', '<', inicioProxAno);
+      const inicioAno = `${anoAlvo}-01-01T00:00:00.000Z`;
+      const inicioProxAno = `${anoAlvo + 1}-01-01T00:00:00.000Z`;
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-      // Consultas de AGREGAÇÃO (.count()) em vez de buscar cada documento —
-      // isso é cobrado como ~1 leitura por até 1000 docs escaneados, não 1
-      // leitura POR documento. Pra ~1500 chamados/ano isso reduz o custo
-      // desta rota em ~99%. (projetos_ia não é lido aqui porque a TV já
-      // busca isso direto via listener próprio no navegador.)
-      const [totalAgg, concluidosAgg, canceladosAgg, slaTrueAgg, slaFalseAgg] = await Promise.all([
-        baseQuery.count().get(),
-        baseQuery.where('status', '==', 'Concluído').count().get(),
-        baseQuery.where('status', '==', 'Cancelado').count().get(),
-        baseQuery.where('dentroSLA', '==', true).count().get(),
-        baseQuery.where('dentroSLA', '==', false).count().get(),
+      // Conta via Postgres (Prefer: count=exact) sem baixar nenhuma linha —
+      // Range 0-0 pede só 1 registro de volta, a contagem real vem no
+      // cabeçalho content-range. Bem mais simples que a agregação do Firestore.
+      async function contar(filtroExtra) {
+        const url = `${SUPABASE_URL}/rest/v1/tickets?data_abertura=gte.${encodeURIComponent(inicioAno)}&data_abertura=lt.${encodeURIComponent(inicioProxAno)}${filtroExtra}&select=id`;
+        const r = await fetch(url, {
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            Prefer: 'count=exact',
+            Range: '0-0',
+          },
+        });
+        const contentRange = r.headers.get('content-range') || '0/0';
+        return parseInt(contentRange.split('/')[1]) || 0;
+      }
+
+      const [total, concluidos, cancelados, slaTrue, slaFalse] = await Promise.all([
+        contar(''),
+        contar(`&status=eq.${encodeURIComponent('Concluído')}`),
+        contar(`&status=eq.${encodeURIComponent('Cancelado')}`),
+        contar('&dentro_sla=eq.true'),
+        contar('&dentro_sla=eq.false'),
       ]);
 
-      const total = totalAgg.data().count;
-      const concluidos = concluidosAgg.data().count;
-      const cancelados = canceladosAgg.data().count;
       const abertos = total - concluidos - cancelados;
-      const dentroSLAqtd = slaTrueAgg.data().count;
-      const comSLA = dentroSLAqtd + slaFalseAgg.data().count;
-      const slaPct = comSLA > 0 ? Math.round((dentroSLAqtd / comSLA) * 100) : null;
+      const comSLA = slaTrue + slaFalse;
+      const slaPct = comSLA > 0 ? Math.round((slaTrue / comSLA) * 100) : null;
 
       return res.status(200).json({
         ok: true,
@@ -73,6 +80,7 @@ module.exports = async (req, res) => {
         abertos, concluidos, cancelados,
         sla_pct: slaPct,
         atualizado_em: new Date().toISOString(),
+        fonte: 'supabase',
       });
     } catch (e) {
       console.error('tv=facilities erro:', e);
