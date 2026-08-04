@@ -23,15 +23,32 @@ export default async function handler(req, res) {
     return res.status(500).json({ ok: false, error: 'Supabase não configurado' });
   }
 
-  const { table, conflict, rows } = req.body || {};
+  const { table, conflict, rows, action, id } = req.body || {};
   if (!table || !TABELAS_PERMITIDAS.has(table)) {
     return res.status(400).json({ ok: false, error: 'Tabela não permitida' });
   }
-  if (!Array.isArray(rows) || !rows.length) {
-    return res.status(400).json({ ok: false, error: 'rows vazio ou inválido' });
-  }
 
   try {
+    if (action === 'delete') {
+      if (!id) return res.status(400).json({ ok: false, error: 'id obrigatório pra excluir' });
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      });
+      if (!r.ok) {
+        const errText = await r.text();
+        console.warn('supabase-sync (delete) falhou:', r.status, errText);
+        return res.status(200).json({ ok: false, error: errText });
+      }
+      return res.status(200).json({ ok: true });
+    }
+
+    if (!Array.isArray(rows) || !rows.length) {
+      return res.status(400).json({ ok: false, error: 'rows vazio ou inválido' });
+    }
     const query = conflict ? `?on_conflict=${encodeURIComponent(conflict)}` : '';
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
       method: 'POST',
