@@ -33,11 +33,21 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 // Groq tem camada gratuita generosa (milhares de pedidos/dia) — sem custo
 // pro volume esperado de um bot interno.
 async function transcreverAudioSlack(url) {
-  if (!url || !GROQ_API_KEY) return null;
+  const debugLog = async (etapa, extra = {}) => {
+    try { await db.collection('slack_debug_logs').add({ at: new Date(), etapa: `audio_${etapa}`, ...extra }); } catch {}
+  };
+  if (!url) { await debugLog('sem_url'); return null; }
+  if (!GROQ_API_KEY) { await debugLog('sem_groq_key'); return null; }
   try {
+    await debugLog('iniciando', { url_prefix: url.substring(0, 60) });
     const audioResp = await fetch(url, { headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` } });
-    if (!audioResp.ok) { console.warn('download do áudio falhou:', audioResp.status); return null; }
+    if (!audioResp.ok) {
+      const corpo = await audioResp.text().catch(() => '');
+      await debugLog('download_falhou', { status: audioResp.status, corpo: corpo.substring(0, 300) });
+      return null;
+    }
     const audioBuffer = await audioResp.arrayBuffer();
+    await debugLog('download_ok', { tamanho_bytes: audioBuffer.byteLength });
 
     const form = new FormData();
     form.append('file', new Blob([audioBuffer]), 'audio.m4a');
@@ -50,11 +60,16 @@ async function transcreverAudioSlack(url) {
       headers: { Authorization: `Bearer ${GROQ_API_KEY}` },
       body: form,
     });
-    if (!r.ok) { console.warn('transcrição Groq falhou:', r.status, await r.text()); return null; }
+    if (!r.ok) {
+      const corpo = await r.text().catch(() => '');
+      await debugLog('groq_falhou', { status: r.status, corpo: corpo.substring(0, 500) });
+      return null;
+    }
     const data = await r.json();
+    await debugLog('sucesso', { texto: (data.text || '').substring(0, 200) });
     return (data.text || '').trim() || null;
   } catch (e) {
-    console.warn('transcreverAudioSlack erro:', e.message);
+    await debugLog('excecao', { mensagem: e.message });
     return null;
   }
 }
