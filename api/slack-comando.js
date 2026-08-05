@@ -25,6 +25,39 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
+// ── Transcrição de áudio (mensagens de voz do Slack) via Groq/Whisper ──
+// Baixa o arquivo do Slack (precisa do token do bot pra acessar o link
+// privado), manda pro Whisper Large v3 na Groq, devolve o texto transcrito.
+// Groq tem camada gratuita generosa (milhares de pedidos/dia) — sem custo
+// pro volume esperado de um bot interno.
+async function transcreverAudioSlack(url) {
+  if (!url || !GROQ_API_KEY) return null;
+  try {
+    const audioResp = await fetch(url, { headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` } });
+    if (!audioResp.ok) { console.warn('download do áudio falhou:', audioResp.status); return null; }
+    const audioBuffer = await audioResp.arrayBuffer();
+
+    const form = new FormData();
+    form.append('file', new Blob([audioBuffer]), 'audio.m4a');
+    form.append('model', 'whisper-large-v3');
+    form.append('language', 'pt');
+    form.append('response_format', 'json');
+
+    const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${GROQ_API_KEY}` },
+      body: form,
+    });
+    if (!r.ok) { console.warn('transcrição Groq falhou:', r.status, await r.text()); return null; }
+    const data = await r.json();
+    return (data.text || '').trim() || null;
+  } catch (e) {
+    console.warn('transcreverAudioSlack erro:', e.message);
+    return null;
+  }
+}
 
 // ── Supabase (colaboradores já migrado — Fase 1 da migração Firestore → Supabase) ──
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -1295,7 +1328,11 @@ function extrairDadosEnvio(texto) {
       return res.status(200).send('');
     }
     if (evt.channel_type !== 'im') return res.status(200).send('');
-    if (!evt.text || !evt.user || !evt.channel) return res.status(200).send('');
+    // Mensagem de áudio não vem com texto, só o arquivo — não descarta mais
+    // nesse caso, só quando não tem NEM texto NEM áudio de verdade.
+    const arquivoAudio = (evt.files || []).find(f => (f.mimetype || '').startsWith('audio/'));
+    if (!evt.text && !arquivoAudio) return res.status(200).send('');
+    if (!evt.user || !evt.channel) return res.status(200).send('');
 
     // Dedup (Slack pode retentar se demorar >3s)
     // IMPORTANTE: se essa checagem falhar (ex: cota do Firestore esgotada),
@@ -1317,10 +1354,22 @@ function extrairDadosEnvio(texto) {
         const ultimoAviso = global.__ultimoAvisoCotaPorUser[evt.user] || 0;
         if (agora - ultimoAviso > 30000) {
           global.__ultimoAvisoCotaPorUser[evt.user] = agora;
-          await enviarMensagem(channel, '⚠️ Sistema temporariamente sobrecarregado. Tenta de novo em alguns minutos — se persistir, usa o formulário: facilities-api.vercel.app').catch(() => {});
+          await enviarMensagem(evt.channel, '⚠️ Sistema temporariamente sobrecarregado. Tenta de novo em alguns minutos — se persistir, usa o formulário: facilities-api.vercel.app').catch(() => {});
         }
         return res.status(200).send('');
       }
+    }
+
+    // Se veio como áudio (sem texto), transcreve antes de seguir. O texto
+    // resultante entra no MESMO fluxo de sempre — nada mais precisa mudar.
+    if (!evt.text && arquivoAudio) {
+      const textoTranscrito = await transcreverAudioSlack(arquivoAudio.url_private_download || arquivoAudio.url_private);
+      if (!textoTranscrito) {
+        await enviarMensagem(evt.channel, '🎤 Não consegui entender esse áudio. Pode tentar de novo ou escrever a mensagem?').catch(() => {});
+        return res.status(200).send('');
+      }
+      evt.text = textoTranscrito;
+      await enviarMensagem(evt.channel, `🎤 Ouvi: _"${textoTranscrito}"_`).catch(() => {});
     }
 
     // Processa SÍNCRONO (Vercel mata a função após res.send, então precisa ser antes)
