@@ -6,7 +6,7 @@
     "api/relatorio-imobiliario.js": { "maxDuration": 30 }
   },
   "crons": [
-    { "path": "/api/relatorio-imobiliario?cron=sla_alertas", "schedule": "30 11 * * 1-5" }
+    { "path": "/api/relatorio-imobiliario?cron=sla_alertas", "schedule": "0 12 * * 1-5" }
   ],
   "rewrites": [
     { "source": "/sobre", "destination": "/sobre.html" }
