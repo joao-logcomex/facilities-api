@@ -97,8 +97,18 @@ module.exports = async (req, res) => {
             Range: '0-0',
           },
         });
-        const contentRange = r.headers.get('content-range') || '0/0';
-        return parseInt(contentRange.split('/')[1]) || 0;
+        // NUNCA assume 0 numa falha passageira (rede, Supabase momentâneo) —
+        // isso já causou um "Concluídos: 0" errado na TV. Se não conseguir
+        // confirmar o número de verdade, lança erro; o endpoint todo falha
+        // e o front-end mantém o último valor bom (em vez de mostrar 0).
+        if (!r.ok) throw new Error(`Supabase respondeu ${r.status} pra "${filtroExtra}"`);
+        const contentRange = r.headers.get('content-range');
+        if (!contentRange || !contentRange.includes('/')) {
+          throw new Error(`content-range ausente/inválido pra "${filtroExtra}": ${contentRange}`);
+        }
+        const total = parseInt(contentRange.split('/')[1]);
+        if (Number.isNaN(total)) throw new Error(`content-range não numérico: ${contentRange}`);
+        return total;
       }
 
       const [total, concluidos, cancelados, slaTrue, slaFalse] = await Promise.all([
