@@ -55,7 +55,13 @@ async function transcreverAudioSlack(url, mimetype) {
       return null;
     }
     const audioBuffer = await audioResp.arrayBuffer();
-    await debugLog('download_ok', { tamanho_bytes: audioBuffer.byteLength });
+    const primeirosBytes = Buffer.from(audioBuffer.slice(0, 32));
+    await debugLog('download_ok', {
+      tamanho_bytes: audioBuffer.byteLength,
+      content_type_resposta: audioResp.headers.get('content-type') || '(nenhum)',
+      primeiros_bytes_hex: primeirosBytes.toString('hex'),
+      primeiros_bytes_texto: primeirosBytes.toString('utf8').replace(/[^\x20-\x7E]/g, '.'),
+    });
 
     // Usa a extensão certa pro formato real do arquivo — a Groq/Whisper
     // decide como decodificar pelo nome do arquivo, então mandar ".m4a"
