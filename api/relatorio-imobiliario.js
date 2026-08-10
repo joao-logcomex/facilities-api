@@ -25,9 +25,98 @@ function contar(arr, getter) {
   return Object.fromEntries([...m.entries()].sort((a,b) => b[1] - a[1]));
 }
 
+// ── Mesmos prazos de SLA (em dias úteis, seg-qui) já usados no admin.html ──
+const SLA_DIAS = { brindes:5, suprimentos:7, manutencao:60, reforma:60, seguranca:2, logistica:3, outros:7, infraestrutura:7, limpeza:7, plataformas:3, gestao:7 };
+
+// Mesma lógica do admin.html: só conta segunda a quinta (João é o único que
+// trabalha sexta), sem entrar em feriados aqui de propósito — é o mesmo
+// critério simplificado já usado no cálculo de SLA do sistema hoje.
+function diasUteisPassados(dataInicioStr) {
+  const d = new Date(dataInicioStr); d.setHours(0, 0, 0, 0);
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  let count = 0;
+  let cur = new Date(d);
+  while (cur < hoje) {
+    const dow = cur.getDay();
+    if (dow >= 1 && dow <= 4) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
+async function rodarAlertaSLA() {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const statusAbertos = ['Aberto', 'Em andamento', 'Aguardando aprovação'].map(encodeURIComponent).join(',');
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/tickets?status=in.(${statusAbertos})&select=id,titulo,categoria,status,data_abertura,nome,user_email`,
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+  );
+  const tickets = await r.json();
+
+  const vencidos = [];
+  const quaseVencendo = [];
+  for (const t of tickets) {
+    if (!t.data_abertura) continue;
+    const diasSLA = SLA_DIAS[t.categoria] || 7;
+    const diasPassados = diasUteisPassados(t.data_abertura);
+    if (diasPassados > diasSLA) {
+      vencidos.push({ ...t, diasSLA, diasPassados });
+    } else if (diasPassados >= diasSLA - 1) {
+      quaseVencendo.push({ ...t, diasSLA, diasPassados });
+    }
+  }
+
+  const linha = (t) => `• *#${t.id}* — ${t.titulo || '(sem título)'} _(${t.categoria}, ${t.diasPassados}/${t.diasSLA} dias úteis, aberto por ${t.nome || t.user_email || '—'})_`;
+
+  let texto;
+  if (!vencidos.length && !quaseVencendo.length) {
+    texto = '✅ *Alerta de SLA* — nenhum chamado vencido ou perto do prazo hoje. Tudo em dia!';
+  } else {
+    const partes = ['📋 *Alerta diário de SLA*'];
+    if (vencidos.length) {
+      partes.push(`\n🔴 *Vencidos (${vencidos.length}):*`);
+      partes.push(vencidos.map(linha).join('\n'));
+    }
+    if (quaseVencendo.length) {
+      partes.push(`\n🟡 *Perto de vencer (${quaseVencendo.length}):*`);
+      partes.push(quaseVencendo.map(linha).join('\n'));
+    }
+    texto = partes.join('\n');
+  }
+
+  // DM pro João — mesmo padrão de envio usado no resto do bot
+  try {
+    await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel: 'U09MEN4BS0N', text: texto }),
+    });
+  } catch (e) { console.warn('envio do alerta de SLA falhou:', e.message); }
+
+  return { ok: true, vencidos: vencidos.length, quase_vencendo: quaseVencendo.length, total_abertos: tickets.length };
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // ── Cron diário: alerta de SLA (chamados perto de vencer ou já vencidos) ──
+  // Chamado pelo Vercel Cron (vercel.json), seg-sex 8h30 Curitiba. Protegido
+  // pelo CRON_SECRET que o próprio Vercel injeta como Bearer automaticamente.
+  if (req.query && req.query.cron === 'sla_alertas') {
+    const authHeader = req.headers.authorization;
+    if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return res.status(401).json({ ok: false, error: 'unauthorized' });
+    }
+    try {
+      const resultado = await rodarAlertaSLA();
+      return res.status(200).json(resultado);
+    } catch (e) {
+      console.error('cron sla_alertas erro:', e);
+      return res.status(200).json({ ok: false, error: e.message });
+    }
+  }
 
   // ── "Meus chamados" (index.html) — lê do Supabase por e-mail ──
   // Só devolve os campos que a tela usa, nunca dados de outras pessoas
