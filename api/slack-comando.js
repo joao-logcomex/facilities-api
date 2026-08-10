@@ -32,14 +32,22 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 // privado), manda pro Whisper Large v3 na Groq, devolve o texto transcrito.
 // Groq tem camada gratuita generosa (milhares de pedidos/dia) — sem custo
 // pro volume esperado de um bot interno.
-async function transcreverAudioSlack(url) {
+const EXTENSAO_POR_MIME = {
+  'audio/mp4': 'mp4', 'audio/x-m4a': 'm4a', 'audio/m4a': 'm4a',
+  'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/oga': 'ogg',
+  'audio/mpeg': 'mp3', 'audio/mp3': 'mp3',
+  'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/wave': 'wav',
+  'audio/flac': 'flac',
+};
+
+async function transcreverAudioSlack(url, mimetype) {
   const debugLog = async (etapa, extra = {}) => {
     try { await db.collection('slack_debug_logs').add({ at: new Date(), etapa: `audio_${etapa}`, ...extra }); } catch {}
   };
   if (!url) { await debugLog('sem_url'); return null; }
   if (!GROQ_API_KEY) { await debugLog('sem_groq_key'); return null; }
   try {
-    await debugLog('iniciando', { url_prefix: url.substring(0, 60) });
+    await debugLog('iniciando', { url_prefix: url.substring(0, 60), mimetype: mimetype || '(nenhum)' });
     const audioResp = await fetch(url, { headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` } });
     if (!audioResp.ok) {
       const corpo = await audioResp.text().catch(() => '');
@@ -49,8 +57,12 @@ async function transcreverAudioSlack(url) {
     const audioBuffer = await audioResp.arrayBuffer();
     await debugLog('download_ok', { tamanho_bytes: audioBuffer.byteLength });
 
+    // Usa a extensão certa pro formato real do arquivo — a Groq/Whisper
+    // decide como decodificar pelo nome do arquivo, então mandar ".m4a"
+    // fixo pra um arquivo que na verdade é webm/ogg fazia ela recusar.
+    const extensao = EXTENSAO_POR_MIME[(mimetype || '').toLowerCase()] || 'mp4';
     const form = new FormData();
-    form.append('file', new Blob([audioBuffer]), 'audio.m4a');
+    form.append('file', new Blob([audioBuffer], { type: mimetype || 'audio/mp4' }), `audio.${extensao}`);
     form.append('model', 'whisper-large-v3');
     form.append('language', 'pt');
     form.append('response_format', 'json');
@@ -62,7 +74,7 @@ async function transcreverAudioSlack(url) {
     });
     if (!r.ok) {
       const corpo = await r.text().catch(() => '');
-      await debugLog('groq_falhou', { status: r.status, corpo: corpo.substring(0, 500) });
+      await debugLog('groq_falhou', { status: r.status, corpo: corpo.substring(0, 500), extensao_usada: extensao });
       return null;
     }
     const data = await r.json();
@@ -1378,7 +1390,7 @@ function extrairDadosEnvio(texto) {
     // Se veio como áudio (sem texto), transcreve antes de seguir. O texto
     // resultante entra no MESMO fluxo de sempre — nada mais precisa mudar.
     if (!evt.text && arquivoAudio) {
-      const textoTranscrito = await transcreverAudioSlack(arquivoAudio.url_private_download || arquivoAudio.url_private);
+      const textoTranscrito = await transcreverAudioSlack(arquivoAudio.url_private_download || arquivoAudio.url_private, arquivoAudio.mimetype);
       if (!textoTranscrito) {
         await enviarMensagem(evt.channel, '🎤 Não consegui entender esse áudio. Pode tentar de novo ou escrever a mensagem?').catch(() => {});
         return res.status(200).send('');
