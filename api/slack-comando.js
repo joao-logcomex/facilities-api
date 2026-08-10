@@ -1616,12 +1616,13 @@ async function processarMensagemDM(evt) {
     }
 
     // ⚡ ABRIR CHAMADO EM NOME DE OUTRA PESSOA (delegação — só admin autorizado por enquanto)
-    // Ex: "abrir chamado pra Maria Silva" ou "abrir chamado para joao@logcomex.com"
-    // Checa o Slack ID direto (sem custo de API) ANTES de tentar o regex, pra nunca
-    // interferir em pedidos normais de outras pessoas que por acaso comecem parecido.
+    // Ex: "abrir chamado no nome de Maria Silva" ou "abrir chamado em nome de joao@logcomex.com"
+    // Restrito a essa frase explícita de propósito — "pra"/"para" sozinho já foi
+    // testado e confundia pedidos normais (ex: "chamado para manutenção do ar")
+    // com uma tentativa de delegação.
     const SLACK_ID_ADMIN_DELEGACAO = 'U09MEN4BS0N'; // João — expandir aqui se liberar pra outros admins
     const matchDelegacao = (userId === SLACK_ID_ADMIN_DELEGACAO)
-      ? texto.match(/abrir\s+(?:um\s+)?chamado\s+(?:pra|para|no\s+nome\s+d[aeo]|em\s+nome\s+d[aeo])\s+(?:a\s+|o\s+)?(.+)/i)
+      ? texto.match(/abrir\s+(?:um\s+)?chamado\s+(?:no\s+nome\s+d[aeo]|em\s+nome\s+d[aeo])\s+(?:a\s+|o\s+)?(.+)/i)
       : null;
     if (matchDelegacao) {
       await log('delegacao_tentativa', { alvo: matchDelegacao[1].substring(0, 40) });
