@@ -2,8 +2,12 @@
   "version": 2,
   "functions": {
     "api/relatorio.js": { "maxDuration": 30 },
-    "api/slack-comando.js": { "maxDuration": 30 }
+    "api/slack-comando.js": { "maxDuration": 30 },
+    "api/relatorio-imobiliario.js": { "maxDuration": 30 }
   },
+  "crons": [
+    { "path": "/api/relatorio-imobiliario?cron=sla_alertas", "schedule": "30 11 * * 1-5" }
+  ],
   "rewrites": [
     { "source": "/sobre", "destination": "/sobre.html" }
   ],
