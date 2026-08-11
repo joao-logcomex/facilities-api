@@ -1,7 +1,13 @@
 ﻿// api/notify-slack.js
 // Notificações: conclusão, rastreio DHL, aprovação/recusa de brindes
 
-const GESTOR_EMAIL = 'leandro.oliveira@logcomex.com'; // Gestor principal de aprovação
+// Gestores que recebem pedido de aprovação de brinde. Leandro é o titular;
+// Milena entrou temporariamente cobrindo a ausência dele (volta dia 11/08 —
+// depois disso, remover a linha da Milena aqui).
+const GESTORES_APROVACAO = [
+  { email: 'leandro.oliveira@logcomex.com', nome: 'Leandro' },
+  { email: 'milena@logcomex.com', nome: 'Milena' }, // TEMPORÁRIO — cobrindo o Leandro até 11/08
+];
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,114 +28,126 @@ export default async function handler(req, res) {
     docId, emailColaborador, nomeColaborador, itensBrinde
   } = req.body;
 
-  // ── Notificação de NOVO BRINDE ao gestor ───────────────────
+  // ── Notificação de NOVO BRINDE aos gestores (Leandro + cobertura temporária) ──
   if (tipo === 'novo_brinde_gestor') {
     try {
-      // Buscar o gestor no Slack pelo email
-      const userRes = await fetch(
-        `https://slack.com/api/users.lookupByEmail?email=${encodeURIComponent(GESTOR_EMAIL)}`,
-        { headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` } }
-      );
-      const userData = await userRes.json();
-      if (!userData.ok) {
-        console.error('Gestor não encontrado no Slack:', userData.error);
-        return res.status(200).json({ warning: 'Gestor não encontrado, mas chamado salvo.' });
-      }
-      const gestorId = userData.user.id;
+      const resultados = await Promise.all(GESTORES_APROVACAO.map(async (gestor) => {
+        try {
+          // Buscar o gestor no Slack pelo email
+          const userRes = await fetch(
+            `https://slack.com/api/users.lookupByEmail?email=${encodeURIComponent(gestor.email)}`,
+            { headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` } }
+          );
+          const userData = await userRes.json();
+          if (!userData.ok) {
+            console.error(`Gestor ${gestor.nome} não encontrado no Slack:`, userData.error);
+            return { gestor: gestor.nome, ok: false, error: userData.error };
+          }
+          const gestorId = userData.user.id;
 
-      // Abrir DM com o gestor
-      const dmRes = await fetch('https://slack.com/api/conversations.open', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ users: gestorId })
-      });
-      const dmData = await dmRes.json();
-      if (!dmData.ok) return res.status(500).json({ error: `Erro ao abrir DM: ${dmData.error}` });
-      const channelId = dmData.channel.id;
+          // Abrir DM com o gestor
+          const dmRes = await fetch('https://slack.com/api/conversations.open', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ users: gestorId })
+          });
+          const dmData = await dmRes.json();
+          if (!dmData.ok) return { gestor: gestor.nome, ok: false, error: dmData.error };
+          const channelId = dmData.channel.id;
 
-      // Valor serializado para os botões — contém tudo que precisamos para aprovar/recusar
-      const btnValue = JSON.stringify({
-        docId, ticketId: ticket || ticketId,
-        emailColaborador: emailColaborador || email,
-        nomeColaborador: nomeColaborador || nome,
-        itens: itensBrinde || itens || '',
-        titulo: titulo || ''
-      });
+          // Valor serializado para os botões — contém tudo que precisamos para aprovar/recusar
+          const btnValue = JSON.stringify({
+            docId, ticketId: ticket || ticketId,
+            emailColaborador: emailColaborador || email,
+            nomeColaborador: nomeColaborador || nome,
+            itens: itensBrinde || itens || '',
+            titulo: titulo || ''
+          });
 
-      // Mensagem com botões de ação direto no Slack
-      const msgRes = await fetch('https://slack.com/api/chat.postMessage', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          channel: channelId,
-          username: 'Facilities LogComex',
-          icon_emoji: ':gift:',
-          text: `🎁 Nova solicitação de brinde aguardando sua aprovação — ${ticket || ticketId}`,
-          blocks: [
-            {
-              type: 'header',
-              text: { type: 'plain_text', text: '🎁 Nova Solicitação de Brinde', emoji: true }
-            },
-            {
-              type: 'section',
-              text: {
-                type: 'mrkdwn',
-                text: `Olá, Leandro! Uma nova solicitação de brinde precisa da sua aprovação.`
-              }
-            },
-            { type: 'divider' },
-            {
-              type: 'section',
-              fields: [
-                { type: 'mrkdwn', text: `*Chamado:*\n${ticket || ticketId || '—'}` },
-                { type: 'mrkdwn', text: `*Solicitante:*\n${nomeColaborador || nome || '—'}` },
-                { type: 'mrkdwn', text: `*E-mail:*\n${emailColaborador || email || '—'}` },
-                ...(titulo ? [{ type: 'mrkdwn', text: `*Solicitação:*\n${titulo}` }] : []),
-              ]
-            },
-            ...(itensBrinde || itens ? [{
-              type: 'section',
-              text: { type: 'mrkdwn', text: `*Itens solicitados:*\n${itensBrinde || itens}` }
-            }] : []),
-            { type: 'divider' },
-            {
-              type: 'actions',
-              elements: [
+          // Mensagem com botões de ação direto no Slack
+          const msgRes = await fetch('https://slack.com/api/chat.postMessage', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              channel: channelId,
+              username: 'Facilities LogComex',
+              icon_emoji: ':gift:',
+              text: `🎁 Nova solicitação de brinde aguardando sua aprovação — ${ticket || ticketId}`,
+              blocks: [
                 {
-                  type: 'button',
-                  text: { type: 'plain_text', text: '✅ Aprovar', emoji: true },
-                  style: 'primary',
-                  action_id: 'aprovar_brinde',
-                  value: btnValue
+                  type: 'header',
+                  text: { type: 'plain_text', text: '🎁 Nova Solicitação de Brinde', emoji: true }
                 },
                 {
-                  type: 'button',
-                  text: { type: 'plain_text', text: '❌ Recusar', emoji: true },
-                  style: 'danger',
-                  action_id: 'recusar_brinde',
-                  value: btnValue
+                  type: 'section',
+                  text: {
+                    type: 'mrkdwn',
+                    text: `Olá, ${gestor.nome}! Uma nova solicitação de brinde precisa da sua aprovação.`
+                  }
+                },
+                { type: 'divider' },
+                {
+                  type: 'section',
+                  fields: [
+                    { type: 'mrkdwn', text: `*Chamado:*\n${ticket || ticketId || '—'}` },
+                    { type: 'mrkdwn', text: `*Solicitante:*\n${nomeColaborador || nome || '—'}` },
+                    { type: 'mrkdwn', text: `*E-mail:*\n${emailColaborador || email || '—'}` },
+                    ...(titulo ? [{ type: 'mrkdwn', text: `*Solicitação:*\n${titulo}` }] : []),
+                  ]
+                },
+                ...(itensBrinde || itens ? [{
+                  type: 'section',
+                  text: { type: 'mrkdwn', text: `*Itens solicitados:*\n${itensBrinde || itens}` }
+                }] : []),
+                { type: 'divider' },
+                {
+                  type: 'actions',
+                  elements: [
+                    {
+                      type: 'button',
+                      text: { type: 'plain_text', text: '✅ Aprovar', emoji: true },
+                      style: 'primary',
+                      action_id: 'aprovar_brinde',
+                      value: btnValue
+                    },
+                    {
+                      type: 'button',
+                      text: { type: 'plain_text', text: '❌ Recusar', emoji: true },
+                      style: 'danger',
+                      action_id: 'recusar_brinde',
+                      value: btnValue
+                    }
+                  ]
+                },
+                { type: 'divider' },
+                {
+                  type: 'context',
+                  elements: [{
+                    type: 'mrkdwn',
+                    text: `🏢 *Facilities LogComex* • Ver chamado: https://facilities-api.vercel.app/admin.html`
+                  }]
                 }
               ]
-            },
-            { type: 'divider' },
-            {
-              type: 'context',
-              elements: [{
-                type: 'mrkdwn',
-                text: `🏢 *Facilities LogComex* • Ver chamado: https://facilities-api.vercel.app/admin.html`
-              }]
-            }
-          ]
-        })
-      });
+            })
+          });
 
-      const msgData = await msgRes.json();
-      if (!msgData.ok) return res.status(500).json({ error: `Erro ao enviar para gestor: ${msgData.error}` });
+          const msgData = await msgRes.json();
+          if (!msgData.ok) return { gestor: gestor.nome, ok: false, error: msgData.error };
+          return { gestor: gestor.nome, ok: true };
+        } catch (e) {
+          return { gestor: gestor.nome, ok: false, error: e.message };
+        }
+      }));
 
-      return res.status(200).json({ success: true, message: 'Gestor notificado no Slack!' });
+      const algumSucesso = resultados.some(r => r.ok);
+      if (!algumSucesso) {
+        console.error('Nenhum gestor notificado:', resultados);
+        return res.status(200).json({ warning: 'Nenhum gestor notificado, mas chamado salvo.', detalhes: resultados });
+      }
+      return res.status(200).json({ success: true, message: 'Gestores notificados no Slack!', detalhes: resultados });
 
     } catch (err) {
-      console.error('Erro notificação gestor:', err);
+      console.error('Erro notificação gestores:', err);
       return res.status(500).json({ error: err.message });
     }
   }
