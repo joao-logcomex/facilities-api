@@ -12,7 +12,8 @@ service cloud.firestore {
     }
     function isViewer() {
       return request.auth != null && request.auth.token.email in [
-        'leandro.oliveira@logcomex.com'
+        'leandro.oliveira@logcomex.com',
+        'milena@logcomex.com'
       ];
     }
     match /tickets/{ticketId} {
