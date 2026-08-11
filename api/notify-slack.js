@@ -16,11 +16,11 @@ function initFirebase() {
 }
 
 // Gestores que recebem pedido de aprovação de brinde. Leandro é o titular;
-// Milena entrou temporariamente cobrindo a ausência dele (volta dia 11/08 —
-// depois disso, remover a linha da Milena aqui).
+// Milena é backup permanente — aprova/recusa junto com ele sempre, e
+// principalmente quando ele estiver de férias/ausente.
 const GESTORES_APROVACAO = [
   { email: 'leandro.oliveira@logcomex.com', nome: 'Leandro' },
-  { email: 'milena@logcomex.com', nome: 'Milena' }, // TEMPORÁRIO — cobrindo o Leandro até 11/08
+  { email: 'milena@logcomex.com', nome: 'Milena' },
 ];
 
 export default async function handler(req, res) {
