@@ -145,13 +145,14 @@ export default async function handler(req, res) {
     // 4. Notificar o Joao (admin) via DM direta
     try {
       const JOAO_DM = 'D0B0NEKTYLA';
+      const nomeAprovador = payload.user?.real_name || payload.user?.name || payload.user?.username || 'alguém';
       const itensTxt = Array.isArray(itens) && itens.length
         ? itens.map(i => `• ${i.quantidade || ''} ${i.nome || i}`).join('\n')
         : (typeof itens === 'string' ? itens : '(sem detalhes)');
 
       const textoJoao = isAprovado
-        ? `✅ *Brinde APROVADO* por Leandro\n*Chamado:* ${ticketId}\n*Solicitante:* ${nomeColaborador || emailColaborador || '—'}\n*Itens:*\n${itensTxt}`
-        : `❌ *Brinde REJEITADO* por Leandro\n*Chamado:* ${ticketId}\n*Solicitante:* ${nomeColaborador || emailColaborador || '—'}\n*Itens:*\n${itensTxt}${motivo ? '\n*Motivo:* ' + motivo : ''}`;
+        ? `✅ *Brinde APROVADO* por ${nomeAprovador}\n*Chamado:* ${ticketId}\n*Solicitante:* ${nomeColaborador || emailColaborador || '—'}\n*Itens:*\n${itensTxt}`
+        : `❌ *Brinde REJEITADO* por ${nomeAprovador}\n*Chamado:* ${ticketId}\n*Solicitante:* ${nomeColaborador || emailColaborador || '—'}\n*Itens:*\n${itensTxt}${motivo ? '\n*Motivo:* ' + motivo : ''}`;
 
       await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',
