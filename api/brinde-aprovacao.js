@@ -54,6 +54,35 @@ export default async function handler(req, res) {
     const ticketData = ticketSnap.data() || {};
     const historico = ticketData.historico || [];
 
+    // ── Trava contra decisão duplicada ──
+    // Como Leandro e Milena (ou outro gestor futuro) recebem o MESMO pedido em
+    // DMs separadas, sem essa checagem os dois poderiam clicar em coisas
+    // diferentes (ex: um aprova, o outro recusa depois) e sobrescrever a
+    // decisão um do outro sem saber. Se o status já não é mais "Aguardando
+    // aprovação", alguém já decidiu — não processa de novo, só avisa.
+    if (ticketData.status && ticketData.status !== 'Aguardando aprovação') {
+      const ultimaAcao = historico[historico.length - 1];
+      const quemDecidiu = ultimaAcao?.usuario || 'outro gestor';
+      const responseUrlJaDecidido = payload.response_url;
+      if (responseUrlJaDecidido) {
+        await fetch(responseUrlJaDecidido, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            replace_original: true,
+            blocks: [{
+              type: 'section',
+              text: {
+                type: 'mrkdwn',
+                text: `⚠️ *Esse brinde já foi decidido por ${quemDecidiu}* antes que você clicasse — nada foi alterado.\nChamado *${ticketId}* está como: *${ticketData.status}*.`
+              }
+            }]
+          })
+        });
+      }
+      return res.status(200).json({ ok: true, ja_decidido: true, por: quemDecidiu });
+    }
+
     await ticketRef.update({
       status: isAprovado ? 'Em andamento' : 'Cancelado',
       motivo_recusa: isAprovado ? '' : motivo,
@@ -63,7 +92,7 @@ export default async function handler(req, res) {
           ? 'Brinde aprovado pelo gestor via Slack — encaminhado para Facilities'
           : `Brinde recusado pelo gestor via Slack${motivo ? ': ' + motivo : ''}`,
         data: new Date().toISOString(),
-        usuario: payload.user?.name || 'Gestor'
+        usuario: payload.user?.real_name || payload.user?.name || 'Gestor'
       }]
     });
 
@@ -123,6 +152,36 @@ export default async function handler(req, res) {
         })
       });
     }
+
+    // 2b. Atualizar a mensagem dos OUTROS gestores que também receberam esse
+    // pedido (ex: se a Milena decidiu, a DM do Leandro também precisa mudar,
+    // senão ele vê os botões ativos ainda como se nada tivesse acontecido).
+    const nomeDecisor = payload.user?.real_name || payload.user?.name || payload.user?.username || 'um gestor';
+    const outrasMensagens = (ticketData.aprovacao_slack_msgs || []).filter(m => m.ts && m.channel);
+    await Promise.all(outrasMensagens.map(async (msg) => {
+      try {
+        await fetch('https://slack.com/api/chat.update', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            channel: msg.channel,
+            ts: msg.ts,
+            text: isAprovado ? `✅ Brinde aprovado por ${nomeDecisor}` : `❌ Brinde recusado por ${nomeDecisor}`,
+            blocks: [{
+              type: 'section',
+              text: {
+                type: 'mrkdwn',
+                text: isAprovado
+                  ? `✅ *Brinde aprovado por ${nomeDecisor}.*\nChamado *${ticketId}* encaminhado para o time de Facilities.`
+                  : `❌ *Brinde recusado por ${nomeDecisor}.*\nChamado *${ticketId}* cancelado.${motivo ? '\nMotivo: ' + motivo : ''}`
+              }
+            }]
+          })
+        });
+      } catch (e) {
+        console.warn('Não consegui atualizar mensagem de outro gestor:', e.message);
+      }
+    }));
 
     // 3. Notificar colaborador via DM
     if (emailColaborador) {
