@@ -1,6 +1,20 @@
 ﻿// api/notify-slack.js
 // Notificações: conclusão, rastreio DHL, aprovação/recusa de brindes
 
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+
+function initFirebase() {
+  if (!getApps().length) {
+    initializeApp({ credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    })});
+  }
+  return getFirestore();
+}
+
 // Gestores que recebem pedido de aprovação de brinde. Leandro é o titular;
 // Milena entrou temporariamente cobrindo a ausência dele (volta dia 11/08 —
 // depois disso, remover a linha da Milena aqui).
@@ -133,7 +147,7 @@ export default async function handler(req, res) {
 
           const msgData = await msgRes.json();
           if (!msgData.ok) return { gestor: gestor.nome, ok: false, error: msgData.error };
-          return { gestor: gestor.nome, ok: true };
+          return { gestor: gestor.nome, ok: true, channel: channelId, ts: msgData.ts };
         } catch (e) {
           return { gestor: gestor.nome, ok: false, error: e.message };
         }
@@ -144,6 +158,21 @@ export default async function handler(req, res) {
         console.error('Nenhum gestor notificado:', resultados);
         return res.status(200).json({ warning: 'Nenhum gestor notificado, mas chamado salvo.', detalhes: resultados });
       }
+
+      // Guarda canal+ts de cada mensagem enviada — assim, quando alguém decidir
+      // (aprovar/recusar), conseguimos atualizar a mensagem de TODOS os gestores
+      // que receberam o pedido, evitando que dois cliquem em coisas diferentes
+      // no mesmo chamado sem saber que o outro já decidiu.
+      if (docId) {
+        try {
+          const db = initFirebase();
+          const mensagensEnviadas = resultados.filter(r => r.ok).map(r => ({ channel: r.channel, ts: r.ts, gestor: r.gestor }));
+          await db.collection('tickets').doc(docId).update({ aprovacao_slack_msgs: mensagensEnviadas });
+        } catch (e) {
+          console.warn('Não consegui salvar referência das mensagens de aprovação:', e.message);
+        }
+      }
+
       return res.status(200).json({ success: true, message: 'Gestores notificados no Slack!', detalhes: resultados });
 
     } catch (err) {
