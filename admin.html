@@ -1468,6 +1468,10 @@ const isAdminOrViewer = (email) => {
       window.allTickets = allTickets;
       updateMetrics(); renderTable(); renderKanban(); updateBadge(); if(typeof initPeriodo==='function'){initPeriodo();}else{updateCharts();}
       if(document.getElementById('page-logistica')?.classList.contains('active') && typeof renderLogistica==='function') renderLogistica();
+      // Sem isso, quem cai direto nessa tela (ex: viewers como Leandro/Milena,
+      // que são redirecionados pra cá automaticamente) via um "0" em tudo —
+      // a tela renderiza antes dos dados chegarem e nunca mais atualizava.
+      if(document.getElementById('page-brindes-dash')?.classList.contains('active') && typeof renderBrindesDash==='function') renderBrindesDash();
     });
 
     // Pedir permissão de notificação do browser
