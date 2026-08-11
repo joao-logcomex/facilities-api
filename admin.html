@@ -1341,7 +1341,7 @@
   window._collection = collection;
   window.auth = auth;
   const ADMINS = ['christian.bertolino@logcomex.com','joao.faria@logcomex.com','henrique.silva@logcomex.com','adriano.martins@logcomex.com','daniel.alle@logcomex.com'];
-const VIEWERS = ['leandro.oliveira@logcomex.com']; // Acesso somente leitura
+const VIEWERS = ['leandro.oliveira@logcomex.com', 'milena@logcomex.com']; // Acesso somente leitura — Milena TEMPORÁRIO, cobrindo o Leandro até 11/08
 const isViewer = (email) => VIEWERS.includes((email||'').toLowerCase().trim());
 const isAdminOrViewer = (email) => {
   const e = (email||'').toLowerCase().trim();
