@@ -1512,6 +1512,9 @@ const isAdminOrViewer = (email) => {
       const updates = { status: s, historico: hist };
       if (observacao) updates.ultima_observacao = observacao;
       if (s === 'Cancelado' && observacao) updates.motivo_cancelamento = observacao;
+      // Marca quando ficou pronto pra retirada — usado pra contar os 2 dias
+      // antes da devolução automática pro estoque se ninguém buscar.
+      if (s === 'Pronto para retirada') updates.data_pronto_retirada = new Date();
 
       // ── Calcula dentroSLA + grava data_conclusao ao concluir ──
       // Cancelado NÃO conta pra SLA (regra de negócio confirmada) — fica null, sem alterar.
@@ -2122,6 +2125,8 @@ function updateBadge() {
 
       const statuses = (t.categoria === 'manutencao' || t.categoria === 'reforma')
         ? ['Aberto','Em andamento','Aguardando fornecedor','Concluído','Cancelado']
+        : (t.categoria === 'brindes')
+        ? ['Aberto','Em andamento','Aguardando aprovação','Pronto para retirada','Concluído','Cancelado']
         : ['Aberto','Em andamento','Aguardando aprovação','Concluído','Cancelado'];
       setHtml('status-btns', statuses.map(s => `<button class="status-btn ${t.status===s?'active-s':''}" onclick="updS('${s}')">${s}</button>`).join(''));
 
