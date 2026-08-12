@@ -1865,6 +1865,16 @@ function updateBadge() {
           const _sc = _pct>=100?'#ef4444':_pct>=75?'#f59e0b':'#12b76a';
           const _sl = _pct>=100?'Vencido':_rest===1?'1 dia':_rest>0?_rest+' dias':'Vencido';
           _sla = '<div class="kanban-sla-bar"><div class="kanban-sla-fill" style="width:'+_pct+'%;background:'+_sc+';"></div></div><div style="font-size:0.62rem;color:'+_sc+';font-weight:600;text-align:right;margin-top:1px;">'+_sl+'</div>';
+        } else if (t.status === 'Pronto para retirada' && t.data_pronto_retirada) {
+          // Contagem própria — 5 dias corridos pra retirar antes de devolver
+          // ao estoque automaticamente. Não é a mesma coisa que o SLA normal.
+          const _dp = t.data_pronto_retirada.toDate ? t.data_pronto_retirada.toDate() : new Date(t.data_pronto_retirada);
+          const _diasPassadosRet = Math.floor((Date.now() - _dp.getTime()) / 86400000);
+          const _restRet = 5 - _diasPassadosRet;
+          const _pctRet = Math.min(100, Math.round((_diasPassadosRet/5)*100));
+          const _scRet = _pctRet>=100?'#ef4444':_pctRet>=75?'#f59e0b':'#12b76a';
+          const _slRet = _restRet<=0?'Vence hoje':_restRet===1?'1 dia p/ retirar':_restRet+' dias p/ retirar';
+          _sla = '<div class="kanban-sla-bar"><div class="kanban-sla-fill" style="width:'+_pctRet+'%;background:'+_scRet+';"></div></div><div style="font-size:0.62rem;color:'+_scRet+';font-weight:600;text-align:right;margin-top:1px;">🎁 '+_slRet+'</div>';
         }
         const _footer = '<div class="kanban-card-footer"><div style="display:flex;align-items:center;gap:5px;"><div class="kanban-avatar">'+_ini+'</div><span style="font-size:0.68rem;color:var(--ink3);">'+_nome.split(' ')[0]+'</span></div><span style="font-size:0.68rem;background:rgba(102,19,208,0.07);color:#6613D0;padding:1px 8px;border-radius:20px;font-weight:600;">'+_cat+'</span></div>';
         if (t.categoria==='logistica') {
@@ -2013,7 +2023,12 @@ function updateBadge() {
                  t.dentroSLA === false ? '<span class="sla-badge sla-vencido">✗ Fora</span>' : '-';
         }
         if (t.status === 'Pronto para retirada') {
-          return '<span class="sla-badge sla-ok">📦 Aguard. retirada</span>';
+          if (!t.data_pronto_retirada) return '<span class="sla-badge sla-ok">📦 Aguard. retirada</span>';
+          const _dp = t.data_pronto_retirada?.toDate ? t.data_pronto_retirada.toDate() : new Date(t.data_pronto_retirada);
+          const _restRet = 5 - Math.floor((Date.now() - _dp.getTime()) / 86400000);
+          const _classe = _restRet<=0?'sla-vencido':_restRet<=1?'sla-risco':'sla-ok';
+          const _txt = _restRet<=0?'Vence hoje':_restRet+'d p/ retirar';
+          return '<span class="sla-badge '+_classe+'">📦 '+_txt+'</span>';
         }
         if (t.status === 'Pedido de compra') {
           return '<span class="sla-badge sla-ok">🛒 Pedido de compra</span>';
