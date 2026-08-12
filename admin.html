@@ -2127,10 +2127,8 @@ function updateBadge() {
       }
 
       const statuses = (t.categoria === 'manutencao' || t.categoria === 'reforma')
-        ? ['Aberto','Em andamento','Aguardando fornecedor','Concluído','Cancelado']
-        : (t.categoria === 'brindes')
-        ? ['Aberto','Em andamento','Aguardando aprovação','Pronto para retirada','Concluído','Cancelado']
-        : ['Aberto','Em andamento','Aguardando aprovação','Concluído','Cancelado'];
+        ? ['Aberto','Em andamento','Aguardando fornecedor','Pronto para retirada','Concluído','Cancelado']
+        : ['Aberto','Em andamento','Aguardando aprovação','Pronto para retirada','Concluído','Cancelado'];
       setHtml('status-btns', statuses.map(s => `<button class="status-btn ${t.status===s?'active-s':''}" onclick="updS('${s}')">${s}</button>`).join(''));
 
       // Box de aprovação para brindes em aguardando aprovação
