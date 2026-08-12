@@ -155,7 +155,7 @@ async function rodarAlertaSLA() {
       partes.push(quaseVencendo.map(linha).join('\n'));
     }
     if (autoConcluidosBrinde.length) {
-      partes.push(`\n🎁 *Brindes devolvidos ao estoque (não retirados em 2 dias) (${autoConcluidosBrinde.length}):*`);
+      partes.push(`\n🎁 *Brindes devolvidos ao estoque (não retirados em 5 dias) (${autoConcluidosBrinde.length}):*`);
       partes.push(autoConcluidosBrinde.map(t => `• *#${t.id}* — ${t.itens_brinde || '(itens não especificados)'}`).join('\n'));
     }
     texto = partes.join('\n');
@@ -217,15 +217,15 @@ async function rodarAutoConcluirBrindes() {
       .where('status', '==', 'Pronto para retirada')
       .get();
 
-    const DOIS_DIAS_MS = 2 * 24 * 60 * 60 * 1000;
+    const PRAZO_RETIRADA_MS = 5 * 24 * 60 * 60 * 1000;
     const agora = Date.now();
 
     for (const doc of snap.docs) {
       const dados = doc.data();
       const dataPronto = dados.data_pronto_retirada?.toDate ? dados.data_pronto_retirada.toDate() : (dados.data_pronto_retirada ? new Date(dados.data_pronto_retirada) : null);
-      if (!dataPronto || (agora - dataPronto.getTime()) < DOIS_DIAS_MS) continue;
+      if (!dataPronto || (agora - dataPronto.getTime()) < PRAZO_RETIRADA_MS) continue;
 
-      const motivo = 'Concluído automaticamente — brinde pronto há mais de 2 dias sem retirada, devolvido ao estoque';
+      const motivo = 'Concluído automaticamente — brinde pronto há mais de 5 dias sem retirada, devolvido ao estoque';
       const hist = [...(dados.historico || []), { acao: `📦 ${motivo}`, data: new Date().toISOString(), usuario: 'Sistema (automático)' }];
       await doc.ref.update({ status: 'Concluído', data_conclusao: new Date(), historico: hist, updatedAt: new Date() });
 
@@ -247,7 +247,7 @@ async function rodarAutoConcluirBrindes() {
       const emailColaborador = dados.userEmail || dados.email;
       if (emailColaborador) {
         await notificarColaboradorPorEmail(emailColaborador,
-          `📦 Seu brinde do chamado *#${dados.id}* estava pronto pra retirada há mais de 2 dias e foi devolvido ao estoque por falta de retirada. Se ainda precisar, pode abrir um novo chamado.`);
+          `📦 Seu brinde do chamado *#${dados.id}* estava pronto pra retirada há mais de 5 dias e foi devolvido ao estoque por falta de retirada. Se ainda precisar, pode abrir um novo chamado.`);
       }
 
       concluidos.push({ id: dados.id, itens_brinde: dados.itens_brinde });
