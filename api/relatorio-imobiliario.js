@@ -44,6 +44,44 @@ function diasUteisPassados(dataInicioStr) {
   return count;
 }
 
+// Notifica um colaborador por e-mail via DM no Slack (busca o Slack ID pelo
+// e-mail). Usado tanto no cancelamento automático por SLA quanto na
+// devolução automática de brinde não retirado.
+async function notificarColaboradorPorEmail(email, texto) {
+  if (!email) return false;
+  try {
+    const userRes = await fetch(`https://slack.com/api/users.lookupByEmail?email=${encodeURIComponent(email)}`,
+      { headers: { Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}` } });
+    const userData = await userRes.json();
+    if (!userData.ok) return false;
+    const dmRes = await fetch('https://slack.com/api/conversations.open', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ users: userData.user.id }),
+    });
+    const dmData = await dmRes.json();
+    if (!dmData.ok) return false;
+    await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel: dmData.channel.id, text: texto }),
+    });
+    return true;
+  } catch (e) {
+    console.warn('notificarColaboradorPorEmail falhou:', e.message);
+    return false;
+  }
+}
+
+// Acha o doc do Firestore pelo id de negócio (LC-XXXXX) — os cron jobs
+// trabalham com dados do Supabase (mais barato de consultar em lote), mas
+// qualquer escrita de verdade precisa achar e atualizar o Firestore, que
+// continua sendo a fonte de verdade.
+async function acharDocFirestorePorId(ticketId) {
+  const snap = await db.collection('tickets').where('id', '==', ticketId).limit(1).get();
+  return snap.empty ? null : snap.docs[0];
+}
+
 async function rodarAlertaSLA() {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -67,25 +105,62 @@ async function rodarAlertaSLA() {
     }
   }
 
+  // ── Auto-cancela quem realmente vencer o SLA (todas as categorias) ──
+  // Cai como "Cancelado" (não inventa status novo, pra não bagunçar os
+  // gráficos existentes), mas com motivo bem marcado pra diferenciar de um
+  // cancelamento manual. Avisa o João e o colaborador que abriu o chamado.
+  const autoCancelados = [];
+  for (const t of vencidos) {
+    try {
+      const doc = await acharDocFirestorePorId(t.id);
+      if (!doc) continue;
+      const dados = doc.data();
+      const motivo = `Cancelado automaticamente por vencimento de SLA (${t.diasPassados}/${t.diasSLA} dias úteis)`;
+      const hist = [...(dados.historico || []), { acao: `⏰ ${motivo}`, data: new Date().toISOString(), usuario: 'Sistema (automático)' }];
+      await doc.ref.update({ status: 'Cancelado', motivo_cancelamento: motivo, historico: hist, updatedAt: new Date() });
+
+      fetch(`${SUPABASE_URL}/rest/v1/tickets?on_conflict=id`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates' },
+        body: JSON.stringify([{ id: t.id, status: 'Cancelado' }]),
+      }).catch(() => {});
+
+      const emailColaborador = dados.userEmail || dados.email || t.user_email;
+      if (emailColaborador) {
+        await notificarColaboradorPorEmail(emailColaborador,
+          `⏰ Seu chamado *#${t.id}* (${t.titulo || dados.titulo || 'sem título'}) foi cancelado automaticamente por ter passado do prazo de atendimento (SLA) sem conclusão. Se ainda precisar disso, pode abrir um novo chamado.`);
+      }
+      autoCancelados.push(t);
+    } catch (e) {
+      console.warn(`Falha ao auto-cancelar ${t.id}:`, e.message);
+    }
+  }
+
+  // ── Devolve ao estoque brinde "Pronto para retirada" há mais de 2 dias ──
+  const autoConcluidosBrinde = await rodarAutoConcluirBrindes();
+
   const linha = (t) => `• *#${t.id}* — ${t.titulo || '(sem título)'} _(${t.categoria}, ${t.diasPassados}/${t.diasSLA} dias úteis, aberto por ${t.nome || t.user_email || '—'})_`;
 
   let texto;
-  if (!vencidos.length && !quaseVencendo.length) {
+  if (!vencidos.length && !quaseVencendo.length && !autoConcluidosBrinde.length) {
     texto = '✅ *Alerta de SLA* — nenhum chamado vencido ou perto do prazo hoje. Tudo em dia!';
   } else {
     const partes = ['📋 *Alerta diário de SLA*'];
-    if (vencidos.length) {
-      partes.push(`\n🔴 *Vencidos (${vencidos.length}):*`);
-      partes.push(vencidos.map(linha).join('\n'));
+    if (autoCancelados.length) {
+      partes.push(`\n⏰ *Cancelados automaticamente por SLA vencido (${autoCancelados.length}):*`);
+      partes.push(autoCancelados.map(linha).join('\n'));
     }
     if (quaseVencendo.length) {
       partes.push(`\n🟡 *Perto de vencer (${quaseVencendo.length}):*`);
       partes.push(quaseVencendo.map(linha).join('\n'));
     }
+    if (autoConcluidosBrinde.length) {
+      partes.push(`\n🎁 *Brindes devolvidos ao estoque (não retirados em 2 dias) (${autoConcluidosBrinde.length}):*`);
+      partes.push(autoConcluidosBrinde.map(t => `• *#${t.id}* — ${t.itens_brinde || '(itens não especificados)'}`).join('\n'));
+    }
     texto = partes.join('\n');
   }
 
-  // DM pro João — mesmo padrão de envio usado no resto do bot
   try {
     await fetch('https://slack.com/api/chat.postMessage', {
       method: 'POST',
@@ -94,7 +169,93 @@ async function rodarAlertaSLA() {
     });
   } catch (e) { console.warn('envio do alerta de SLA falhou:', e.message); }
 
-  return { ok: true, vencidos: vencidos.length, quase_vencendo: quaseVencendo.length, total_abertos: tickets.length };
+  return {
+    ok: true,
+    vencidos: vencidos.length,
+    quase_vencendo: quaseVencendo.length,
+    auto_cancelados: autoCancelados.length,
+    auto_concluidos_brinde: autoConcluidosBrinde.length,
+    total_abertos: tickets.length,
+  };
+}
+
+// Normaliza texto pra comparar item do estoque com o texto livre do chamado
+// (mesma lógica usada na baixa automática — precisa ser a mesma pra achar
+// os itens certos na hora de devolver).
+function normalizarNome(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/s\b/g, '').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function detectarQtdNoTexto(textoNorm, itemNomeNorm) {
+  const palavras = itemNomeNorm.split(' ').filter(p => p.length >= 3);
+  if (!palavras.length) return null;
+  if (palavras.length === 1) {
+    const p = palavras[0];
+    const m1 = textoNorm.match(new RegExp(`(\\d+)\\s+\\w*${p}\\w*`, 'i'));
+    if (m1) return parseInt(m1[1], 10);
+    const m2 = textoNorm.match(new RegExp(`\\w*${p}\\w*\\s+(?:x\\s+)?(\\d+)`, 'i'));
+    if (m2) return parseInt(m2[1], 10);
+    return null;
+  }
+  const p1 = palavras[0], p2 = palavras[palavras.length - 1];
+  const m = textoNorm.match(new RegExp(`(\\d+)\\s+\\w*${p1}\\w*(?:\\s+\\w+){0,3}\\s+\\w*${p2}\\w*`, 'i'));
+  if (m) return parseInt(m[1], 10);
+  const m2 = textoNorm.match(new RegExp(`\\w*${p1}\\w*(?:\\s+\\w+){0,3}\\s+\\w*${p2}\\w*\\s+(?:x\\s+)?(\\d+)`, 'i'));
+  if (m2) return parseInt(m2[1], 10);
+  return null;
+}
+
+// Brinde "Pronto para retirada" há mais de 2 dias corridos sem ninguém
+// buscar → conclui automaticamente e devolve a quantidade pro estoque
+// (sede), já que o item nunca saiu de fato das mãos da empresa.
+async function rodarAutoConcluirBrindes() {
+  const concluidos = [];
+  try {
+    const snap = await db.collection('tickets')
+      .where('categoria', '==', 'brindes')
+      .where('status', '==', 'Pronto para retirada')
+      .get();
+
+    const DOIS_DIAS_MS = 2 * 24 * 60 * 60 * 1000;
+    const agora = Date.now();
+
+    for (const doc of snap.docs) {
+      const dados = doc.data();
+      const dataPronto = dados.data_pronto_retirada?.toDate ? dados.data_pronto_retirada.toDate() : (dados.data_pronto_retirada ? new Date(dados.data_pronto_retirada) : null);
+      if (!dataPronto || (agora - dataPronto.getTime()) < DOIS_DIAS_MS) continue;
+
+      const motivo = 'Concluído automaticamente — brinde pronto há mais de 2 dias sem retirada, devolvido ao estoque';
+      const hist = [...(dados.historico || []), { acao: `📦 ${motivo}`, data: new Date().toISOString(), usuario: 'Sistema (automático)' }];
+      await doc.ref.update({ status: 'Concluído', data_conclusao: new Date(), historico: hist, updatedAt: new Date() });
+
+      // Devolve a quantidade pro estoque (sede) — usa o mesmo texto livre
+      // que foi usado pra dar baixa quando o chamado foi criado.
+      const itensTexto = dados.itens_brinde || dados.titulo || '';
+      const textoNorm = normalizarNome(itensTexto);
+      const estoqueSnap = await db.collection('estoque_brindes').get();
+      for (const itemDoc of estoqueSnap.docs) {
+        const itemDados = itemDoc.data();
+        const nomeNorm = normalizarNome(itemDados.nome || itemDoc.id);
+        const qtd = detectarQtdNoTexto(textoNorm, nomeNorm);
+        if (qtd && qtd > 0) {
+          const sedeAtual = typeof itemDados.sede === 'number' ? itemDados.sede : 0;
+          await itemDoc.ref.update({ sede: sedeAtual + qtd, ultimaAtualizacao: new Date(), ultimaBaixaPor: 'devolucao_automatica' });
+        }
+      }
+
+      const emailColaborador = dados.userEmail || dados.email;
+      if (emailColaborador) {
+        await notificarColaboradorPorEmail(emailColaborador,
+          `📦 Seu brinde do chamado *#${dados.id}* estava pronto pra retirada há mais de 2 dias e foi devolvido ao estoque por falta de retirada. Se ainda precisar, pode abrir um novo chamado.`);
+      }
+
+      concluidos.push({ id: dados.id, itens_brinde: dados.itens_brinde });
+    }
+  } catch (e) {
+    console.warn('rodarAutoConcluirBrindes falhou:', e.message);
+  }
+  return concluidos;
 }
 
 module.exports = async (req, res) => {
