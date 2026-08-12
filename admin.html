@@ -1852,7 +1852,7 @@ function updateBadge() {
         const _pipefy = t.origem==='pipefy'?'<span style="background:rgba(254,143,28,0.15);color:#FF6B2B;font-size:0.65rem;padding:1px 5px;border-radius:4px;font-weight:700;">Pipefy</span>':'';
         const _prio = t.prioridade?'<span style="font-size:0.65rem;background:'+_pBg+';color:'+_pCor+';padding:1px 7px;border-radius:20px;font-weight:600;">'+t.prioridade+'</span>':'';
         let _sla = '';
-        if (t.status!=='Concluído' && t.status!=='Cancelado' && t.data_abertura) {
+        if (t.status!=='Concluído' && t.status!=='Cancelado' && t.status!=='Pronto para retirada' && t.data_abertura) {
           const _ab = t.data_abertura.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura);
           const _dias = SLA_DIAS_K[t.categoria]||7;
           const _pass = window.diasUteisPassados(_ab);
@@ -2007,6 +2007,9 @@ function updateBadge() {
         if (t.status === 'Concluído' || t.status === 'Cancelado') {
           return t.dentroSLA === true ? '<span class="sla-badge sla-ok">✓ OK</span>' : 
                  t.dentroSLA === false ? '<span class="sla-badge sla-vencido">✗ Fora</span>' : '-';
+        }
+        if (t.status === 'Pronto para retirada') {
+          return '<span class="sla-badge sla-ok">📦 Aguard. retirada</span>';
         }
         if (!t.data_abertura) return '-';
         const SLA_DIAS = {brindes:5,suprimentos:7,manutencao:60,reforma:60,seguranca:2,logistica:3,outros:7,infraestrutura:7,limpeza:7,plataformas:3,gestao:7};
