@@ -298,6 +298,7 @@
   .b-andamento { background: var(--warning-bg); color: var(--warning); }
   .b-aprovacao { background: #f3e8ff; color: #9333ea; }
   .b-pronto-retirada { background: #fef9c3; color: #a16207; }
+  .b-pedido-compra { background: #cffafe; color: #0e7490; }
   .b-concluido { background: var(--success-bg); color: var(--success); }
   .b-cancelado { background: var(--surface3); color: var(--ink3); }
   .pb { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.71rem; font-weight: 700; }
@@ -728,6 +729,7 @@
       <div class="kanban-col" id="col-aprovacao-cs"><div class="kanban-col-top" style="background:#8b5cf6"><span style="font-size:0.82rem;font-weight:700;color:#fff;">⏳ Aprovação CS</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-aprovacao-cs">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-aprovacao-cs"></div></div></div>
       <div class="kanban-col" id="col-andamento"><div class="kanban-col-top" style="background:#FF6B2B"><span style="font-size:0.82rem;font-weight:700;color:#fff;">⚙️ Em andamento</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-andamento">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-andamento"></div></div></div>
       <div class="kanban-col" id="col-pronto-retirada"><div class="kanban-col-top" style="background:#eab308"><span style="font-size:0.82rem;font-weight:700;color:#fff;">🎁 Pronto p/ retirada</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-pronto-retirada">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-pronto-retirada"></div></div></div>
+      <div class="kanban-col" id="col-pedido-compra"><div class="kanban-col-top" style="background:#0891b2"><span style="font-size:0.82rem;font-weight:700;color:#fff;">🛒 Pedido de compra</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-pedido-compra">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-pedido-compra"></div></div></div>
       <div class="kanban-col" id="col-concluido"><div class="kanban-col-top" style="background:#12b76a"><span style="font-size:0.82rem;font-weight:700;color:#fff;">✅ Concluído</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-concluido">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-concluido"></div></div></div>
       <div class="kanban-col" id="col-cancelado"><div class="kanban-col-top" style="background:#94a3b8"><span style="font-size:0.82rem;font-weight:700;color:#fff;">🚫 Cancelado</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-cancelado">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-cancelado"></div></div></div>
     </div>
@@ -743,7 +745,7 @@
     </div>
     <div class="filters-bar">
       <input type="text" class="fi-input wide" id="search" placeholder="🔍 Buscar por título, nome, protocolo..." oninput="renderTable()">
-      <select class="fi-input" id="f-status" onchange="renderTable()"><option value="">Todos os status</option><option>Aberto</option><option>Em andamento</option><option>Aguardando aprovação</option><option>Pronto para retirada</option><option>Concluído</option><option>Cancelado</option></select>
+      <select class="fi-input" id="f-status" onchange="renderTable()"><option value="">Todos os status</option><option>Aberto</option><option>Em andamento</option><option>Aguardando aprovação</option><option>Pronto para retirada</option><option>Pedido de compra</option><option>Concluído</option><option>Cancelado</option></select>
       <select class="fi-input" id="f-cat" onchange="renderTable()"><option value="">Todas categorias</option><option value="manutencao">Manutenção</option><option value="infraestrutura">Infraestrutura</option><option value="limpeza">Limpeza</option><option value="seguranca">Segurança</option><option value="brindes">Brindes</option><option value="suprimentos">Suprimentos</option><option value="plataformas">Plataformas</option></select>
       <select class="fi-input" id="f-prio" onchange="renderTable()"><option value="">Todas prioridades</option><option>Baixa</option><option>Média</option><option>Alta</option><option>Urgente</option></select>
     </div>
@@ -1362,7 +1364,7 @@ const isAdminOrViewer = (email) => {
     logistica:'Logística', acessos:'Acessos', outros:'Outros', gestao:'Gestão'
   };
   const SBADGE = {
-    'Aberto':'b-aberto','Em andamento':'b-andamento','Aguardando aprovação':'b-aprovacao','Pronto para retirada':'b-pronto-retirada','Concluído':'b-concluido','Cancelado':'b-cancelado'
+    'Aberto':'b-aberto','Em andamento':'b-andamento','Aguardando aprovação':'b-aprovacao','Pronto para retirada':'b-pronto-retirada','Pedido de compra':'b-pedido-compra','Concluído':'b-concluido','Cancelado':'b-cancelado'
   };
 
   function fds(ts) { if(!ts)return'-'; const d=ts.toDate?ts.toDate():new Date(ts); return d.toLocaleDateString('pt-BR'); }
@@ -1819,11 +1821,12 @@ function updateBadge() {
       'Aguardando aprovação': 'aprovacao-cs',
       'Em andamento': 'andamento',
       'Pronto para retirada': 'pronto-retirada',
+      'Pedido de compra': 'pedido-compra',
       'Concluído': 'concluido',
       'Cancelado': 'cancelado',
     };
 
-    const cols = ['solicitacoes','aprovacao-cs','andamento','pronto-retirada','concluido','cancelado'];
+    const cols = ['solicitacoes','aprovacao-cs','andamento','pronto-retirada','pedido-compra','concluido','cancelado'];
     const buckets = {};
     cols.forEach(c => buckets[c] = []);
 
@@ -1852,7 +1855,7 @@ function updateBadge() {
         const _pipefy = t.origem==='pipefy'?'<span style="background:rgba(254,143,28,0.15);color:#FF6B2B;font-size:0.65rem;padding:1px 5px;border-radius:4px;font-weight:700;">Pipefy</span>':'';
         const _prio = t.prioridade?'<span style="font-size:0.65rem;background:'+_pBg+';color:'+_pCor+';padding:1px 7px;border-radius:20px;font-weight:600;">'+t.prioridade+'</span>':'';
         let _sla = '';
-        if (t.status!=='Concluído' && t.status!=='Cancelado' && t.status!=='Pronto para retirada' && t.data_abertura) {
+        if (t.status!=='Concluído' && t.status!=='Cancelado' && t.status!=='Pronto para retirada' && t.status!=='Pedido de compra' && t.data_abertura) {
           const _ab = t.data_abertura.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura);
           const _dias = SLA_DIAS_K[t.categoria]||7;
           const _pass = window.diasUteisPassados(_ab);
@@ -2011,6 +2014,9 @@ function updateBadge() {
         if (t.status === 'Pronto para retirada') {
           return '<span class="sla-badge sla-ok">📦 Aguard. retirada</span>';
         }
+        if (t.status === 'Pedido de compra') {
+          return '<span class="sla-badge sla-ok">🛒 Pedido de compra</span>';
+        }
         if (!t.data_abertura) return '-';
         const SLA_DIAS = {brindes:5,suprimentos:7,manutencao:60,reforma:60,seguranca:2,logistica:3,outros:7,infraestrutura:7,limpeza:7,plataformas:3,gestao:7};
         const diasSLA = SLA_DIAS[t.categoria] || 7;
@@ -2130,8 +2136,8 @@ function updateBadge() {
       }
 
       const statuses = (t.categoria === 'manutencao' || t.categoria === 'reforma')
-        ? ['Aberto','Em andamento','Aguardando fornecedor','Pronto para retirada','Concluído','Cancelado']
-        : ['Aberto','Em andamento','Aguardando aprovação','Pronto para retirada','Concluído','Cancelado'];
+        ? ['Aberto','Em andamento','Aguardando fornecedor','Pronto para retirada','Pedido de compra','Concluído','Cancelado']
+        : ['Aberto','Em andamento','Aguardando aprovação','Pronto para retirada','Pedido de compra','Concluído','Cancelado'];
       setHtml('status-btns', statuses.map(s => `<button class="status-btn ${t.status===s?'active-s':''}" onclick="updS('${s}')">${s}</button>`).join(''));
 
       // Box de aprovação para brindes em aguardando aprovação
