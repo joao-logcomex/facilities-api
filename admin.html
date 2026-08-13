@@ -315,6 +315,7 @@
   .fb-Crítica { background: var(--danger-bg); color: var(--danger); }
   .fb-Sugestão { background: var(--info-bg); color: var(--info); }
   .fb-Elogio { background: var(--success-bg); color: var(--success); }
+  .fb-Avaliação { background: #fef9c3; color: #a16207; }
   .fb-Ideia { background: #f3e8ff; color: #9333ea; }
   .fb-Processo { background: var(--warning-bg); color: var(--warning); }
   .fb-Geral { background: var(--surface3); color: var(--ink3); }
@@ -754,7 +755,14 @@
   </div>
 
   <div class="page" id="page-feedbacks">
-    <div class="topbar"><div class="page-title">Feedbacks</div></div>
+    <div class="topbar"><div class="page-title">Feedbacks</div>
+      <select class="fi-input" id="fb-filtro-tipo" onchange="renderFeedbacks()" style="margin-left:auto;">
+        <option value="">Todos os tipos</option>
+        <option value="Elogio">Elogios</option>
+        <option value="Sugestão">Sugestões</option>
+        <option value="Avaliação">⭐ Avaliações (Slack)</option>
+      </select>
+    </div>
     <div class="feedback-list" id="feedback-list"></div>
   </div>
 
@@ -2074,19 +2082,29 @@ function updateBadge() {
 
   window.renderFeedbacks = () => {
     const el = document.getElementById('feedback-list');
-    el.innerHTML = allFeedbacks.length ? allFeedbacks.map(f => `
+    const filtroEl = document.getElementById('fb-filtro-tipo');
+    const filtro = filtroEl ? filtroEl.value : '';
+    const lista = filtro ? allFeedbacks.filter(f => f.tipo === filtro) : allFeedbacks;
+    el.innerHTML = lista.length ? lista.map(f => {
+      const estrelas = f.tipo === 'Avaliação' && f.nota
+        ? `<div style="margin:6px 0;font-size:1rem;letter-spacing:2px;">${'⭐'.repeat(f.nota)}${'☆'.repeat(5-f.nota)}<span style="font-size:0.75rem;color:var(--ink3);letter-spacing:0;margin-left:8px;">(${f.nota}/5)</span></div>`
+        : '';
+      const origemBadge = f.origem === 'slack' ? '<span style="font-size:0.68rem;background:rgba(102,19,208,0.08);color:#6613D0;padding:1px 8px;border-radius:20px;font-weight:600;margin-left:6px;">via Slack</span>' : '';
+      return `
       <div class="fb-card">
         <div class="fb-card-header">
-          <span class="fb-type-badge fb-${f.tipo||'Geral'}">${f.tipo||'Geral'}</span>
+          <span class="fb-type-badge fb-${f.tipo||'Geral'}">${f.tipo||'Geral'}</span>${origemBadge}
           ${f.assunto?`<span style="font-weight:600;font-size:0.88rem;">${f.assunto}</span>`:''}
           <span style="margin-left:auto;display:flex;align-items:center;gap:10px;">
             <span style="font-size:0.75rem;color:var(--ink3);">${fds(f.data)}</span>
             <button onclick="excluirFeedback('${f._docId}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:0.75rem;font-weight:600;color:var(--danger);cursor:pointer;font-family:'Poppins',sans-serif;" title="Excluir feedback">🗑️</button>
           </span>
         </div>
+        ${estrelas}
         <div class="fb-text">${f.texto}</div>
-        <div class="fb-meta">Por: <strong>${f.nome||'Anônimo'}</strong></div>
-      </div>`).join('') : '<div class="empty-state"><div>💡</div>Nenhum feedback ainda.</div>';
+        <div class="fb-meta">Por: <strong>${f.nome||'Anônimo'}</strong>${f.chamado_ref?` · Chamado: <strong>${f.chamado_ref}</strong>`:''}</div>
+      </div>`;
+    }).join('') : '<div class="empty-state"><div>💡</div>Nenhum feedback ainda.</div>';
   };
 
   window.openT = (docId) => {
