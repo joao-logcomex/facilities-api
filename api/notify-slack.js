@@ -472,10 +472,16 @@ export default async function handler(req, res) {
       ) : null;
 
       // ── Botões: avaliar (se concluído) + rastrear (se tem código) + ver detalhes ──
-      const feedbackUrl = `https://facilities-api.vercel.app/?feedback=${encodeURIComponent(ticketNum)}`;
+      const botoesEstrela = [1,2,3,4,5].map(n => ({
+        type: 'button',
+        text: { type: 'plain_text', text: `${n}⭐`, emoji: true },
+        action_id: 'avaliar_estrela',
+        value: JSON.stringify({ ticketId: ticketNum, nota: n }),
+      }));
       const ctaBlocks = statusAtual === 'Concluído' ? [
         { type: 'divider' },
-        { type: 'section', text: { type: 'mrkdwn', text: '💬 *Como foi o atendimento?*' } },
+        { type: 'section', text: { type: 'mrkdwn', text: '💬 *Como foi o atendimento? Dá uma nota de 1 a 5:*' } },
+        { type: 'actions', elements: botoesEstrela },
         {
           type: 'actions',
           elements: [
@@ -484,12 +490,6 @@ export default async function handler(req, res) {
               text: { type: 'plain_text', text: '🔍 Rastrear envio', emoji: true },
               url: rastreioUrl
             }] : []),
-            {
-              type: 'button',
-              text: { type: 'plain_text', text: '⭐ Avaliar atendimento', emoji: true },
-              url: feedbackUrl,
-              style: 'primary'
-            },
             {
               type: 'button',
               text: { type: 'plain_text', text: '🆕 Abrir novo chamado', emoji: true },
@@ -732,7 +732,13 @@ export default async function handler(req, res) {
     else {
       let dataFormatada = dataAbertura;
       try { dataFormatada = new Date(dataAbertura).toLocaleDateString('pt-BR'); } catch {}
-      const feedbackUrl = `https://facilities-api.vercel.app/?feedback=${encodeURIComponent(ticketId || ticket || '')}`;
+      const ticketRefAvaliacao = ticketId || ticket || '';
+      const botoesEstrela2 = [1,2,3,4,5].map(n => ({
+        type: 'button',
+        text: { type: 'plain_text', text: `${n}⭐`, emoji: true },
+        action_id: 'avaliar_estrela',
+        value: JSON.stringify({ ticketId: ticketRefAvaliacao, nota: n }),
+      }));
       text = `✅ Chamado concluído!`;
       blocks = [
         { type: 'header', text: { type: 'plain_text', text: '✅ Chamado Concluído!', emoji: true } },
@@ -748,9 +754,9 @@ export default async function handler(req, res) {
           ]
         },
         { type: 'divider' },
-        { type: 'section', text: { type: 'mrkdwn', text: '💬 *Como foi o atendimento?*' } },
+        { type: 'section', text: { type: 'mrkdwn', text: '💬 *Como foi o atendimento? Dá uma nota de 1 a 5:*' } },
+        { type: 'actions', elements: botoesEstrela2 },
         { type: 'actions', elements: [
-          { type: 'button', text: { type: 'plain_text', text: '⭐ Avaliar atendimento', emoji: true }, url: feedbackUrl, style: 'primary' },
           { type: 'button', text: { type: 'plain_text', text: '🆕 Abrir novo chamado', emoji: true }, url: 'https://facilities-api.vercel.app/index.html' }
         ] },
         { type: 'context', elements: [{ type: 'mrkdwn', text: '🏢 *Facilities LogComex* • facilities-api.vercel.app' }] }
