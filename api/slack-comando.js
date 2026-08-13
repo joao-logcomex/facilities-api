@@ -1096,6 +1096,32 @@ module.exports = async function handler(req, res) {
     const action = body.actions?.[0] || {};
     const actionId = action.action_id || '';
 
+    // ⭐ Avaliação por estrelas — direto no Slack, sem sair pro app
+    if (actionId === 'avaliar_estrela') {
+      try {
+        const { ticketId, nota } = JSON.parse(action.value || '{}');
+        const userIdAv = body.user?.id;
+        if (userIdAv) {
+          await setEstado(userIdAv, { etapa: 'aguardando_motivo_avaliacao', ticketId, nota });
+        }
+        const estrelas = '⭐'.repeat(nota) + '☆'.repeat(5 - nota);
+        if (body.response_url) {
+          await fetch(body.response_url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              replace_original: true,
+              blocks: [{
+                type: 'section',
+                text: { type: 'mrkdwn', text: `Você avaliou com ${estrelas}\n\n💬 *Por que essa nota?* Me conta em uma mensagem (ou digite "pular" se não quiser comentar).` }
+              }]
+            })
+          });
+        }
+      } catch (e) { console.error('Erro no clique de avaliação:', e.message); }
+      return res.status(200).send('');
+    }
+
     // Aprovação/recusa de brinde — repassa pro endpoint legacy
     if (actionId === 'aprovar_brinde' || actionId === 'recusar_brinde' || actionId.startsWith('aprovar_') || actionId.startsWith('recusar_')) {
       try {
@@ -1612,6 +1638,30 @@ async function processarMensagemDM(evt) {
       await log('cancelar');
       await limparEstado(userId);
       await enviarMensagem(channel, '✅ Conversa reiniciada. Pode mandar uma nova solicitação quando quiser! 👋');
+      return;
+    }
+
+    // ⭐ Motivo da avaliação por estrelas — captura a PRÓXIMA mensagem depois
+    // que a pessoa clicou numa nota, sem precisar sair do Slack pra avaliar.
+    const estadoAvaliacao = await getEstado(userId);
+    if (estadoAvaliacao?.etapa === 'aguardando_motivo_avaliacao') {
+      await log('avaliacao_motivo_recebido');
+      const motivo = /^(pular|não|nao|n)$/i.test(texto) ? '' : texto;
+      try {
+        const solicitante = await getUserInfo(userId);
+        await db.collection('feedbacks').add({
+          tipo_feedback: 'Avaliação de chamado',
+          nota: estadoAvaliacao.nota,
+          texto: motivo || '(sem comentário)',
+          chamado_ref: estadoAvaliacao.ticketId,
+          nome: solicitante?.nome || solicitante?.email || userId,
+          email: solicitante?.email || null,
+          origem: 'slack',
+          criadoEm: new Date(),
+        });
+      } catch (e) { console.warn('Erro salvando avaliação:', e.message); }
+      await limparEstado(userId);
+      await enviarMensagem(channel, '🙏 Obrigado pelo feedback! Isso nos ajuda a melhorar.');
       return;
     }
 
