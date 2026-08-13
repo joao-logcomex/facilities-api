@@ -1525,6 +1525,10 @@ const isAdminOrViewer = (email) => {
       // voltar pra andamento depois de já ter passado por aqui, reinicia a
       // contagem (faz sentido: recomeçou o trabalho de verdade).
       if (s === 'Em andamento') updates.data_em_andamento = new Date();
+      // Marca a entrada em QUALQUER fase — usado pro contador visual "X dias
+      // nesta fase" que aparece no card, renovando toda vez que muda de fase
+      // (independente de contar ou não pra SLA/cancelamento automático).
+      updates.data_fase_atual = new Date();
 
       // ── Calcula dentroSLA + grava data_conclusao ao concluir ──
       // Cancelado NÃO conta pra SLA (regra de negócio confirmada) — fica null, sem alterar.
@@ -1880,6 +1884,16 @@ function updateBadge() {
           const _scRet = _pctRet>=100?'#ef4444':_pctRet>=75?'#f59e0b':'#12b76a';
           const _slRet = _restRet<=0?'Vence hoje':_restRet===1?'1 dia p/ retirar':_restRet+' dias p/ retirar';
           _sla = '<div class="kanban-sla-bar"><div class="kanban-sla-fill" style="width:'+_pctRet+'%;background:'+_scRet+';"></div></div><div style="font-size:0.62rem;color:'+_scRet+';font-weight:600;text-align:right;margin-top:1px;">🎁 '+_slRet+'</div>';
+        } else if (t.status!=='Pedido de compra' && t.status!=='Concluído' && t.status!=='Cancelado') {
+          // Contador neutro (sem cor de risco, não conta pra SLA) — só pra
+          // dar visibilidade de quanto tempo está nessa fase. Renova toda
+          // vez que a fase muda, igual as contagens de cima.
+          const _baseFase = t.data_fase_atual || t.data_abertura;
+          if (_baseFase) {
+            const _dfa = _baseFase.toDate ? _baseFase.toDate() : new Date(_baseFase);
+            const _diasFase = Math.floor((Date.now() - _dfa.getTime()) / 86400000);
+            _sla = '<div style="font-size:0.62rem;color:var(--ink3);font-weight:600;text-align:right;margin-top:3px;">'+(_diasFase<=0?'hoje':_diasFase+(_diasFase===1?' dia':' dias')+' nesta fase')+'</div>';
+          }
         }
         const _footer = '<div class="kanban-card-footer"><div style="display:flex;align-items:center;gap:5px;"><div class="kanban-avatar">'+_ini+'</div><span style="font-size:0.68rem;color:var(--ink3);">'+_nome.split(' ')[0]+'</span></div><span style="font-size:0.68rem;background:rgba(102,19,208,0.07);color:#6613D0;padding:1px 8px;border-radius:20px;font-weight:600;">'+_cat+'</span></div>';
         if (t.categoria==='logistica') {
