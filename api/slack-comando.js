@@ -1650,14 +1650,14 @@ async function processarMensagemDM(evt) {
       try {
         const solicitante = await getUserInfo(userId);
         await db.collection('feedbacks').add({
-          tipo_feedback: 'Avaliação de chamado',
+          tipo: 'Avaliação',
+          assunto: `Avaliação do chamado ${estadoAvaliacao.ticketId || ''}`.trim(),
           nota: estadoAvaliacao.nota,
           texto: motivo || '(sem comentário)',
-          chamado_ref: estadoAvaliacao.ticketId,
+          chamado_ref: estadoAvaliacao.ticketId || null,
           nome: solicitante?.nome || solicitante?.email || userId,
-          email: solicitante?.email || null,
           origem: 'slack',
-          criadoEm: new Date(),
+          data: new Date(),
         });
       } catch (e) { console.warn('Erro salvando avaliação:', e.message); }
       await limparEstado(userId);
