@@ -85,23 +85,31 @@ async function acharDocFirestorePorId(ticketId) {
 async function rodarAlertaSLA() {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const statusAbertos = ['Aberto', 'Em andamento', 'Aguardando aprovação'].map(encodeURIComponent).join(',');
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/tickets?status=in.(${statusAbertos})&select=id,titulo,categoria,status,data_abertura,nome,user_email`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-  );
-  const tickets = await r.json();
+
+  // Busca direto no Firestore — só "Em andamento" entra na conta de SLA (as
+  // outras fases não são atraso do time: Aberto ainda não foi triado,
+  // Aguardando aprovação depende de terceiro, Pronto p/ retirada e Pedido de
+  // compra têm suas próprias regras).
+  const snap = await db.collection('tickets').where('status', '==', 'Em andamento').get();
 
   const vencidos = [];
   const quaseVencendo = [];
-  for (const t of tickets) {
-    if (!t.data_abertura) continue;
-    const diasSLA = SLA_DIAS[t.categoria] || 7;
-    const diasPassados = diasUteisPassados(t.data_abertura);
+  for (const doc of snap.docs) {
+    const dados = doc.data();
+    const baseData = dados.data_em_andamento || dados.data_abertura;
+    if (!baseData) continue;
+    const baseDataISO = baseData.toDate ? baseData.toDate().toISOString() : baseData;
+    const diasSLA = SLA_DIAS[dados.categoria] || 7;
+    const diasPassados = diasUteisPassados(baseDataISO);
+    const t = {
+      id: dados.id, titulo: dados.titulo, categoria: dados.categoria,
+      nome: dados.nome, user_email: dados.userEmail || dados.email,
+      diasSLA, diasPassados, _docRef: doc.ref, _dados: dados,
+    };
     if (diasPassados > diasSLA) {
-      vencidos.push({ ...t, diasSLA, diasPassados });
+      vencidos.push(t);
     } else if (diasPassados >= diasSLA - 1) {
-      quaseVencendo.push({ ...t, diasSLA, diasPassados });
+      quaseVencendo.push(t);
     }
   }
 
@@ -112,12 +120,10 @@ async function rodarAlertaSLA() {
   const autoCancelados = [];
   for (const t of vencidos) {
     try {
-      const doc = await acharDocFirestorePorId(t.id);
-      if (!doc) continue;
-      const dados = doc.data();
-      const motivo = `Cancelado automaticamente por vencimento de SLA (${t.diasPassados}/${t.diasSLA} dias úteis)`;
+      const dados = t._dados;
+      const motivo = `Cancelado automaticamente por vencimento de SLA (${t.diasPassados}/${t.diasSLA} dias úteis em andamento)`;
       const hist = [...(dados.historico || []), { acao: `⏰ ${motivo}`, data: new Date().toISOString(), usuario: 'Sistema (automático)' }];
-      await doc.ref.update({ status: 'Cancelado', motivo_cancelamento: motivo, historico: hist, updatedAt: new Date() });
+      await t._docRef.update({ status: 'Cancelado', motivo_cancelamento: motivo, historico: hist, updatedAt: new Date() });
 
       fetch(`${SUPABASE_URL}/rest/v1/tickets?on_conflict=id`, {
         method: 'POST',
@@ -125,10 +131,9 @@ async function rodarAlertaSLA() {
         body: JSON.stringify([{ id: t.id, status: 'Cancelado' }]),
       }).catch(() => {});
 
-      const emailColaborador = dados.userEmail || dados.email || t.user_email;
-      if (emailColaborador) {
-        await notificarColaboradorPorEmail(emailColaborador,
-          `⏰ Seu chamado *#${t.id}* (${t.titulo || dados.titulo || 'sem título'}) foi cancelado automaticamente por ter passado do prazo de atendimento (SLA) sem conclusão. Se ainda precisar disso, pode abrir um novo chamado.`);
+      if (t.user_email) {
+        await notificarColaboradorPorEmail(t.user_email,
+          `⏰ Seu chamado *#${t.id}* (${t.titulo || 'sem título'}) foi cancelado automaticamente por ter passado do prazo de atendimento (SLA) sem conclusão. Se ainda precisar disso, pode abrir um novo chamado.`);
       }
       autoCancelados.push(t);
     } catch (e) {
@@ -136,10 +141,10 @@ async function rodarAlertaSLA() {
     }
   }
 
-  // ── Devolve ao estoque brinde "Pronto para retirada" há mais de 2 dias ──
+  // ── Devolve ao estoque brinde "Pronto para retirada" há mais de 5 dias ──
   const autoConcluidosBrinde = await rodarAutoConcluirBrindes();
 
-  const linha = (t) => `• *#${t.id}* — ${t.titulo || '(sem título)'} _(${t.categoria}, ${t.diasPassados}/${t.diasSLA} dias úteis, aberto por ${t.nome || t.user_email || '—'})_`;
+  const linha = (t) => `• *#${t.id}* — ${t.titulo || '(sem título)'} _(${t.categoria}, ${t.diasPassados}/${t.diasSLA} dias úteis em andamento, aberto por ${t.nome || t.user_email || '—'})_`;
 
   let texto;
   if (!vencidos.length && !quaseVencendo.length && !autoConcluidosBrinde.length) {
