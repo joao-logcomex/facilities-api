@@ -1520,6 +1520,11 @@ const isAdminOrViewer = (email) => {
       // Marca quando ficou pronto pra retirada — usado pra contar os 2 dias
       // antes da devolução automática pro estoque se ninguém buscar.
       if (s === 'Pronto para retirada') updates.data_pronto_retirada = new Date();
+      // Marca quando entrou (ou re-entrou) em "Em andamento" — o SLA só conta
+      // o tempo passado NESSA fase, não desde a abertura do chamado. Se
+      // voltar pra andamento depois de já ter passado por aqui, reinicia a
+      // contagem (faz sentido: recomeçou o trabalho de verdade).
+      if (s === 'Em andamento') updates.data_em_andamento = new Date();
 
       // ── Calcula dentroSLA + grava data_conclusao ao concluir ──
       // Cancelado NÃO conta pra SLA (regra de negócio confirmada) — fica null, sem alterar.
@@ -1856,8 +1861,8 @@ function updateBadge() {
         const _pipefy = t.origem==='pipefy'?'<span style="background:rgba(254,143,28,0.15);color:#FF6B2B;font-size:0.65rem;padding:1px 5px;border-radius:4px;font-weight:700;">Pipefy</span>':'';
         const _prio = t.prioridade?'<span style="font-size:0.65rem;background:'+_pBg+';color:'+_pCor+';padding:1px 7px;border-radius:20px;font-weight:600;">'+t.prioridade+'</span>':'';
         let _sla = '';
-        if (t.status!=='Concluído' && t.status!=='Cancelado' && t.status!=='Pronto para retirada' && t.status!=='Pedido de compra' && t.data_abertura) {
-          const _ab = t.data_abertura.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura);
+        if (t.status === 'Em andamento' && (t.data_em_andamento || t.data_abertura)) {
+          const _ab = (t.data_em_andamento || t.data_abertura).toDate ? (t.data_em_andamento || t.data_abertura).toDate() : new Date(t.data_em_andamento || t.data_abertura);
           const _dias = SLA_DIAS_K[t.categoria]||7;
           const _pass = window.diasUteisPassados(_ab);
           const _pct = Math.min(100,Math.round((_pass/_dias)*100));
@@ -2033,10 +2038,16 @@ function updateBadge() {
         if (t.status === 'Pedido de compra') {
           return '<span class="sla-badge sla-ok">🛒 Pedido de compra</span>';
         }
-        if (!t.data_abertura) return '-';
+        if (t.status !== 'Em andamento') {
+          // SLA só conta o tempo de verdade trabalhando no chamado — antes
+          // disso (Aberto, Aguardando aprovação) não é atraso do time.
+          return '<span class="sla-badge sla-ok">– Não conta ainda</span>';
+        }
+        const baseData = t.data_em_andamento || t.data_abertura;
+        if (!baseData) return '-';
         const SLA_DIAS = {brindes:5,suprimentos:7,manutencao:60,reforma:60,seguranca:2,logistica:3,outros:7,infraestrutura:7,limpeza:7,plataformas:3,gestao:7};
         const diasSLA = SLA_DIAS[t.categoria] || 7;
-        const abertura = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura);
+        const abertura = baseData?.toDate ? baseData.toDate() : new Date(baseData);
         const diasPassados = diasUteisPassados ? window.diasUteisPassados(abertura) : Math.floor((Date.now()-abertura.getTime())/86400000);
         const restam = diasSLA - diasPassados;
         if (restam < 0) return '<span class="sla-badge sla-vencido">⚠ Vencido</span>';
