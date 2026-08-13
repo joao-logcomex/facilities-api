@@ -180,7 +180,7 @@ async function rodarAlertaSLA() {
     quase_vencendo: quaseVencendo.length,
     auto_cancelados: autoCancelados.length,
     auto_concluidos_brinde: autoConcluidosBrinde.length,
-    total_abertos: tickets.length,
+    total_abertos: snap.size,
   };
 }
 
