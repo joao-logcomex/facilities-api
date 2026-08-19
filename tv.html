@@ -442,13 +442,16 @@ async function loadRankingSalas(){
   try{
     const ANO_ALVO = 2026;
     const diasDesdeInicioAno = Math.ceil((Date.now() - new Date(`${ANO_ALVO}-01-01T00:00:00Z`).getTime()) / 86400000) + 1;
-    const trintaDiasAtras = Date.now() - 30*24*60*60*1000;
 
     window._ultimoRankingPorSala = window._ultimoRankingPorSala || {};
     const roomEmails = ROOMS.map(r => r.email).join(',');
     let dadosLote = null;
     try {
-      const r = await fetch(`${SALAS_BACKEND}?action=historico_lote&roomEmails=${encodeURIComponent(roomEmails)}&dias=${diasDesdeInicioAno}`);
+      // Agora o cálculo (dia útil, feriado, hora de pico etc) já vem pronto
+      // do Apps Script — muito mais rápido e leve que baixar todo o
+      // histórico bruto e processar aqui (isso ficava mais lento conforme
+      // o ano avançava; agosto já demorava quase 1 minuto pra responder).
+      const r = await fetch(`${SALAS_BACKEND}?action=ranking_lote&roomEmails=${encodeURIComponent(roomEmails)}&dias=${diasDesdeInicioAno}&ano=${ANO_ALVO}`);
       dadosLote = await r.json();
     } catch(e) { dadosLote = null; }
 
@@ -456,22 +459,7 @@ async function loadRankingSalas(){
       try{
         const porSala = dadosLote ? dadosLote[room.email] : null;
         if (!porSala || porSala.error) throw new Error('sem dados');
-        const eventos = porSala.eventos || [];
-        // Só conta reunião de segunda a sexta, fora feriados nacionais (ranking anual)
-        const doAno = eventos.filter(ev =>
-          new Date(ev.start).getFullYear() === ANO_ALVO && ehDiaUtil(ev.start)
-        );
-        // Últimos 30 dias corridos, sem filtro de dia útil (é uma contagem simples de reservas reais)
-        const ultimos30 = eventos.filter(ev => new Date(ev.start).getTime() >= trintaDiasAtras).length;
-        // Hora local (Brasília, UTC-3, sem horário de verão) de cada reunião — pra achar o horário de pico
-        const horas = doAno.map(ev => {
-          const h = new Date(ev.start).getUTCHours() - 3;
-          return ((h % 24) + 24) % 24;
-        });
-        // Dia da semana em horário local (Brasília) — desloca 3h antes de ler o dia,
-        // pra não errar quando o horário UTC já virou o dia seguinte
-        const diasSemana = doAno.map(ev => new Date(new Date(ev.start).getTime() - 3*3600000).getUTCDay());
-        const resultado = { nome: room.name, qtd: doAno.length, ultimos30, horas, diasSemana };
+        const resultado = { nome: room.name, qtd: porSala.qtd || 0, ultimos30: porSala.ultimos30 || 0, horas: porSala.horas || [], diasSemana: porSala.diasSemana || [] };
         window._ultimoRankingPorSala[room.email] = resultado; // guarda pra usar se a próxima falhar
         return resultado;
       }catch(e){
