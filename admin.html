@@ -1540,23 +1540,20 @@ const isAdminOrViewer = (email) => {
 
       // ── Calcula dentroSLA + grava data_conclusao ao concluir ──
       // Cancelado NÃO conta pra SLA (regra de negócio confirmada) — fica null, sem alterar.
-      // Prazos em dias corridos, mesmos usados na sincronização histórica do Pipefy
-      // (SLA_PRAZOS_SYNC) — mantém o cálculo consistente entre chamados antigos e novos.
+      // Mesma regra usada no resto do sistema: só conta o tempo em "Em
+      // andamento" (data_em_andamento), em dias úteis — não desde a
+      // abertura original nem em dias corridos.
       if (s === 'Concluído') {
         const agora = new Date();
         updates.data_conclusao = agora;
-        const PRAZOS_SLA = { brindes: 5, seguranca: 2, manutencao: 60, suprimentos: 7, outros: 30, plataformas: 1, infraestrutura: 7 };
-        const SLA_LOGISTICA = { 'DHL': 2, 'Correio': 7, 'Uber Flash': 1 };
-        let prazo = t.categoria === 'logistica'
-          ? (SLA_LOGISTICA[t.transportadora] ?? SLA_LOGISTICA[t.subcategoria])
-          : PRAZOS_SLA[t.categoria];
-        if (prazo != null && t.data_abertura) {
-          const abertura = t.data_abertura.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura);
-          const diasCorridos = (agora - abertura) / 86400000;
-          updates.dentroSLA = diasCorridos <= prazo;
+        const PRAZOS_SLA = {brindes:5,suprimentos:7,manutencao:60,reforma:60,seguranca:2,logistica:3,outros:7,infraestrutura:7,limpeza:7,plataformas:3,gestao:7};
+        const prazo = PRAZOS_SLA[t.categoria] || 7;
+        const baseFase = t.data_em_andamento || t.data_abertura;
+        if (baseFase) {
+          const abertura = baseFase.toDate ? baseFase.toDate() : new Date(baseFase);
+          const diasPassados = window.diasUteisPassados(abertura);
+          updates.dentroSLA = diasPassados <= prazo;
         }
-        // plataformas: 1 dia corrido (24h exatas desde a abertura)
-        // infraestrutura: 7 dias corridos (manutenção de escritório)
       }
 
       await updateDoc(doc(db, 'tickets', currentDocId), updates);
