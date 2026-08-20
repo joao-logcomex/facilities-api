@@ -1096,6 +1096,16 @@ module.exports = async function handler(req, res) {
     const action = body.actions?.[0] || {};
     const actionId = action.action_id || '';
 
+    // DEBUG TEMPORÁRIO — investigando botões do App Home não abrindo DM
+    try {
+      await db.collection('slack_debug_logs').add({
+        at: new Date(), etapa: 'block_actions_recebido',
+        actionId, actionValue: action.value || '',
+        viewType: body.view?.type || '(nenhum)',
+        userId: body.user?.id || '(nenhum)',
+      });
+    } catch (e) {}
+
     // ⭐ Avaliação por estrelas — direto no Slack, sem sair pro app
     if (actionId === 'avaliar_estrela') {
       try {
