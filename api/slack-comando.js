@@ -773,6 +773,7 @@ async function publishHome(userId) {
         {type:'button', text:{type:'plain_text', text:'🔑 Acessos', emoji:true}, action_id:'home_acessos', value:'acessos'},
         {type:'button', text:{type:'plain_text', text:'📝 Outro assunto', emoji:true}, action_id:'home_outros', value:'outros'},
       ]},
+      {type:'context', elements:[{type:'mrkdwn', text:'👆 Depois de clicar, vá na aba *Mensagens* aqui do bot pra continuar a conversa (o Slack não troca de aba sozinho).'}]},
       {type:'divider'},
       {type:'context', elements:[{type:'mrkdwn', text:'💬 Ou simplesmente me mande uma mensagem direta — eu entendo linguagem natural!'}]}
     ]
@@ -1095,16 +1096,6 @@ module.exports = async function handler(req, res) {
   if (body.type === 'block_actions') {
     const action = body.actions?.[0] || {};
     const actionId = action.action_id || '';
-
-    // DEBUG TEMPORÁRIO — investigando botões do App Home não abrindo DM
-    try {
-      await db.collection('slack_debug_logs').add({
-        at: new Date(), etapa: 'block_actions_recebido',
-        actionId, actionValue: action.value || '',
-        viewType: body.view?.type || '(nenhum)',
-        userId: body.user?.id || '(nenhum)',
-      });
-    } catch (e) {}
 
     // ⭐ Avaliação por estrelas — direto no Slack, sem sair pro app
     if (actionId === 'avaliar_estrela') {
