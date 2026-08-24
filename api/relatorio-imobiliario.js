@@ -263,9 +263,268 @@ async function rodarAutoConcluirBrindes() {
   return concluidos;
 }
 
+// ── IDs dos gestores que recebem notificação de chamado QR ──
+const JOAO_SLACK_ID = 'U09MEN4BS0N';
+const HENRIQUE_SLACK_ID = 'D09NP8EMYLX'; // chefe do João
+
+// Supabase helpers (para escrita dupla no QR)
+const SUPABASE_URL_ENV = process.env.SUPABASE_URL;
+const SUPABASE_KEY_ENV = process.env.SUPABASE_SERVICE_ROLE_KEY;
+async function supabasePost(path, body) {
+  if (!SUPABASE_URL_ENV || !SUPABASE_KEY_ENV) return;
+  await fetch(`${SUPABASE_URL_ENV}/rest/v1/${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY_ENV,
+      'Authorization': `Bearer ${SUPABASE_KEY_ENV}`,
+      'Prefer': 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+// Gera ID sequencial (mesmo contador do bot Slack e formulário web)
+async function gerarIdQR() {
+  const contadorRef = db.collection('contadores').doc('tickets_lc');
+  const novo = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(contadorRef);
+    const atual = snap.exists ? (snap.data().seq || 0) : 0;
+    const proximo = atual + 1;
+    tx.set(contadorRef, { seq: proximo }, { merge: true });
+    return proximo;
+  });
+  return 'LC-' + String(novo).padStart(5, '0');
+}
+
+// Classifica categoria via Claude Haiku baseado na descrição
+async function classificarCategoriaQR(descricao, localNome) {
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 100,
+        messages: [{
+          role: 'user',
+          content: `Você é um classificador de chamados de Facilities. Com base na descrição, retorne APENAS uma das categorias abaixo (só a palavra, sem explicação):
+
+suprimentos - papel, sabonete, papel toalha, copos, caneta, material de escritório, itens de consumo
+manutencao - torneira, lâmpada, ar condicionado, equipamento quebrado, vazamento, elétrica, conserto, porta, janela, fechadura
+limpeza - sujeira, lixo, higiene, cheiro, manchas
+reforma - obra, pintura, melhoria estrutural, instalação de móvel
+outros - qualquer coisa que não se encaixe acima
+
+Local: ${localNome}
+Descrição: "${descricao}"
+
+Categoria:`,
+        }],
+      }),
+    });
+    const data = await resp.json();
+    const cat = (data.content?.[0]?.text || '').trim().toLowerCase().replace(/[^a-z]/g, '');
+    const validas = ['suprimentos', 'manutencao', 'limpeza', 'reforma', 'outros'];
+    return validas.includes(cat) ? cat : 'outros';
+  } catch(e) {
+    return 'outros';
+  }
+}
+
+// Gera título curto via IA
+async function gerarTituloQR(descricao, localNome) {
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 60,
+        messages: [{
+          role: 'user',
+          content: `Crie um título curto (máximo 8 palavras) para este chamado de facilities. Seja direto e descritivo. Só o título, sem pontuação final.
+
+Local: ${localNome}
+Descrição: "${descricao}"
+
+Título:`,
+        }],
+      }),
+    });
+    const data = await resp.json();
+    return (data.content?.[0]?.text || '').trim().replace(/^["']|["']$/g, '') || descricao.slice(0, 50);
+  } catch(e) {
+    return descricao.slice(0, 50);
+  }
+}
+
+// Envia notificação Slack (DM) para um Slack ID
+async function notificarSlackQR(slackId, texto, blocos) {
+  const SLACK_TOKEN = process.env.SLACK_BOT_TOKEN;
+  if (!SLACK_TOKEN) return;
+  await fetch('https://slack.com/api/chat.postMessage', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SLACK_TOKEN}` },
+    body: JSON.stringify({ channel: slackId, text: texto, blocks: blocos }),
+  });
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // ── QR Code: abertura de chamado via página /qr.html ──
+  // POST com { local, localNome, descricao, email } + Authorization: Bearer <firebase_id_token>
+  if (req.method === 'POST' && req.query && req.query.qr === '1') {
+    try {
+      const { local, localNome, descricao, email } = req.body || {};
+      if (!descricao || !email || descricao.trim().length < 10) {
+        return res.status(400).json({ ok: false, error: 'Dados insuficientes' });
+      }
+
+      // Busca dados do colaborador no Firestore
+      const colabSnap = await db.collection('colaboradores')
+        .where('email', '==', email.toLowerCase().trim())
+        .limit(1)
+        .get();
+
+      let colabData = { nome: email.split('@')[0], centroCusto: null, cargo: null };
+      if (!colabSnap.empty) {
+        const c = colabSnap.docs[0].data();
+        colabData = {
+          nome: c.nome || c.name || colabData.nome,
+          centroCusto: c.centroCusto || c.centro_custo || null,
+          cargo: c.cargo || null,
+        };
+      }
+
+      // Classifica categoria e gera título em paralelo
+      const [categoria, titulo] = await Promise.all([
+        classificarCategoriaQR(descricao.trim(), localNome || local),
+        gerarTituloQR(descricao.trim(), localNome || local),
+      ]);
+
+      // Gera ID sequencial
+      const ticketId = await gerarIdQR();
+      const agora = new Date();
+
+      const docData = {
+        id: ticketId,
+        titulo,
+        descricao: descricao.trim(),
+        categoria,
+        subcategoria: null,
+        prioridade: 'media',
+        status: 'Aberto',
+        data_abertura: agora,
+        updatedAt: agora,
+        origem: 'qrcode',
+        local_qr: local || null,
+        local_qr_nome: localNome || local || null,
+        userEmail: email.toLowerCase().trim(),
+        email: email.toLowerCase().trim(),
+        nome: colabData.nome,
+        centroCusto: colabData.centroCusto,
+        departamento: colabData.centroCusto,
+        cargo: colabData.cargo,
+        historico: [{
+          acao: `Chamado aberto via QR Code em ${localNome || local || 'local não identificado'}`,
+          data: agora.toISOString(),
+          usuario: email,
+        }],
+      };
+
+      // Salva no Firestore
+      await db.collection('tickets').add(docData);
+
+      // Espelha no Supabase (não bloqueia em caso de erro)
+      supabasePost('tickets?on_conflict=id', [{
+        id: ticketId,
+        titulo,
+        descricao: descricao.trim(),
+        categoria,
+        subcategoria: null,
+        prioridade: 'media',
+        status: 'Aberto',
+        origem: 'qrcode',
+        user_email: email.toLowerCase().trim(),
+        nome: colabData.nome,
+        centro_custo: colabData.centroCusto,
+        departamento: colabData.centroCusto,
+        cargo: colabData.cargo,
+        dentro_sla: null,
+        data_abertura: agora.toISOString(),
+      }]).catch(e => console.warn('supabase qr falhou:', e.message));
+
+      // Emojis por categoria
+      const emojiCat = { suprimentos: '📎', manutencao: '🔧', limpeza: '🧹', reforma: '🏗️', outros: '📝' };
+      const emoji = emojiCat[categoria] || '📝';
+      const localLabel = localNome || local || 'Local não identificado';
+
+      // Notifica o João
+      const blocos = [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `${emoji} *Novo chamado via QR Code*\n*${ticketId}* · ${titulo}`,
+          },
+        },
+        {
+          type: 'section',
+          fields: [
+            { type: 'mrkdwn', text: `*📍 Local:*\n${localLabel}` },
+            { type: 'mrkdwn', text: `*🗂️ Categoria:*\n${categoria}` },
+            { type: 'mrkdwn', text: `*👤 Solicitante:*\n${colabData.nome}` },
+            { type: 'mrkdwn', text: `*📧 E-mail:*\n${email}` },
+          ],
+        },
+        {
+          type: 'section',
+          text: { type: 'mrkdwn', text: `*💬 Descrição:*\n>${descricao.trim()}` },
+        },
+        {
+          type: 'actions',
+          elements: [{
+            type: 'button',
+            text: { type: 'plain_text', text: '📋 Ver no admin', emoji: true },
+            url: `https://facilities-api.vercel.app/admin.html`,
+            style: 'primary',
+          }],
+        },
+      ];
+
+      // Notifica João (DM)
+      await notificarSlackQR(JOAO_SLACK_ID,
+        `${emoji} Novo chamado QR: ${ticketId} — ${localLabel}`, blocos);
+
+      // Notifica Henrique (DM) — só abertura e conclusão, sem fases intermediárias
+      await notificarSlackQR(HENRIQUE_SLACK_ID,
+        `${emoji} Novo chamado via QR Code: ${ticketId} — ${localLabel} — ${titulo}`, [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `${emoji} *Chamado aberto via QR Code*\n*${ticketId}* · ${titulo}\n\n*📍 Local:* ${localLabel}\n*👤 Solicitante:* ${colabData.nome} (${email})\n*🗂️ Categoria:* ${categoria}\n\n>${descricao.trim()}`,
+            },
+          },
+        ]);
+
+      return res.status(200).json({ ok: true, ticketId });
+    } catch(e) {
+      console.error('qr chamado erro:', e);
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
 
   // ── Cron diário: alerta de SLA (chamados perto de vencer ou já vencidos) ──
   // Chamado pelo Vercel Cron (vercel.json), seg-sex 8h30 Curitiba. Protegido
