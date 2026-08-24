@@ -382,26 +382,26 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  // ── QR Code: abertura de chamado via página /qr.html ──
-  // POST com { local, localNome, descricao, email } + Authorization: Bearer <firebase_id_token>
+  // ── QR Code: abertura de chamado via página /qr.html (público, sem autenticação) ──
+  // POST com { local, localNome, descricao, email, nome }
   if (req.method === 'POST' && req.query && req.query.qr === '1') {
     try {
-      const { local, localNome, descricao, email } = req.body || {};
-      if (!descricao || !email || descricao.trim().length < 10) {
+      const { local, localNome, descricao, email, nome: nomeEnviado } = req.body || {};
+      if (!descricao || !email || descricao.trim().length < 5) {
         return res.status(400).json({ ok: false, error: 'Dados insuficientes' });
       }
 
-      // Busca dados do colaborador no Firestore
+      // Busca dados do colaborador no Firestore pelo e-mail
       const colabSnap = await db.collection('colaboradores')
         .where('email', '==', email.toLowerCase().trim())
         .limit(1)
         .get();
 
-      let colabData = { nome: email.split('@')[0], centroCusto: null, cargo: null };
+      let colabData = { nome: nomeEnviado || email.split('@')[0], centroCusto: null, cargo: null };
       if (!colabSnap.empty) {
         const c = colabSnap.docs[0].data();
         colabData = {
-          nome: c.nome || c.name || colabData.nome,
+          nome: c.nome || c.name || nomeEnviado || email.split('@')[0],
           centroCusto: c.centroCusto || c.centro_custo || null,
           cargo: c.cargo || null,
         };
