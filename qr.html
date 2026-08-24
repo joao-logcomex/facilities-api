@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Facilities · LogComex</title>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -15,425 +15,375 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <style>
 :root {
-  --bg: #0B0D19; --purple: #6613D0; --purple-dark: #5B11BA; --purple-deeper: #2D085D;
-  --purple-light: #8E44ED; --purple-mid: #E2D0FA; --orange: #FE8F1C;
-  --surface: #fff; --surface2: #f5f3ff; --border: rgba(102,19,208,0.12);
-  --ink: #1e1b4b; --ink2: #6b7280; --ink3: #9ca3af;
-  --radius: 16px; --radius-sm: 10px;
+  --bg:#0B0D19; --purple:#6613D0; --purple-dark:#5B11BA; --purple-deep:#2D085D;
+  --purple-light:#8E44ED; --purple-mid:#E2D0FA; --orange:#FE8F1C;
+  --surface:#fff; --surface2:#f5f3ff; --border:rgba(102,19,208,0.12);
+  --ink:#1e1b4b; --ink2:#6b7280; --ink3:#9ca3af;
+  --r:16px; --rs:10px;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width: 100%; min-height: 100%; overflow-x: hidden; background: var(--bg); font-family: 'Poppins', sans-serif; color: #fff; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;min-height:100%;overflow-x:hidden;background:var(--bg);font-family:'Poppins',sans-serif;color:#fff}
 
 /* LOADING */
-.loading-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.6s ease, visibility 0.6s ease; }
-.loading-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-.loading-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; animation: loadPulse 1.5s ease-in-out infinite; }
-@keyframes loadPulse { 0%,100%{opacity:0.4;transform:scale(0.97)} 50%{opacity:1;transform:scale(1)} }
-.loading-text { color: rgba(255,255,255,0.25); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.ls{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .6s,visibility .6s}
+.ls.h{opacity:0;visibility:hidden;pointer-events:none}
+.li{display:flex;flex-direction:column;align-items:center;gap:14px;animation:lp 1.5s ease-in-out infinite}
+@keyframes lp{0%,100%{opacity:.4;transform:scale(.97)}50%{opacity:1;transform:scale(1)}}
+.lt{color:rgba(255,255,255,.25);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase}
 
 /* AUTH */
-.auth-screen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 998; padding: 1rem; background: radial-gradient(circle at 50% 32%, #2D085D 0%, #0B0D19 75%); }
-.auth-box { background: rgba(19,21,42,0.96); border: 1px solid rgba(102,19,208,0.25); border-radius: 22px; padding: 2.5rem; width: 100%; max-width: 360px; box-shadow: 0 0 80px rgba(102,19,208,0.2); animation: authAppear 0.5s cubic-bezier(0.16,1,0.3,1) both; }
-@keyframes authAppear { from{opacity:0;transform:translateY(24px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-.auth-logo { display: flex; justify-content: center; margin-bottom: 1.5rem; }
-.auth-local-badge { background: rgba(102,19,208,0.15); border: 1px solid rgba(102,19,208,0.3); border-radius: 100px; padding: 6px 16px; font-size: 0.78rem; color: var(--purple-mid); font-weight: 600; text-align: center; margin-bottom: 1.5rem; }
-.auth-title { color: #fff; font-family: 'Funnel Display', sans-serif; font-size: 1.4rem; font-weight: 800; text-align: center; margin-bottom: 0.3rem; letter-spacing: -0.03em; }
-.auth-sub { color: rgba(255,255,255,0.35); font-size: 0.82rem; text-align: center; margin-bottom: 1rem; line-height: 1.6; }
-.btn-google { width: 100%; padding: 12px; border-radius: var(--radius-sm); border: 1.5px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.07); font-family: 'Poppins', sans-serif; font-size: 0.9rem; font-weight: 600; color: rgba(255,255,255,0.85); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; }
-.btn-google:hover { background: rgba(255,255,255,0.12); }
-.auth-error { color: #f87171; font-size: 0.82rem; margin-top: 0.8rem; text-align: center; display: none; }
-.auth-footer { text-align: center; margin-top: 1.2rem; font-size: 0.72rem; color: rgba(255,255,255,0.15); }
+.as{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:998;padding:1rem;background:radial-gradient(circle at 50% 32%,#2D085D 0%,#0B0D19 75%)}
+.ab{background:rgba(19,21,42,.96);border:1px solid rgba(102,19,208,.25);border-radius:22px;padding:2.5rem;width:100%;max-width:360px;box-shadow:0 0 80px rgba(102,19,208,.2);animation:aa .5s cubic-bezier(.16,1,.3,1) both}
+@keyframes aa{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.al{display:flex;justify-content:center;margin-bottom:1.5rem}
+.alb{background:rgba(102,19,208,.15);border:1px solid rgba(102,19,208,.3);border-radius:100px;padding:6px 16px;font-size:.78rem;color:var(--purple-mid);font-weight:600;text-align:center;margin-bottom:1.5rem}
+.at{color:#fff;font-family:'Funnel Display',sans-serif;font-size:1.4rem;font-weight:800;text-align:center;margin-bottom:.3rem;letter-spacing:-.03em}
+.as2{color:rgba(255,255,255,.35);font-size:.82rem;text-align:center;margin-bottom:1rem;line-height:1.6}
+.bg{width:100%;padding:12px;border-radius:var(--rs);border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);font-family:'Poppins',sans-serif;font-size:.9rem;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s}
+.bg:hover{background:rgba(255,255,255,.12)}
+.ae{color:#f87171;font-size:.82rem;margin-top:.8rem;text-align:center;display:none}
+.af{text-align:center;margin-top:1.2rem;font-size:.72rem;color:rgba(255,255,255,.15)}
 
 /* HEADER */
-.site-header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; background: rgba(11,13,25,0.6); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(102,19,208,0.1); opacity: 0; transform: translateY(-100%); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16,1,0.3,1); }
-.site-header.visible { opacity: 1; transform: translateY(0); }
-.logo-header { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-.logo-divider { width: 1px; height: 16px; background: rgba(255,255,255,0.15); }
-.logo-facilities { font-size: 0.8rem; font-weight: 500; color: rgba(255,255,255,0.45); }
-.header-user { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.55); font-size: 0.8rem; }
-.header-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(102,19,208,0.4); object-fit: cover; }
+.sh{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 1.5rem;height:58px;display:flex;align-items:center;justify-content:space-between;background:rgba(11,13,25,.7);backdrop-filter:blur(20px);border-bottom:1px solid rgba(102,19,208,.1);opacity:0;transform:translateY(-100%);transition:opacity .6s,transform .6s cubic-bezier(.16,1,.3,1)}
+.sh.v{opacity:1;transform:translateY(0)}
+.lh{display:flex;align-items:center;gap:10px;text-decoration:none}
+.ld{width:1px;height:15px;background:rgba(255,255,255,.15)}
+.lf{font-size:.78rem;font-weight:500;color:rgba(255,255,255,.4)}
+.hu{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.5);font-size:.8rem}
+.ha{width:28px;height:28px;border-radius:50%;border:2px solid rgba(102,19,208,.4);object-fit:cover}
 
 /* HERO */
-.hero-wrapper { position: relative; width: 100%; height: 100vh; min-height: 650px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 32%, #2D085D 0%, #0B0D19 75%); overflow: hidden; }
-#webgl-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-.hero-ui { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 1.5rem; pointer-events: none; margin-top: 140px; }
-.eyebrow-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(254,143,28,0.12); border: 1px solid rgba(254,143,28,0.35); padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.72rem; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--orange); margin-bottom: 1.1rem; backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(254,143,28,0.2); opacity: 0; transform: translateY(30px); }
-.hero-title { font-family: 'Funnel Display', sans-serif; font-size: clamp(2.2rem, 6vw, 4.2rem); font-weight: 800; line-height: 1.05; margin-bottom: 1.2rem; background: linear-gradient(180deg, #FFFFFF 30%, #C4A1FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; opacity: 0; transform: translateY(30px); }
-.location-card { display: inline-flex; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); padding: 0.75rem 1.5rem; border-radius: 16px; font-size: 0.95rem; color: #E2E8F0; backdrop-filter: blur(16px); box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2); opacity: 0; transform: translateY(30px); }
-.scroll-hint { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); z-index: 2; font-size: 0.7rem; letter-spacing: 1px; color: rgba(255,255,255,0.3); text-transform: uppercase; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0; transition: opacity 0.8s ease; }
-.scroll-hint.visible { opacity: 1; }
-.scroll-mouse { width: 22px; height: 34px; border: 1.5px solid rgba(255,255,255,0.15); border-radius: 11px; position: relative; }
-.scroll-wheel { width: 3px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 2px; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); animation: scrollW 1.8s ease-in-out infinite; }
-@keyframes scrollW { 0%{opacity:1;top:6px} 100%{opacity:0;top:16px} }
+.hw{position:relative;width:100%;height:100vh;min-height:600px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 35%,#2D085D 0%,#0B0D19 72%);overflow:hidden}
+#wc{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1}
+.hui{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 1.5rem;pointer-events:none;margin-top:130px}
+@media(max-width:600px){.hui{margin-top:100px}}
+.eb{display:inline-flex;align-items:center;gap:.5rem;background:rgba(254,143,28,.12);border:1px solid rgba(254,143,28,.35);padding:.45rem 1.1rem;border-radius:100px;font-size:.72rem;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--orange);margin-bottom:1rem;backdrop-filter:blur(10px);box-shadow:0 0 20px rgba(254,143,28,.2);opacity:0;transform:translateY(30px)}
+.ht{font-family:'Funnel Display',sans-serif;font-size:clamp(2rem,5.5vw,4rem);font-weight:800;line-height:1.05;margin-bottom:1.2rem;background:linear-gradient(180deg,#fff 30%,#C4A1FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;opacity:0;transform:translateY(30px)}
+.lc{display:inline-flex;align-items:center;gap:.75rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);padding:.7rem 1.4rem;border-radius:14px;font-size:.9rem;color:#E2E8F0;backdrop-filter:blur(16px);box-shadow:0 20px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.2);opacity:0;transform:translateY(30px)}
+.shs{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:2;font-size:.68rem;letter-spacing:1px;color:rgba(255,255,255,.25);text-transform:uppercase;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:5px;opacity:0;transition:opacity .8s ease}
+.shs.v{opacity:1}
+.sm{width:20px;height:32px;border:1.5px solid rgba(255,255,255,.15);border-radius:10px;position:relative}
+.sw{width:3px;height:5px;background:rgba(255,255,255,.3);border-radius:2px;position:absolute;top:5px;left:50%;transform:translateX(-50%);animation:sw 1.8s ease-in-out infinite}
+@keyframes sw{0%{opacity:1;top:5px}100%{opacity:0;top:14px}}
 
 /* FORM */
-.main { background: var(--surface2); padding: 3rem 1.25rem 5rem; }
-.main-inner { max-width: 560px; margin: 0 auto; }
-.section-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16,1,0.3,1); }
-.section-eyebrow.visible { opacity: 1; transform: translateY(0); }
-.section-line { flex: 1; height: 1px; background: var(--border); }
-.section-label { font-size: 0.7rem; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; }
-.form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: 0 8px 40px rgba(102,19,208,0.08); opacity: 0; transform: translateY(32px); transition: opacity 0.7s ease 0.1s, transform 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s; }
-.form-card.visible { opacity: 1; transform: translateY(0); }
-.form-card-header { padding: 1.4rem 1.6rem; border-bottom: 1px solid var(--border); background: linear-gradient(135deg,#faf8ff,#f5f3ff); display: flex; align-items: center; gap: 14px; }
-.fch-icon { width: 46px; height: 46px; background: linear-gradient(135deg,var(--purple),var(--purple-light)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; box-shadow: 0 4px 14px rgba(102,19,208,0.25); }
-.fch-title { font-weight: 700; font-size: 0.95rem; letter-spacing: -0.02em; color: var(--ink); }
-.fch-sub { font-size: 0.77rem; color: var(--ink3); margin-top: 2px; }
-.form-body { padding: 1.6rem; }
-.tip-box { background: linear-gradient(135deg,#f5f3ff,#ede9fe); border: 1px solid rgba(102,19,208,0.12); border-radius: var(--radius-sm); padding: 12px 15px; margin-bottom: 1.25rem; }
-.tip-box p { font-size: 0.79rem; color: var(--ink2); line-height: 1.6; }
-.tip-box strong { color: var(--purple); }
-.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem; }
-.field label { font-size: 0.8rem; font-weight: 600; color: var(--ink2); }
-textarea { width: 100%; padding: 13px 15px; border: 1.5px solid #e8e4f5; border-radius: var(--radius-sm); font-family: 'Poppins', sans-serif; font-size: 0.88rem; color: var(--ink); background: var(--surface); outline: none; transition: border-color 0.2s, box-shadow 0.2s; resize: vertical; min-height: 130px; }
-textarea:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(102,19,208,0.08); }
-textarea::placeholder { color: var(--ink3); }
-.char-count { font-size: 0.72rem; color: var(--ink3); text-align: right; }
-.btn-submit { width: 100%; background: linear-gradient(135deg,var(--purple),var(--purple-light)); color: #fff; border: none; padding: 15px; border-radius: var(--radius-sm); font-family: 'Poppins', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(102,19,208,0.35); margin-top: 0.25rem; }
-.btn-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(102,19,208,0.45); }
-.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-.btn-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
-@keyframes spin { to{transform:rotate(360deg)} }
-.success-card { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.8rem 2rem; text-align: center; box-shadow: 0 8px 40px rgba(102,19,208,0.08); }
-.success-icon-wrap { width: 76px; height: 76px; background: linear-gradient(135deg,#dcfce7,#bbf7d0); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 2.2rem; }
-.success-card h2 { font-family: 'Funnel Display', sans-serif; font-size: 1.6rem; font-weight: 800; color: var(--ink); margin-bottom: 0.5rem; letter-spacing: -0.04em; }
-.success-card p { color: var(--ink2); font-size: 0.88rem; margin-bottom: 0.3rem; line-height: 1.7; }
-.success-ticket { display: inline-block; background: linear-gradient(135deg,var(--purple),var(--purple-light)); color: #fff; font-weight: 700; font-size: 1.05rem; padding: 7px 22px; border-radius: 100px; margin: 0.9rem 0 1.3rem; box-shadow: 0 4px 14px rgba(102,19,208,0.3); }
-.btn-novo { background: transparent; color: var(--purple); border: 1.5px solid rgba(102,19,208,0.25); padding: 10px 24px; border-radius: var(--radius-sm); font-family: 'Poppins', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-.btn-novo:hover { background: #f5f3ff; border-color: var(--purple); }
-.page-footer { background: var(--surface2); text-align: center; padding: 1rem 1rem 2rem; color: var(--ink3); font-size: 0.75rem; }
-.page-footer a { color: var(--purple); text-decoration: none; }
+.mn{background:var(--surface2);padding:2.5rem 1.25rem 5rem}
+.mi{max-width:540px;margin:0 auto}
+.se{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s cubic-bezier(.16,1,.3,1)}
+.se.v{opacity:1;transform:translateY(0)}
+.sl{flex:1;height:1px;background:var(--border)}
+.slb{font-size:.7rem;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.1em;white-space:nowrap}
+.fc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:0 8px 40px rgba(102,19,208,.08);opacity:0;transform:translateY(32px);transition:opacity .7s ease .1s,transform .7s cubic-bezier(.16,1,.3,1) .1s}
+.fc.v{opacity:1;transform:translateY(0)}
+.fch{padding:1.3rem 1.5rem;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#faf8ff,#f5f3ff);display:flex;align-items:center;gap:13px}
+.fi{width:44px;height:44px;background:linear-gradient(135deg,var(--purple),var(--purple-light));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;box-shadow:0 4px 14px rgba(102,19,208,.25)}
+.ft{font-weight:700;font-size:.93rem;letter-spacing:-.02em;color:var(--ink)}
+.fs{font-size:.76rem;color:var(--ink3);margin-top:2px}
+.fb{padding:1.5rem}
+.tb{background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid rgba(102,19,208,.12);border-radius:var(--rs);padding:11px 14px;margin-bottom:1.2rem}
+.tb p{font-size:.78rem;color:var(--ink2);line-height:1.6}
+.tb strong{color:var(--purple)}
+.fd{display:flex;flex-direction:column;gap:5px;margin-bottom:.9rem}
+.fd label{font-size:.79rem;font-weight:600;color:var(--ink2)}
+textarea{width:100%;padding:12px 14px;border:1.5px solid #e8e4f5;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.87rem;color:var(--ink);background:var(--surface);outline:none;transition:border-color .2s,box-shadow .2s;resize:vertical;min-height:120px}
+textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(102,19,208,.08)}
+textarea::placeholder{color:var(--ink3)}
+.cc{font-size:.71rem;color:var(--ink3);text-align:right}
+.bs{width:100%;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;border:none;padding:14px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.93rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 20px rgba(102,19,208,.35);margin-top:.2rem}
+.bs:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 28px rgba(102,19,208,.45)}
+.bs:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.bsp{width:17px;height:17px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sc2{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2.5rem 2rem;text-align:center;box-shadow:0 8px 40px rgba(102,19,208,.08)}
+.siw{width:72px;height:72px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;font-size:2rem}
+.sc2 h2{font-family:'Funnel Display',sans-serif;font-size:1.5rem;font-weight:800;color:var(--ink);margin-bottom:.5rem;letter-spacing:-.04em}
+.sc2 p{color:var(--ink2);font-size:.87rem;margin-bottom:.3rem;line-height:1.7}
+.stk{display:inline-block;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;font-weight:700;font-size:1rem;padding:6px 20px;border-radius:100px;margin:.9rem 0 1.2rem;box-shadow:0 4px 14px rgba(102,19,208,.3)}
+.bn{background:transparent;color:var(--purple);border:1.5px solid rgba(102,19,208,.25);padding:9px 22px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.87rem;font-weight:600;cursor:pointer;transition:all .2s}
+.bn:hover{background:#f5f3ff;border-color:var(--purple)}
+.pf{background:var(--surface2);text-align:center;padding:1rem 1rem 2.5rem;color:var(--ink3);font-size:.75rem}
+.pf a{color:var(--purple);text-decoration:none}
 </style>
 </head>
 <body>
 
-<!-- SVG logo reutilizável -->
-<svg style="display:none">
-  <symbol id="logo-svg" viewBox="0 0 197 30">
-    <path d="M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z" fill="#8E44ED"/>
-    <path d="M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z" fill="#6613D0"/>
-    <path d="M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z" fill="#ffffff"/>
-    <path d="M34.6369 17.3919V0.96096H31.4808V17.3786C31.4808 20.5613 34.0752 23.1423 37.2727 23.1423H38.0798V20.0025H37.2549C35.8047 20.0025 34.6325 18.8347 34.6325 17.3948H34.6369Z" fill="white"/>
-    <path d="M47.7122 7.63091C45.446 7.63091 43.5509 8.37448 42.077 9.83796C40.584 11.2837 39.8286 13.1493 39.8286 15.3874C39.8286 17.6255 40.584 19.491 42.077 20.9368C43.5509 22.4017 45.446 23.1438 47.7122 23.1438C49.9784 23.1438 51.8735 22.3988 53.3473 20.9368C54.8404 19.491 55.5972 17.6255 55.5972 15.3874C55.5972 13.1493 54.8418 11.2837 53.3488 9.83796C51.875 8.373 49.9798 7.63091 47.7137 7.63091H47.7122ZM51.1151 18.7726C50.2267 19.6581 49.0855 20.1045 47.7107 20.1045C46.3359 20.1045 45.1962 19.6581 44.3063 18.7726C43.4178 17.8915 42.9684 16.7518 42.9684 15.3859C42.9684 14.02 43.4193 12.8847 44.3063 11.9992C45.1947 11.1137 46.3359 10.6673 47.7107 10.6673C49.0855 10.6673 50.2252 11.1137 51.1151 11.9992C52.0051 12.8847 52.453 14.0214 52.453 15.3859C52.453 16.7503 52.0021 17.8886 51.1151 18.7726Z" fill="white"/>
-    <path d="M160.941 7.63091L156.734 13.0606L152.523 7.63091H148.936L154.956 15.3859L148.936 23.1423H152.523L156.734 17.7112L160.941 23.1423H164.528L158.511 15.3859L164.528 7.63091H160.941Z" fill="white"/>
-  </symbol>
-</svg>
-
 <!-- LOADING -->
-<div class="loading-screen" id="loading">
-  <div class="loading-inner">
-    <svg width="140" height="22"><use href="#logo-svg"/></svg>
-    <div class="loading-text">Carregando...</div>
+<div class="ls" id="loading">
+  <div class="li">
+    <svg width="130" height="20" viewBox="0 0 197 30" fill="none">
+      <path d="M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z" fill="#8E44ED"/>
+      <path d="M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z" fill="#6613D0"/>
+      <path d="M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z" fill="#ffffff"/>
+      <path d="M34.6369 17.3919V0.96096H31.4808V17.3786C31.4808 20.5613 34.0752 23.1423 37.2727 23.1423H38.0798V20.0025H37.2549C35.8047 20.0025 34.6325 18.8347 34.6325 17.3948H34.6369Z" fill="white"/>
+      <path d="M47.7122 7.63091C45.446 7.63091 43.5509 8.37448 42.077 9.83796C40.584 11.2837 39.8286 13.1493 39.8286 15.3874C39.8286 17.6255 40.584 19.491 42.077 20.9368C43.5509 22.4017 45.446 23.1438 47.7122 23.1438C49.9784 23.1438 51.8735 22.3988 53.3473 20.9368C54.8404 19.491 55.5972 17.6255 55.5972 15.3874C55.5972 13.1493 54.8418 11.2837 53.3488 9.83796C51.875 8.373 49.9798 7.63091 47.7137 7.63091H47.7122ZM51.1151 18.7726C50.2267 19.6581 49.0855 20.1045 47.7107 20.1045C46.3359 20.1045 45.1962 19.6581 44.3063 18.7726C43.4178 17.8915 42.9684 16.7518 42.9684 15.3859C42.9684 14.02 43.4193 12.8847 44.3063 11.9992C45.1947 11.1137 46.3359 10.6673 47.7107 10.6673C49.0855 10.6673 50.2252 11.1137 51.1151 11.9992C52.0051 12.8847 52.453 14.0214 52.453 15.3859C52.453 16.7503 52.0021 17.8886 51.1151 18.7726Z" fill="white"/>
+    </svg>
+    <div class="lt">Carregando...</div>
   </div>
 </div>
 
 <!-- AUTH -->
-<div class="auth-screen" id="authScreen">
-  <div class="auth-box">
-    <div class="auth-logo"><svg width="160" height="25"><use href="#logo-svg"/></svg></div>
-    <div class="auth-title">Abrir chamado</div>
-    <p class="auth-sub">Entre com sua conta LogComex para registrar sua solicitação.</p>
-    <div class="auth-local-badge" id="authLocalBadge">📍 Carregando...</div>
-    <button class="btn-google" onclick="loginGoogle()">
+<div class="as" id="authScreen">
+  <div class="ab">
+    <div class="al">
+      <svg width="150" height="23" viewBox="0 0 197 30" fill="none">
+        <path d="M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z" fill="#8E44ED"/>
+        <path d="M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z" fill="#6613D0"/>
+        <path d="M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z" fill="#ffffff"/>
+        <path d="M34.6369 17.3919V0.96096H31.4808V17.3786C31.4808 20.5613 34.0752 23.1423 37.2727 23.1423H38.0798V20.0025H37.2549C35.8047 20.0025 34.6325 18.8347 34.6325 17.3948H34.6369Z" fill="white"/>
+        <path d="M47.7122 7.63091C45.446 7.63091 43.5509 8.37448 42.077 9.83796C40.584 11.2837 39.8286 13.1493 39.8286 15.3874C39.8286 17.6255 40.584 19.491 42.077 20.9368C43.5509 22.4017 45.446 23.1438 47.7122 23.1438C49.9784 23.1438 51.8735 22.3988 53.3473 20.9368C54.8404 19.491 55.5972 17.6255 55.5972 15.3874C55.5972 13.1493 54.8418 11.2837 53.3488 9.83796C51.875 8.373 49.9798 7.63091 47.7137 7.63091H47.7122ZM51.1151 18.7726C50.2267 19.6581 49.0855 20.1045 47.7107 20.1045C46.3359 20.1045 45.1962 19.6581 44.3063 18.7726C43.4178 17.8915 42.9684 16.7518 42.9684 15.3859C42.9684 14.02 43.4193 12.8847 44.3063 11.9992C45.1947 11.1137 46.3359 10.6673 47.7107 10.6673C49.0855 10.6673 50.2252 11.1137 51.1151 11.9992C52.0051 12.8847 52.453 14.0214 52.453 15.3859C52.453 16.7503 52.0021 17.8886 51.1151 18.7726Z" fill="white"/>
+        <path d="M97.9214 7.63091C95.6553 7.63091 93.7586 8.37448 92.2863 9.83796C90.7932 11.2837 90.0379 13.1493 90.0379 15.3874C90.0379 17.6255 90.7932 19.491 92.2863 20.9368C93.7601 22.4017 95.6553 23.1438 97.9214 23.1438C100.188 23.1438 102.083 22.3988 103.557 20.9368C105.05 19.491 105.805 17.6255 105.805 15.3874C105.805 13.1493 105.05 11.2837 103.557 9.83796C102.086 8.373 100.188 7.63091 97.9214 7.63091ZM101.326 18.7726C100.436 19.6581 99.2962 20.1045 97.9214 20.1045C96.5467 20.1045 95.4069 19.6581 94.517 18.7726C93.6271 17.8915 93.1806 16.7518 93.1806 15.3859C93.1806 14.02 93.6315 12.8847 94.517 11.9992C95.4054 11.1137 96.5467 10.6673 97.9214 10.6673C99.2962 10.6673 100.436 11.1137 101.326 11.9992C102.214 12.8847 102.662 14.0214 102.662 15.3859C102.662 16.7503 102.213 17.8886 101.326 18.7726Z" fill="white"/>
+      </svg>
+    </div>
+    <div class="at">Abrir chamado</div>
+    <p class="as2">Entre com sua conta LogComex para registrar sua solicitação.</p>
+    <div class="alb" id="authLocalBadge">📍 Carregando...</div>
+    <button class="bg" onclick="loginGoogle()">
       <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Entrar com Google
     </button>
-    <div class="auth-error" id="authError">Acesso restrito a contas @logcomex.com</div>
-    <div class="auth-footer">Facilities LogComex · Sistema interno</div>
+    <div class="ae" id="authError">Acesso restrito a contas @logcomex.com</div>
+    <div class="af">Facilities LogComex · Sistema interno</div>
   </div>
 </div>
 
 <!-- HEADER -->
-<header class="site-header" id="siteHeader">
-  <a class="logo-header" href="/">
-    <svg width="120" height="18"><use href="#logo-svg"/></svg>
-    <div class="logo-divider"></div>
-    <span class="logo-facilities">Facilities</span>
+<header class="sh" id="siteHeader">
+  <a class="lh" href="/">
+    <svg width="100" height="15" viewBox="0 0 197 30" fill="none">
+      <path d="M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z" fill="#8E44ED"/>
+      <path d="M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z" fill="#6613D0"/>
+      <path d="M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z" fill="#ffffff"/>
+      <path d="M34.6369 17.3919V0.96096H31.4808V17.3786C31.4808 20.5613 34.0752 23.1423 37.2727 23.1423H38.0798V20.0025H37.2549C35.8047 20.0025 34.6325 18.8347 34.6325 17.3948H34.6369Z" fill="white"/>
+      <path d="M47.7122 7.63091C45.446 7.63091 43.5509 8.37448 42.077 9.83796C40.584 11.2837 39.8286 13.1493 39.8286 15.3874C39.8286 17.6255 40.584 19.491 42.077 20.9368C43.5509 22.4017 45.446 23.1438 47.7122 23.1438C49.9784 23.1438 51.8735 22.3988 53.3473 20.9368C54.8404 19.491 55.5972 17.6255 55.5972 15.3874C55.5972 13.1493 54.8418 11.2837 53.3488 9.83796C51.875 8.373 49.9798 7.63091 47.7137 7.63091H47.7122ZM51.1151 18.7726C50.2267 19.6581 49.0855 20.1045 47.7107 20.1045C46.3359 20.1045 45.1962 19.6581 44.3063 18.7726C43.4178 17.8915 42.9684 16.7518 42.9684 15.3859C42.9684 14.02 43.4193 12.8847 44.3063 11.9992C45.1947 11.1137 46.3359 10.6673 47.7107 10.6673C49.0855 10.6673 50.2252 11.1137 51.1151 11.9992C52.0051 12.8847 52.453 14.0214 52.453 15.3859C52.453 16.7503 52.0021 17.8886 51.1151 18.7726Z" fill="white"/>
+    </svg>
+    <div class="ld"></div>
+    <span class="lf">Facilities</span>
   </a>
-  <div class="header-user">
-    <img class="header-avatar" id="headerAvatar" src="" alt="" onerror="this.style.display='none'">
+  <div class="hu">
+    <img class="ha" id="headerAvatar" src="" alt="" onerror="this.style.display='none'">
     <span id="headerName"></span>
   </div>
 </header>
 
 <!-- HERO -->
-<section class="hero-wrapper" id="heroSection" style="display:none">
-  <canvas id="webgl-canvas"></canvas>
-  <div class="hero-ui">
-    <div class="eyebrow-badge" id="ui-eyebrow"><span>●</span> CHAMADO RÁPIDO</div>
-    <h1 class="hero-title" id="ui-title">O que você precisa?</h1>
-    <div class="location-card" id="ui-location">
-      <span id="localChipText">Carregando...</span>
-    </div>
+<section class="hw" id="heroSection" style="display:none">
+  <canvas id="wc"></canvas>
+  <div class="hui">
+    <div class="eb" id="ui-eyebrow"><span>●</span> CHAMADO RÁPIDO</div>
+    <h1 class="ht" id="ui-title">O que você precisa?</h1>
+    <div class="lc" id="ui-location"><span id="localText">Carregando...</span></div>
   </div>
-  <div class="scroll-hint" id="scrollHint">
-    <div class="scroll-mouse"><div class="scroll-wheel"></div></div>
+  <div class="shs" id="scrollHint">
+    <div class="sm"><div class="sw"></div></div>
     <span>scroll</span>
   </div>
 </section>
 
-<!-- FORMULÁRIO -->
-<section class="main" id="mainSection" style="display:none">
-  <div class="main-inner">
-    <div class="section-eyebrow" id="sectionEyebrow">
-      <div class="section-line"></div>
-      <div class="section-label">📝 Sua solicitação</div>
-      <div class="section-line"></div>
+<!-- FORM -->
+<section class="mn" id="mainSection" style="display:none">
+  <div class="mi">
+    <div class="se" id="sectionEyebrow">
+      <div class="sl"></div><div class="slb">📝 Sua solicitação</div><div class="sl"></div>
     </div>
-    <div class="form-card" id="formCard">
-      <div class="form-card-header">
-        <div class="fch-icon">💬</div>
-        <div>
-          <div class="fch-title">Descreva sua solicitação</div>
-          <div class="fch-sub">Nossa IA vai classificar e encaminhar automaticamente</div>
-        </div>
+    <div class="fc" id="formCard">
+      <div class="fch">
+        <div class="fi">💬</div>
+        <div><div class="ft">Descreva sua solicitação</div><div class="fs">Nossa IA vai classificar e encaminhar automaticamente</div></div>
       </div>
-      <div class="form-body">
-        <div class="tip-box">
-          <p>Seja específico! Exemplos: <strong>"papel higiênico acabou"</strong>, <strong>"torneira pingando"</strong>, <strong>"falta sabonete"</strong>, <strong>"lâmpada queimada"</strong>, <strong>"ar-condicionado não liga"</strong>...</p>
-        </div>
-        <div class="field">
+      <div class="fb">
+        <div class="tb"><p>Seja específico! Ex: <strong>"papel higiênico acabou"</strong>, <strong>"torneira pingando"</strong>, <strong>"lâmpada queimada"</strong>, <strong>"ar-condicionado não liga"</strong>...</p></div>
+        <div class="fd">
           <label>Descreva o problema ou necessidade <span style="color:var(--orange)">*</span></label>
-          <textarea id="descricao" placeholder="Conte com detalhes o que está acontecendo ou o que você precisa..." maxlength="800" oninput="atualizarContador()"></textarea>
-          <div class="char-count"><span id="charCount">0</span>/800</div>
+          <textarea id="descricao" placeholder="Conte com detalhes o que está acontecendo ou o que você precisa..." maxlength="800" oninput="cnt()"></textarea>
+          <div class="cc"><span id="charCount">0</span>/800</div>
         </div>
-        <button class="btn-submit" id="btnSubmit" onclick="enviarChamado()">
+        <button class="bs" id="btnSubmit" onclick="enviar()">
           <span id="btnText">Enviar solicitação</span>
-          <div class="btn-spinner" id="btnSpinner"></div>
-          <svg id="btnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <div class="bsp" id="btnSpinner"></div>
+          <svg id="btnIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
     </div>
-    <div class="success-card" id="successCard">
-      <div class="success-icon-wrap">✅</div>
+    <div class="sc2" id="successCard">
+      <div class="siw">✅</div>
       <h2>Chamado registrado!</h2>
       <p>Sua solicitação foi enviada com sucesso.<br>O time de Facilities vai cuidar disso em breve.</p>
-      <div class="success-ticket" id="successTicket">#LC-00000</div>
-      <p style="font-size:0.8rem;color:var(--ink3)">Você vai receber atualizações pelo Slack.</p>
-      <br>
-      <button class="btn-novo" onclick="novoChamado()">Abrir outro chamado</button>
+      <div class="stk" id="successTicket">#LC-00000</div>
+      <p style="font-size:.8rem;color:var(--ink3)">Você vai receber atualizações pelo Slack.</p><br>
+      <button class="bn" onclick="novoChamado()">Abrir outro chamado</button>
     </div>
   </div>
 </section>
-<div class="page-footer" id="pageFooter" style="display:none">
-  Facilities LogComex &nbsp;·&nbsp; <a href="/">Ver meus chamados</a>
-</div>
+<div class="pf" id="pageFooter" style="display:none">Facilities LogComex &nbsp;·&nbsp; <a href="/">Ver meus chamados</a></div>
 
 <script>
-// ── Locais ──
-const LOCAIS = {
-  'war-room':'🪖 War Room — 2º andar','xgh':'🧪 XGH — 2º andar','ia-2':'🤖 IA — 2º andar',
-  'deploy':'🚀 Deploy — 2º andar','root':'🌱 Root — 2º andar','roadmap':'🗺️ Roadmap — 2º andar',
-  'full-stack':'🧱 Full Stack — 1º andar','git':'🔀 Git — 1º andar','bot':'🤖 Bot — 1º andar',
-  'linux':'🐧 Linux — 1º andar','cron':'⏰ Cron — 1º andar','ia-1':'🧠 IA — 1º andar',
-  'html':'📄 HTML — 1º andar','cloud':'☁️ Cloud — 1º andar','container':'📦 Container — 1º andar',
-  'python':'🐍 Python — 1º andar','javascript':'📜 Javascript — 1º andar','php':'🐘 PHP — 1º andar',
-  'banheiro-fem-armarios-1':'🚺 Banheiro Feminino — Armários 1','banheiro-masc-armarios-1':'🚹 Banheiro Masculino — Armários 1',
-  'banheiro-fem-armarios-2':'🚺 Banheiro Feminino — Armários 2','banheiro-masc-armarios-2':'🚹 Banheiro Masculino — Armários 2',
-  'banheiro-fem-copa-1':'🚺 Banheiro Feminino — Copa/Cozinha 1','banheiro-masc-copa-1':'🚹 Banheiro Masculino — Copa/Cozinha 1',
-  'banheiro-fem-copa-2':'🚺 Banheiro Feminino — Copa/Cozinha 2','banheiro-masc-copa-2':'🚹 Banheiro Masculino — Copa/Cozinha 2',
-  'banheiro-pcd':'♿ Banheiro PCD — 2º andar','banheiro-fem-cozinha':'🚺 Banheiro Feminino — Cozinha 2º andar','banheiro-masc-root':'🚹 Banheiro Masculino — Sala Root',
-};
-const localSlug = new URLSearchParams(window.location.search).get('local') || '';
-const localNome = LOCAIS[localSlug] || (localSlug ? '📍 ' + localSlug : '📍 Local não identificado');
-document.getElementById('localChipText').textContent = localNome;
-document.getElementById('authLocalBadge').textContent = localNome;
+// Locais
+const LOCAIS={'war-room':'🪖 War Room — 2º andar','xgh':'🧪 XGH — 2º andar','ia-2':'🤖 IA — 2º andar','deploy':'🚀 Deploy — 2º andar','root':'🌱 Root — 2º andar','roadmap':'🗺️ Roadmap — 2º andar','full-stack':'🧱 Full Stack — 1º andar','git':'🔀 Git — 1º andar','bot':'🤖 Bot — 1º andar','linux':'🐧 Linux — 1º andar','cron':'⏰ Cron — 1º andar','ia-1':'🧠 IA — 1º andar','html':'📄 HTML — 1º andar','cloud':'☁️ Cloud — 1º andar','container':'📦 Container — 1º andar','python':'🐍 Python — 1º andar','javascript':'📜 Javascript — 1º andar','php':'🐘 PHP — 1º andar','banheiro-fem-armarios-1':'🚺 Banheiro Feminino — Armários 1','banheiro-masc-armarios-1':'🚹 Banheiro Masculino — Armários 1','banheiro-fem-armarios-2':'🚺 Banheiro Feminino — Armários 2','banheiro-masc-armarios-2':'🚹 Banheiro Masculino — Armários 2','banheiro-fem-copa-1':'🚺 Banheiro Feminino — Copa/Cozinha 1','banheiro-masc-copa-1':'🚹 Banheiro Masculino — Copa/Cozinha 1','banheiro-fem-copa-2':'🚺 Banheiro Feminino — Copa/Cozinha 2','banheiro-masc-copa-2':'🚹 Banheiro Masculino — Copa/Cozinha 2','banheiro-pcd':'♿ Banheiro PCD — 2º andar','banheiro-fem-cozinha':'🚺 Banheiro Feminino — Cozinha 2º andar','banheiro-masc-root':'🚹 Banheiro Masculino — Sala Root'};
+const slug=new URLSearchParams(location.search).get('local')||'';
+const nome=LOCAIS[slug]||(slug?'📍 '+slug:'📍 Local não identificado');
+document.getElementById('localText').textContent=nome;
+document.getElementById('authLocalBadge').textContent=nome;
 
-function atualizarContador() { document.getElementById('charCount').textContent = document.getElementById('descricao').value.length; }
-window.atualizarContador = atualizarContador;
+function cnt(){document.getElementById('charCount').textContent=document.getElementById('descricao').value.length}
+window.cnt=cnt;
 
-async function enviarChamado() {
-  const descricao = document.getElementById('descricao').value.trim();
-  if (!descricao || descricao.length < 10) { alert('Descreva com pelo menos 10 caracteres.'); return; }
-  if (!window._currentUser) { alert('Sessão expirada. Recarregue.'); return; }
-  const btn = document.getElementById('btnSubmit');
-  btn.disabled = true;
-  document.getElementById('btnText').textContent = 'Enviando...';
-  document.getElementById('btnSpinner').style.display = 'block';
-  document.getElementById('btnIcon').style.display = 'none';
-  try {
-    const token = await window._currentUser.getIdToken();
-    const resp = await fetch('/api/relatorio-imobiliario?qr=1', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ local: localSlug, localNome, descricao, email: window._currentUser.email }),
-    });
-    const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || 'Erro desconhecido');
-    document.getElementById('formCard').style.display = 'none';
-    document.getElementById('successCard').style.display = 'block';
-    document.getElementById('successTicket').textContent = data.ticketId;
-  } catch(e) { alert('Erro: ' + e.message); }
-  finally {
-    btn.disabled = false;
-    document.getElementById('btnText').textContent = 'Enviar solicitação';
-    document.getElementById('btnSpinner').style.display = 'none';
-    document.getElementById('btnIcon').style.display = 'block';
-  }
+async function enviar(){
+  const desc=document.getElementById('descricao').value.trim();
+  if(!desc||desc.length<10){alert('Descreva com pelo menos 10 caracteres.');return}
+  if(!window._cu){alert('Sessão expirada. Recarregue.');return}
+  const btn=document.getElementById('btnSubmit');btn.disabled=true;
+  document.getElementById('btnText').textContent='Enviando...';
+  document.getElementById('btnSpinner').style.display='block';
+  document.getElementById('btnIcon').style.display='none';
+  try{
+    const tk=await window._cu.getIdToken();
+    const r=await fetch('/api/relatorio-imobiliario?qr=1',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},body:JSON.stringify({local:slug,localNome:nome,descricao:desc,email:window._cu.email})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'Erro desconhecido');
+    document.getElementById('formCard').style.display='none';
+    document.getElementById('successCard').style.display='block';
+    document.getElementById('successTicket').textContent=d.ticketId;
+  }catch(e){alert('Erro: '+e.message)}
+  finally{btn.disabled=false;document.getElementById('btnText').textContent='Enviar solicitação';document.getElementById('btnSpinner').style.display='none';document.getElementById('btnIcon').style.display='block'}
 }
-window.enviarChamado = enviarChamado;
-function novoChamado() {
-  document.getElementById('descricao').value = '';
-  document.getElementById('charCount').textContent = '0';
-  document.getElementById('formCard').style.display = 'block';
-  document.getElementById('successCard').style.display = 'none';
-}
-window.novoChamado = novoChamado;
+window.enviar=enviar;
+function novoChamado(){document.getElementById('descricao').value='';document.getElementById('charCount').textContent='0';document.getElementById('formCard').style.display='block';document.getElementById('successCard').style.display='none'}
+window.novoChamado=novoChamado;
 
-// ── Three.js — inicializa SÓ depois que o hero estiver visível ──
-function initThreeJS() {
-  if (typeof THREE === 'undefined') return;
-  const canvas = document.getElementById('webgl-canvas');
-  const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x0B0D19, 0.07);
-  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(0, 0, 8);
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.3;
+// Three.js — só inicializa depois que o hero estiver visível
+function initThree(){
+  if(typeof THREE==='undefined')return;
+  const canvas=document.getElementById('wc');
+  const W=window.innerWidth,H=window.innerHeight;
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(45,W/H,.1,100);
+  camera.position.z=8;
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setSize(W,H);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 
-  scene.add(new THREE.AmbientLight(0x2D085D, 1.8));
-  const purpleLight = new THREE.PointLight(0x6613D0, 5, 12);
-  purpleLight.position.set(-3, 2, 2); scene.add(purpleLight);
-  const orangeLight = new THREE.PointLight(0xFE8F1C, 7, 10);
-  orangeLight.position.set(2, 2, 3); scene.add(orangeLight);
+  // Luzes
+  scene.add(new THREE.AmbientLight(0x2D085D,2));
+  const pl=new THREE.PointLight(0x6613D0,6,14);pl.position.set(-3,2,2);scene.add(pl);
+  const ol=new THREE.PointLight(0xFE8F1C,8,12);ol.position.set(2,2,3);scene.add(ol);
 
-  const mainGroup = new THREE.Group();
-  mainGroup.position.set(0, 1.15, 0);
-  mainGroup.scale.set(0, 0, 0);
-  scene.add(mainGroup);
+  const grp=new THREE.Group();grp.position.y=1.1;grp.scale.set(0,0,0);scene.add(grp);
 
-  const ext = { depth: 0.4, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.04, bevelThickness: 0.04 };
-  const purpleMat = new THREE.MeshPhysicalMaterial({ color: 0x6613D0, metalness: 0.1, roughness: 0.1, transmission: 0.85, ior: 1.45, reflectivity: 0.9, thickness: 1.0, transparent: true, opacity: 0.85, clearcoat: 1.0 });
-  const orangeMat = new THREE.MeshPhysicalMaterial({ color: 0xFE8F1C, metalness: 0.2, roughness: 0.05, transmission: 0.9, ior: 1.5, reflectivity: 1.0, emissive: 0xFE8F1C, emissiveIntensity: 0.35, transparent: true, opacity: 0.9 });
+  // Materiais simples (compatível com r128 sem transmission)
+  const mP=new THREE.MeshStandardMaterial({color:0x6613D0,metalness:.5,roughness:.2,transparent:true,opacity:.9});
+  const mO=new THREE.MeshStandardMaterial({color:0xFE8F1C,metalness:.4,roughness:.15,emissive:0xFE8F1C,emissiveIntensity:.3,transparent:true,opacity:.92});
+  const mS=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xFE8F1C,emissiveIntensity:2.5,roughness:.1});
 
-  const oShape = new THREE.Shape();
-  oShape.moveTo(0,0); oShape.lineTo(1.2,0); oShape.lineTo(1.2,-0.6); oShape.lineTo(0.6,-0.6); oShape.lineTo(0.6,-1.2); oShape.lineTo(0,-0.6); oShape.closePath();
-  const oGeo = new THREE.ExtrudeGeometry(oShape, ext); oGeo.center();
-  const orangePiece = new THREE.Mesh(oGeo, orangeMat);
-  orangePiece.position.set(0.2, 0.3, 0); mainGroup.add(orangePiece);
+  const ext={depth:.4,bevelEnabled:true,bevelSegments:3,bevelSize:.04,bevelThickness:.04};
 
-  const pShape = new THREE.Shape();
-  pShape.moveTo(0,0); pShape.lineTo(-1.2,0); pShape.lineTo(-1.2,0.6); pShape.lineTo(-0.6,0.6); pShape.lineTo(-0.6,1.2); pShape.lineTo(0,0.6); pShape.closePath();
-  const pGeo = new THREE.ExtrudeGeometry(pShape, ext); pGeo.center();
-  const purplePiece = new THREE.Mesh(pGeo, purpleMat);
-  purplePiece.position.set(-0.2, -0.3, -0.1); mainGroup.add(purplePiece);
+  // Peça laranja
+  const oS=new THREE.Shape();
+  oS.moveTo(0,0);oS.lineTo(1.2,0);oS.lineTo(1.2,-.6);oS.lineTo(.6,-.6);oS.lineTo(.6,-1.2);oS.lineTo(0,-.6);oS.closePath();
+  const oG=new THREE.ExtrudeGeometry(oS,ext);oG.center();
+  const oM=new THREE.Mesh(oG,mO);oM.position.set(.2,.3,0);grp.add(oM);
 
-  const sShape = new THREE.Shape();
-  sShape.moveTo(0,0.5); sShape.quadraticCurveTo(0,0,0.5,0); sShape.quadraticCurveTo(0,0,0,-0.5); sShape.quadraticCurveTo(0,0,-0.5,0); sShape.quadraticCurveTo(0,0,0,0.5);
-  const sGeo = new THREE.ExtrudeGeometry(sShape, { depth: 0.15, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02 }); sGeo.center();
-  const aiStar = new THREE.Mesh(sGeo, new THREE.MeshStandardMaterial({ color: 0xFFFFFF, emissive: 0xFE8F1C, emissiveIntensity: 3.0, roughness: 0.1 }));
-  aiStar.position.set(0, 0, 0.3); aiStar.scale.set(0.7, 0.7, 0.7); mainGroup.add(aiStar);
+  // Peça roxa
+  const pS=new THREE.Shape();
+  pS.moveTo(0,0);pS.lineTo(-1.2,0);pS.lineTo(-1.2,.6);pS.lineTo(-.6,.6);pS.lineTo(-.6,1.2);pS.lineTo(0,.6);pS.closePath();
+  const pG=new THREE.ExtrudeGeometry(pS,ext);pG.center();
+  const pM=new THREE.Mesh(pG,mP);pM.position.set(-.2,-.3,-.1);grp.add(pM);
 
-  const sc = document.createElement('canvas'); sc.width = sc.height = 128;
-  const sCtx = sc.getContext('2d');
-  const grad = sCtx.createRadialGradient(64,64,0,64,64,64);
-  grad.addColorStop(0,'rgba(0,0,0,0.75)'); grad.addColorStop(1,'rgba(0,0,0,0)');
-  sCtx.fillStyle = grad; sCtx.fillRect(0,0,128,128);
-  const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(3.5,3.5), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, opacity: 0.65, depthWrite: false }));
-  shadowPlane.position.set(0,-1.8,-0.8); shadowPlane.rotation.x = -Math.PI/2.2; mainGroup.add(shadowPlane);
+  // Estrela IA
+  const sS=new THREE.Shape();
+  sS.moveTo(0,.5);sS.quadraticCurveTo(0,0,.5,0);sS.quadraticCurveTo(0,0,0,-.5);sS.quadraticCurveTo(0,0,-.5,0);sS.quadraticCurveTo(0,0,0,.5);
+  const sG=new THREE.ExtrudeGeometry(sS,{depth:.15,bevelEnabled:true,bevelSize:.02,bevelThickness:.02});sG.center();
+  const star=new THREE.Mesh(sG,mS);star.position.set(0,0,.3);star.scale.set(.65,.65,.65);grp.add(star);
 
-  const pCount = 130;
-  const pGeo = new THREE.BufferGeometry();
-  const pPos = new Float32Array(pCount * 3);
-  const pSpeeds = [];
-  for (let i = 0; i < pCount; i++) {
-    pPos[i*3]=(Math.random()-0.5)*2.8; pPos[i*3+1]=(Math.random()-0.5)*2-0.5; pPos[i*3+2]=(Math.random()-0.5)*2.8;
-    pSpeeds.push({ y: Math.random()*0.012+0.004 });
-  }
-  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-  const particleSystem = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xFE8F1C, size: 0.055, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending }));
-  mainGroup.add(particleSystem);
+  // Sombra
+  const sc=document.createElement('canvas');sc.width=sc.height=128;
+  const sx=sc.getContext('2d'),sg=sx.createRadialGradient(64,64,0,64,64,64);
+  sg.addColorStop(0,'rgba(0,0,0,.7)');sg.addColorStop(1,'rgba(0,0,0,0)');
+  sx.fillStyle=sg;sx.fillRect(0,0,128,128);
+  const shM=new THREE.Mesh(new THREE.PlaneGeometry(3.5,3.5),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(sc),transparent:true,opacity:.6,depthWrite:false}));
+  shM.position.set(0,-1.8,-.8);shM.rotation.x=-Math.PI/2.2;grp.add(shM);
 
-  let targetX = 0, targetY = 0, currentX = 0, currentY = 0;
-  window.addEventListener('mousemove', e => { targetX=(e.clientX/window.innerWidth-0.5)*2; targetY=(e.clientY/window.innerHeight-0.5)*2; });
-  window.addEventListener('touchmove', e => { if(e.touches[0]){targetX=(e.touches[0].clientX/window.innerWidth-0.5)*2;targetY=(e.touches[0].clientY/window.innerHeight-0.5)*2;} }, {passive:true});
+  // Partículas
+  const n=120,pp=new Float32Array(n*3),sp=[];
+  for(let i=0;i<n;i++){pp[i*3]=(Math.random()-.5)*2.8;pp[i*3+1]=(Math.random()-.5)*2-.5;pp[i*3+2]=(Math.random()-.5)*2.8;sp.push(Math.random()*.012+.004)}
+  const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+  const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:0xFE8F1C,size:.05,transparent:true,opacity:.8,blending:THREE.AdditiveBlending}));
+  grp.add(pts);
 
-  // GSAP entrada elástica
-  gsap.to(mainGroup.scale, { x:1, y:1, z:1, duration: 1.6, ease: 'elastic.out(1, 0.6)', delay: 0.3 });
-  gsap.to('#ui-eyebrow', { opacity:1, y:0, duration:0.7, ease:'back.out(1.6)', delay:0.5 });
-  gsap.to('#ui-title',   { opacity:1, y:0, duration:0.7, ease:'back.out(1.6)', delay:0.75 });
-  gsap.to('#ui-location',{ opacity:1, y:0, duration:0.7, ease:'back.out(1.6)', delay:1.0 });
-  setTimeout(() => document.getElementById('scrollHint').classList.add('visible'), 2200);
+  // Mouse
+  let tx=0,ty=0,cx=0,cy=0;
+  window.addEventListener('mousemove',e=>{tx=(e.clientX/innerWidth-.5)*2;ty=(e.clientY/innerHeight-.5)*2});
+  window.addEventListener('touchmove',e=>{if(e.touches[0]){tx=(e.touches[0].clientX/innerWidth-.5)*2;ty=(e.touches[0].clientY/innerHeight-.5)*2}},{passive:true});
 
-  const clock = new THREE.Clock();
-  function animate() {
-    requestAnimationFrame(animate);
-    const t = clock.getElapsedTime();
-    currentX += (targetX-currentX)*0.05; currentY += (targetY-currentY)*0.05;
-    mainGroup.rotation.y = currentX*0.65 + Math.sin(t*0.4)*0.12;
-    mainGroup.rotation.x = currentY*0.45 + Math.cos(t*0.4)*0.1;
-    mainGroup.position.y = 1.15 + Math.sin(t*1.6)*0.08;
-    aiStar.rotation.z = t*0.8; aiStar.rotation.y = Math.sin(t)*0.5;
-    orangeLight.position.x = currentX*4; orangeLight.position.y = -currentY*4+1;
-    const pos = particleSystem.geometry.attributes.position.array;
-    for (let i=0;i<pCount;i++) {
-      pos[i*3+1] += pSpeeds[i].y;
-      pos[i*3] += Math.sin(t+i)*0.001;
-      if (pos[i*3+1] > 2.2) { pos[i*3+1]=-1.2; pos[i*3]=(Math.random()-0.5)*2.5; }
-    }
-    particleSystem.geometry.attributes.position.needsUpdate = true;
-    renderer.render(scene, camera);
-  }
-  animate();
+  // GSAP entrada
+  gsap.to(grp.scale,{x:1,y:1,z:1,duration:1.6,ease:'elastic.out(1,.6)',delay:.2});
+  gsap.to('#ui-eyebrow',{opacity:1,y:0,duration:.7,ease:'back.out(1.6)',delay:.4});
+  gsap.to('#ui-title',{opacity:1,y:0,duration:.7,ease:'back.out(1.6)',delay:.65});
+  gsap.to('#ui-location',{opacity:1,y:0,duration:.7,ease:'back.out(1.6)',delay:.9});
+  setTimeout(()=>document.getElementById('scrollHint').classList.add('v'),2400);
 
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    if (window.innerWidth < 768) camera.position.z = 9.2;
-    else camera.position.z = 8;
+  // Loop
+  const clk=new THREE.Clock();
+  (function loop(){
+    requestAnimationFrame(loop);
+    const t=clk.getElapsedTime();
+    cx+=(tx-cx)*.05;cy+=(ty-cy)*.05;
+    grp.rotation.y=cx*.65+Math.sin(t*.4)*.12;
+    grp.rotation.x=cy*.45+Math.cos(t*.4)*.1;
+    grp.position.y=1.1+Math.sin(t*1.6)*.08;
+    star.rotation.z=t*.8;star.rotation.y=Math.sin(t)*.5;
+    ol.position.x=cx*4;ol.position.y=-cy*4+1;
+    const p=pts.geometry.attributes.position.array;
+    for(let i=0;i<n;i++){p[i*3+1]+=sp[i];p[i*3]+=Math.sin(t+i)*.001;if(p[i*3+1]>2.2){p[i*3+1]=-1.2;p[i*3]=(Math.random()-.5)*2.5}}
+    pts.geometry.attributes.position.needsUpdate=true;
+    renderer.render(scene,camera);
+  })();
+
+  window.addEventListener('resize',()=>{
+    const w=innerWidth,h=innerHeight;
+    camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);
+    camera.position.z=w<600?9.5:8;
   });
-  if (window.innerWidth < 768) camera.position.z = 9.2;
+  if(innerWidth<600)camera.position.z=9.5;
 }
-window.initThreeJS = initThreeJS;
+window.initThree=initThree;
 </script>
 
-<!-- FIREBASE -->
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-  const app = initializeApp({ apiKey:"AIzaSyCczKnSawfHiAPuMjY2L80ww_wtBMJJY30", authDomain:"facilities-logcomex.firebaseapp.com", projectId:"facilities-logcomex", storageBucket:"facilities-logcomex.firebasestorage.app", messagingSenderId:"957812645576", appId:"1:957812645576:web:80c88475cc904106d20ffd" });
-  const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ hd: 'logcomex.com' });
-  window._auth = auth;
-  window.loginGoogle = async function() {
-    document.getElementById('authError').style.display = 'none';
-    try {
-      const result = await signInWithPopup(auth, provider);
-      if (!result.user.email.endsWith('@logcomex.com')) { await signOut(auth); document.getElementById('authError').style.display='block'; }
-    } catch(e) { if (e.code !== 'auth/popup-closed-by-user') { document.getElementById('authError').style.display='block'; } }
-  };
-  onAuthStateChanged(auth, (user) => {
-    document.getElementById('loading').classList.add('hidden');
-    if (user && user.email && user.email.endsWith('@logcomex.com')) {
-      window._currentUser = user;
-      document.getElementById('authScreen').style.display = 'none';
-      document.getElementById('heroSection').style.display = 'flex';
-      document.getElementById('mainSection').style.display = 'block';
-      document.getElementById('pageFooter').style.display = 'block';
-      if (user.photoURL) document.getElementById('headerAvatar').src = user.photoURL;
-      document.getElementById('headerName').textContent = (user.displayName||user.email).split(' ')[0];
-      document.getElementById('siteHeader').classList.add('visible');
-      // ✅ Inicializa Three.js DEPOIS que o hero está visível no DOM
-      requestAnimationFrame(() => requestAnimationFrame(() => window.initThreeJS()));
-      // Anima o form ao entrar na viewport
-      const obs = new IntersectionObserver(entries => {
-        entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);} });
-      }, { threshold: 0.1 });
-      obs.observe(document.getElementById('sectionEyebrow'));
-      obs.observe(document.getElementById('formCard'));
-    } else {
-      window._currentUser = null;
-      document.getElementById('authScreen').style.display = 'flex';
-      document.getElementById('heroSection').style.display = 'none';
-      document.getElementById('mainSection').style.display = 'none';
-      document.getElementById('pageFooter').style.display = 'none';
-    }
-  });
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+const app=initializeApp({apiKey:"AIzaSyCczKnSawfHiAPuMjY2L80ww_wtBMJJY30",authDomain:"facilities-logcomex.firebaseapp.com",projectId:"facilities-logcomex",storageBucket:"facilities-logcomex.firebasestorage.app",messagingSenderId:"957812645576",appId:"1:957812645576:web:80c88475cc904106d20ffd"});
+const auth=getAuth(app);
+const prov=new GoogleAuthProvider();prov.setCustomParameters({hd:'logcomex.com'});
+window._auth=auth;
+window.loginGoogle=async function(){
+  document.getElementById('authError').style.display='none';
+  try{const r=await signInWithPopup(auth,prov);if(!r.user.email.endsWith('@logcomex.com')){await signOut(auth);document.getElementById('authError').style.display='block'}}
+  catch(e){if(e.code!=='auth/popup-closed-by-user')document.getElementById('authError').style.display='block'}
+};
+onAuthStateChanged(auth,user=>{
+  document.getElementById('loading').classList.add('h');
+  if(user&&user.email&&user.email.endsWith('@logcomex.com')){
+    window._cu=user;
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('heroSection').style.display='flex';
+    document.getElementById('mainSection').style.display='block';
+    document.getElementById('pageFooter').style.display='block';
+    document.getElementById('siteHeader').classList.add('v');
+    if(user.photoURL)document.getElementById('headerAvatar').src=user.photoURL;
+    document.getElementById('headerName').textContent=(user.displayName||user.email).split(' ')[0];
+    // Inicializa Three.js depois de 2 frames (hero já visível)
+    requestAnimationFrame(()=>requestAnimationFrame(()=>window.initThree()));
+    // Anima form ao entrar na tela
+    const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('v');obs.unobserve(e.target)}})},{threshold:.1});
+    obs.observe(document.getElementById('sectionEyebrow'));
+    obs.observe(document.getElementById('formCard'));
+  }else{
+    window._cu=null;
+    document.getElementById('authScreen').style.display='flex';
+    ['heroSection','mainSection','pageFooter'].forEach(id=>document.getElementById(id).style.display='none');
+  }
+});
 </script>
 </body>
 </html>
