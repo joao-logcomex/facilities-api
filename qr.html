@@ -150,15 +150,17 @@ textarea::placeholder{color:var(--ink3)}
 <!-- HEADER -->
 <header class="sh" id="siteHeader">
   <a class="lh" href="/">
-    <svg width="100" height="15" viewBox="0 0 197 30" fill="none">
-      <path d="M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z" fill="#8E44ED"/>
-      <path d="M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z" fill="#6613D0"/>
-      <path d="M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z" fill="#ffffff"/>
-      <path d="M34.6369 17.3919V0.96096H31.4808V17.3786C31.4808 20.5613 34.0752 23.1423 37.2727 23.1423H38.0798V20.0025H37.2549C35.8047 20.0025 34.6325 18.8347 34.6325 17.3948H34.6369Z" fill="white"/>
-      <path d="M47.7122 7.63091C45.446 7.63091 43.5509 8.37448 42.077 9.83796C40.584 11.2837 39.8286 13.1493 39.8286 15.3874C39.8286 17.6255 40.584 19.491 42.077 20.9368C43.5509 22.4017 45.446 23.1438 47.7122 23.1438C49.9784 23.1438 51.8735 22.3988 53.3473 20.9368C54.8404 19.491 55.5972 17.6255 55.5972 15.3874C55.5972 13.1493 54.8418 11.2837 53.3488 9.83796C51.875 8.373 49.9798 7.63091 47.7137 7.63091H47.7122ZM51.1151 18.7726C50.2267 19.6581 49.0855 20.1045 47.7107 20.1045C46.3359 20.1045 45.1962 19.6581 44.3063 18.7726C43.4178 17.8915 42.9684 16.7518 42.9684 15.3859C42.9684 14.02 43.4193 12.8847 44.3063 11.9992C45.1947 11.1137 46.3359 10.6673 47.7107 10.6673C49.0855 10.6673 50.2252 11.1137 51.1151 11.9992C52.0051 12.8847 52.453 14.0214 52.453 15.3859C52.453 16.7503 52.0021 17.8886 51.1151 18.7726Z" fill="white"/>
+    <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="6" fill="#6613D0"/>
+      <path d="M6 19.5H12.5V26H6V19.5Z" fill="white"/>
+      <path d="M6 6H12.5V19.5H6V6Z" fill="white"/>
+      <path d="M6 19.5H19.5V26H6V19.5Z" fill="white"/>
+      <path d="M13 6H19.5V12.5H13V6Z" fill="#FE8F1C"/>
+      <path d="M19.5 12.5H26V19.5H19.5V12.5Z" fill="white"/>
+      <path d="M19.5 19.5H26V26H19.5V19.5Z" fill="white"/>
     </svg>
     <div class="ld"></div>
-    <span class="lf">Facilities</span>
+    <span style="font-family:'Funnel Display',sans-serif;font-weight:800;font-size:.95rem;color:#fff;letter-spacing:-.02em">Logcomex</span><div class="ld"></div><span class="lf">Facilities</span>
   </a>
   <div class="hu">
     <img class="ha" id="headerAvatar" src="" alt="" onerror="this.style.display='none'">
@@ -263,17 +265,19 @@ function initThree(){
   renderer.setSize(W,H);
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 
-  // Luzes
-  scene.add(new THREE.AmbientLight(0x2D085D,2));
-  const pl=new THREE.PointLight(0x6613D0,6,14);pl.position.set(-3,2,2);scene.add(pl);
-  const ol=new THREE.PointLight(0xFE8F1C,8,12);ol.position.set(2,2,3);scene.add(ol);
+  // Luzes calibradas para não distorcer cores
+  scene.add(new THREE.AmbientLight(0xffffff,1.2));
+  scene.add(new THREE.AmbientLight(0x2D085D,0.8));
+  const pl=new THREE.DirectionalLight(0xffffff,1.5);pl.position.set(-2,3,3);scene.add(pl);
+  const ol=new THREE.PointLight(0xFE8F1C,3,10);ol.position.set(2,2,3);scene.add(ol);
+  const sl=new THREE.PointLight(0x8E44ED,2,8);sl.position.set(-2,-1,2);scene.add(sl);
 
   const grp=new THREE.Group();grp.position.y=1.1;grp.scale.set(0,0,0);scene.add(grp);
 
-  // Materiais simples (compatível com r128 sem transmission)
-  const mP=new THREE.MeshStandardMaterial({color:0x6613D0,metalness:.5,roughness:.2,transparent:true,opacity:.9});
-  const mO=new THREE.MeshStandardMaterial({color:0xFE8F1C,metalness:.4,roughness:.15,emissive:0xFE8F1C,emissiveIntensity:.3,transparent:true,opacity:.92});
-  const mS=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xFE8F1C,emissiveIntensity:2.5,roughness:.1});
+  // Materiais com cores fiéis — Lambert não distorce cores com iluminação
+  const mP=new THREE.MeshPhongMaterial({color:0x6613D0,emissive:0x2D085D,emissiveIntensity:.4,shininess:80,transparent:true,opacity:.95});
+  const mO=new THREE.MeshPhongMaterial({color:0xFE8F1C,emissive:0x8B4500,emissiveIntensity:.3,shininess:100,transparent:true,opacity:.98});
+  const mS=new THREE.MeshPhongMaterial({color:0xffffff,emissive:0xFE8F1C,emissiveIntensity:.8,shininess:200});
 
   const ext={depth:.4,bevelEnabled:true,bevelSegments:3,bevelSize:.04,bevelThickness:.04};
 
@@ -332,7 +336,7 @@ function initThree(){
     grp.rotation.x=cy*.45+Math.cos(t*.4)*.1;
     grp.position.y=1.1+Math.sin(t*1.6)*.08;
     star.rotation.z=t*.8;star.rotation.y=Math.sin(t)*.5;
-    ol.position.x=cx*4;ol.position.y=-cy*4+1;
+    ol.position.x=cx*3;ol.position.y=-cy*3+1;
     const p=pts.geometry.attributes.position.array;
     for(let i=0;i<n;i++){p[i*3+1]+=sp[i];p[i*3]+=Math.sin(t+i)*.001;if(p[i*3+1]>2.2){p[i*3+1]=-1.2;p[i*3]=(Math.random()-.5)*2.5}}
     pts.geometry.attributes.position.needsUpdate=true;
