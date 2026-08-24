@@ -9,19 +9,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --purple:#6613D0;--purple-dark:#5B11BA;--purple-deep:#2D085D;
-  --purple-light:#8E44ED;--orange:#FE8F1C;
+  --purple:#6613D0;--purple-light:#8E44ED;--orange:#FE8F1C;
   --surface:#fff;--surface2:#f5f3ff;--border:rgba(102,19,208,0.12);
   --ink:#1e1b4b;--ink2:#6b7280;--ink3:#9ca3af;
   --r:14px;--rs:10px;
 }
 html,body{width:100%;height:100%;overflow:hidden;background:#0B0D19;font-family:'Poppins',sans-serif;color:#fff}
-@media(max-width:768px){html,body{overflow:auto}}
+@media(max-width:768px){html,body{overflow-y:auto;height:auto}}
 
 /* LOADING */
 #loading{position:fixed;inset:0;background:#0B0D19;display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s,visibility .5s}
@@ -50,23 +47,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0B0D19;font-family:
 .hu{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.45);font-size:.8rem}
 .ha{width:28px;height:28px;border-radius:50%;border:2px solid rgba(102,19,208,.4);object-fit:cover}
 
-/* APP — layout lado a lado */
+/* APP */
 #app{display:none;width:100%;height:100vh;background:radial-gradient(circle at 30% 50%,#2D085D 0%,#0B0D19 65%);padding-top:56px}
-.app-inner{display:flex;align-items:center;justify-content:center;height:100%;gap:0;max-width:1100px;margin:0 auto;padding:0 2rem}
+.app-inner{display:flex;align-items:center;justify-content:center;height:100%;max-width:1100px;margin:0 auto;padding:0 2rem;gap:2rem}
 
-/* LADO ESQUERDO — Three.js */
-.hero-side{flex:0 0 auto;width:420px;height:100%;display:flex;align-items:center;justify-content:center;position:relative}
-@media(max-width:900px){.hero-side{width:280px}}
-#three-canvas{width:100%;height:100%;display:block}
+/* LADO ESQUERDO — imagem */
+.hero-side{flex:0 0 auto;width:440px;display:flex;align-items:center;justify-content:center}
+.hero-img{width:100%;max-width:440px;object-fit:contain;animation:float 4s ease-in-out infinite;filter:drop-shadow(0 0 50px rgba(102,19,208,0.45))}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-16px) rotate(1deg)}}
+@media(max-width:900px){.hero-side{width:260px}.hero-img{max-width:260px}}
 
-/* LADO DIREITO — textos + formulário */
-.form-side{flex:1;max-width:480px;padding-left:2rem;opacity:0;transform:translateX(30px);transition:opacity .7s ease .4s,transform .7s cubic-bezier(.16,1,.3,1) .4s}
+/* LADO DIREITO — formulário */
+.form-side{flex:1;max-width:460px;opacity:0;transform:translateX(30px);transition:opacity .7s ease .3s,transform .7s cubic-bezier(.16,1,.3,1) .3s}
 .form-side.v{opacity:1;transform:translateX(0)}
-
 .hero-eyebrow{display:inline-flex;align-items:center;gap:.5rem;background:rgba(254,143,28,.1);border:1px solid rgba(254,143,28,.3);padding:.4rem 1rem;border-radius:100px;font-size:.7rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:1rem}
-.hero-title{font-family:'Funnel Display',sans-serif;font-size:clamp(2rem,3.5vw,3.2rem);font-weight:800;line-height:1.05;margin-bottom:1.5rem;background:linear-gradient(150deg,#fff 40%,#C4A1FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.04em}
+.hero-title{font-family:'Funnel Display',sans-serif;font-size:clamp(1.8rem,3.2vw,3rem);font-weight:800;line-height:1.05;margin-bottom:1.4rem;background:linear-gradient(150deg,#fff 40%,#C4A1FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.04em}
 
-/* Card do formulário */
+/* Card formulário */
 .fcard{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);overflow:hidden;backdrop-filter:blur(12px)}
 .fcard-head{padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px}
 .fcard-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--purple),var(--purple-light));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
@@ -78,7 +75,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0B0D19;font-family:
 .tip strong{color:var(--purple-light)}
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:.9rem}
 .field label{font-size:.76rem;font-weight:600;color:rgba(255,255,255,.4)}
-textarea{width:100%;padding:11px 13px;border:1.5px solid rgba(255,255,255,.08);border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.85rem;color:#fff;background:rgba(255,255,255,.05);outline:none;transition:border-color .2s,box-shadow .2s;resize:none;height:110px}
+textarea{width:100%;padding:11px 13px;border:1.5px solid rgba(255,255,255,.08);border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.85rem;color:#fff;background:rgba(255,255,255,.05);outline:none;transition:border-color .2s,box-shadow .2s;resize:none;height:100px}
 textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(102,19,208,.15)}
 textarea::placeholder{color:rgba(255,255,255,.2)}
 .cc{font-size:.68rem;color:rgba(255,255,255,.25);text-align:right;margin-top:2px}
@@ -87,22 +84,21 @@ textarea::placeholder{color:rgba(255,255,255,.2)}
 .btn-s:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .bsp{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-/* Sucesso */
 .scard{display:none;text-align:center;padding:2rem 1.5rem}
-.sicon{width:64px;height:64px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.8rem}
+.sicon{width:60px;height:60px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .9rem;font-size:1.7rem}
 .scard h2{font-family:'Funnel Display',sans-serif;font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:.4rem;letter-spacing:-.03em}
 .scard p{color:rgba(255,255,255,.4);font-size:.83rem;line-height:1.7;margin-bottom:.3rem}
-.stk{display:inline-block;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;font-weight:700;font-size:.95rem;padding:5px 18px;border-radius:100px;margin:.8rem 0 1rem;box-shadow:0 4px 14px rgba(102,19,208,.3)}
+.stk{display:inline-block;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;font-weight:700;font-size:.95rem;padding:5px 18px;border-radius:100px;margin:.7rem 0 1rem;box-shadow:0 4px 14px rgba(102,19,208,.3)}
 .btn-n{background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);padding:8px 20px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;transition:all .2s}
 .btn-n:hover{background:rgba(255,255,255,.05);color:#fff}
 
 /* MOBILE */
 @media(max-width:768px){
-  #app{overflow-y:auto;height:auto}
-  .app-inner{flex-direction:column;padding:1rem 1.25rem 2rem;gap:0;height:auto}
-  .hero-side{width:100%;height:280px;flex-shrink:0}
-  .form-side{padding-left:0;padding-top:0;max-width:100%;width:100%}
+  #app{height:auto;overflow-y:auto}
+  .app-inner{flex-direction:column;padding:1.5rem 1.25rem 3rem;gap:1.5rem;height:auto}
+  .hero-side{width:100%}
+  .hero-img{max-width:280px;margin:0 auto;display:block}
+  .form-side{max-width:100%;width:100%}
   .hero-title{font-size:1.8rem}
 }
 </style>
@@ -129,7 +125,7 @@ textarea::placeholder{color:rgba(255,255,255,.2)}
 <div id="authScreen">
   <div class="ab">
     <div style="display:flex;justify-content:center;margin-bottom:1.5rem">
-      <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+      <svg width="42" height="42" viewBox="0 0 32 32" fill="none">
         <rect width="32" height="32" rx="7" fill="#6613D0"/>
         <path d="M6 19.5H12.5V26H6V19.5Z" fill="white"/>
         <path d="M6 6H12.5V19.5H6V6Z" fill="white"/>
@@ -176,16 +172,15 @@ textarea::placeholder{color:rgba(255,255,255,.2)}
 <div id="app">
   <div class="app-inner">
 
-    <!-- Lado esquerdo: Three.js -->
+    <!-- Imagem hero -->
     <div class="hero-side">
-      <canvas id="three-canvas"></canvas>
+      <img src="/hero-logcomex.png" alt="LogComex Facilities" class="hero-img">
     </div>
 
-    <!-- Lado direito: texto + formulário -->
+    <!-- Formulário -->
     <div class="form-side" id="formSide">
       <div class="hero-eyebrow"><span>●</span> CHAMADO RÁPIDO</div>
       <h1 class="hero-title">O que você<br>precisa?</h1>
-
       <div class="fcard">
         <div class="fcard-head">
           <div class="fcard-icon">💬</div>
@@ -223,14 +218,12 @@ textarea::placeholder{color:rgba(255,255,255,.2)}
   </div>
 </div>
 
-<!-- JS -->
 <script>
-const slug = new URLSearchParams(location.search).get('local') || '';
-const LOCAIS = {'war-room':'🪖 War Room — 2º andar','xgh':'🧪 XGH — 2º andar','ia-2':'🤖 IA — 2º andar','deploy':'🚀 Deploy — 2º andar','root':'🌱 Root — 2º andar','roadmap':'🗺️ Roadmap — 2º andar','full-stack':'🧱 Full Stack — 1º andar','git':'🔀 Git — 1º andar','bot':'🤖 Bot — 1º andar','linux':'🐧 Linux — 1º andar','cron':'⏰ Cron — 1º andar','ia-1':'🧠 IA — 1º andar','html':'📄 HTML — 1º andar','cloud':'☁️ Cloud — 1º andar','container':'📦 Container — 1º andar','python':'🐍 Python — 1º andar','javascript':'📜 Javascript — 1º andar','php':'🐘 PHP — 1º andar','banheiro-fem-armarios-1':'🚺 Banheiro Feminino — Armários 1','banheiro-masc-armarios-1':'🚹 Banheiro Masculino — Armários 1','banheiro-fem-armarios-2':'🚺 Banheiro Feminino — Armários 2','banheiro-masc-armarios-2':'🚹 Banheiro Masculino — Armários 2','banheiro-fem-copa-1':'🚺 Banheiro Feminino — Copa/Cozinha 1','banheiro-masc-copa-1':'🚹 Banheiro Masculino — Copa/Cozinha 1','banheiro-fem-copa-2':'🚺 Banheiro Feminino — Copa/Cozinha 2','banheiro-masc-copa-2':'🚹 Banheiro Masculino — Copa/Cozinha 2','banheiro-pcd':'♿ Banheiro PCD — 2º andar','banheiro-fem-cozinha':'🚺 Banheiro Feminino — Cozinha 2º andar','banheiro-masc-root':'🚹 Banheiro Masculino — Sala Root'};
-const localNome = LOCAIS[slug] || (slug ? '📍 '+slug : '');
+const slug=new URLSearchParams(location.search).get('local')||'';
+const LOCAIS={'war-room':'🪖 War Room — 2º andar','xgh':'🧪 XGH — 2º andar','ia-2':'🤖 IA — 2º andar','deploy':'🚀 Deploy — 2º andar','root':'🌱 Root — 2º andar','roadmap':'🗺️ Roadmap — 2º andar','full-stack':'🧱 Full Stack — 1º andar','git':'🔀 Git — 1º andar','bot':'🤖 Bot — 1º andar','linux':'🐧 Linux — 1º andar','cron':'⏰ Cron — 1º andar','ia-1':'🧠 IA — 1º andar','html':'📄 HTML — 1º andar','cloud':'☁️ Cloud — 1º andar','container':'📦 Container — 1º andar','python':'🐍 Python — 1º andar','javascript':'📜 Javascript — 1º andar','php':'🐘 PHP — 1º andar','banheiro-fem-armarios-1':'🚺 Banheiro Feminino — Armários 1','banheiro-masc-armarios-1':'🚹 Banheiro Masculino — Armários 1','banheiro-fem-armarios-2':'🚺 Banheiro Feminino — Armários 2','banheiro-masc-armarios-2':'🚹 Banheiro Masculino — Armários 2','banheiro-fem-copa-1':'🚺 Banheiro Feminino — Copa/Cozinha 1','banheiro-masc-copa-1':'🚹 Banheiro Masculino — Copa/Cozinha 1','banheiro-fem-copa-2':'🚺 Banheiro Feminino — Copa/Cozinha 2','banheiro-masc-copa-2':'🚹 Banheiro Masculino — Copa/Cozinha 2','banheiro-pcd':'♿ Banheiro PCD — 2º andar','banheiro-fem-cozinha':'🚺 Banheiro Feminino — Cozinha 2º andar','banheiro-masc-root':'🚹 Banheiro Masculino — Sala Root'};
+const localNome=LOCAIS[slug]||(slug?'📍 '+slug:'');
 
 function cnt(){document.getElementById('charCount').textContent=document.getElementById('descricao').value.length}
-
 async function enviar(){
   const desc=document.getElementById('descricao').value.trim();
   if(!desc||desc.length<10){alert('Descreva com pelo menos 10 caracteres.');return}
@@ -253,185 +246,8 @@ async function enviar(){
 window.enviar=enviar;
 function novoChamado(){document.getElementById('descricao').value='';document.getElementById('charCount').textContent='0';document.getElementById('formBody').style.display='block';document.getElementById('successCard').style.display='none'}
 window.novoChamado=novoChamado;
-
-// ── THREE.JS — ícone LogComex 3D flutuando sozinho ──
-function initThree(){
-  if(typeof THREE==='undefined')return;
-
-  const canvas=document.getElementById('three-canvas');
-  const container=canvas.parentElement;
-  const W=container.clientWidth||420;
-  const H=container.clientHeight||500;
-
-  const scene=new THREE.Scene();
-  const camera=new THREE.PerspectiveCamera(40,W/H,.1,100);
-  camera.position.set(0,0,7);
-
-  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
-  renderer.setSize(W,H);
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  renderer.shadowMap.enabled=true;
-
-  // Luzes calibradas — branca suave para não distorcer cores
-  const ambient=new THREE.AmbientLight(0xffffff,0.8);
-  scene.add(ambient);
-
-  const dirLight=new THREE.DirectionalLight(0xffffff,1.2);
-  dirLight.position.set(3,5,5);
-  scene.add(dirLight);
-
-  const purpleLight=new THREE.PointLight(0x8E44ED,1.5,10);
-  purpleLight.position.set(-3,2,2);
-  scene.add(purpleLight);
-
-  const orangeGlow=new THREE.PointLight(0xFE8F1C,1.2,8);
-  orangeGlow.position.set(2,-1,3);
-  scene.add(orangeGlow);
-
-  // ── Grupo principal ──
-  const grp=new THREE.Group();
-  scene.add(grp);
-
-  // Materiais com cores exatas
-  const matPurple=new THREE.MeshPhongMaterial({
-    color:0x6613D0, specular:0x9966ff, shininess:60,
-    transparent:false
-  });
-  const matWhite=new THREE.MeshPhongMaterial({
-    color:0xffffff, specular:0xffffff, shininess:80
-  });
-  const matOrange=new THREE.MeshPhongMaterial({
-    color:0xFE8F1C, specular:0xffcc88, shininess:80,
-    emissive:0x331100, emissiveIntensity:.3
-  });
-  const matStar=new THREE.MeshPhongMaterial({
-    color:0xffffff, emissive:0xFE8F1C, emissiveIntensity:.6,
-    specular:0xffffff, shininess:120
-  });
-
-  // Tamanho do ícone — baseado no favicon 32x32, escala 3D
-  const S=1.2; // escala base
-
-  // FUNDO ROXO (rect 32x32) — cubo achatado
-  const bgGeo=new THREE.BoxGeometry(S*2,S*2,.12);
-  const bgMesh=new THREE.Mesh(bgGeo,matPurple);
-  bgMesh.position.z=-.3;
-  grp.add(bgMesh);
-
-  // Bloco branco esquerdo vertical (path "M6 6H12.5V19.5H6V6Z" → x:6-12.5, y:6-19.5)
-  // Convertendo coordenadas favicon (0-32) para espaço 3D (-1 a +1)
-  function toV(x,w,y,h,z=0){
-    const cx=((x+w/2)/32-0.5)*S*2;
-    const cy=-((y+h/2)/32-0.5)*S*2;
-    return [cx,cy,z];
-  }
-  function box(x,y,w,h,mat,z=.12){
-    const g=new THREE.BoxGeometry(w/32*S*2,h/32*S*2,.22);
-    const m=new THREE.Mesh(g,mat);
-    const [cx,cy]=toV(x,w,y,h);
-    m.position.set(cx,cy,z);
-    return m;
-  }
-
-  // Blocos brancos — baseados exatamente nas paths do favicon SVG
-  // path "M6 6H12.5V19.5H6" → x=6, y=6, w=6.5, h=13.5
-  grp.add(box(6,6,6.5,13.5,matWhite));
-  // path "M6 19.5H19.5V26H6" → x=6, y=19.5, w=13.5, h=6.5
-  grp.add(box(6,19.5,13.5,6.5,matWhite));
-  // path "M19.5 12.5H26V19.5H19.5" → x=19.5, y=12.5, w=6.5, h=7
-  grp.add(box(19.5,12.5,6.5,7,matWhite));
-  // path "M19.5 19.5H26V26H19.5" → x=19.5, y=19.5, w=6.5, h=6.5
-  grp.add(box(19.5,19.5,6.5,6.5,matWhite));
-
-  // Bloco laranja — "M13 6H19.5V12.5H13" → x=13, y=6, w=6.5, h=6.5
-  grp.add(box(13,6,6.5,6.5,matOrange,.18));
-
-  // Estrela IA no centro
-  const starShape=new THREE.Shape();
-  starShape.moveTo(0,.4);
-  starShape.quadraticCurveTo(0,0,.4,0);
-  starShape.quadraticCurveTo(0,0,0,-.4);
-  starShape.quadraticCurveTo(0,0,-.4,0);
-  starShape.quadraticCurveTo(0,0,0,.4);
-  const starGeo=new THREE.ExtrudeGeometry(starShape,{depth:.1,bevelEnabled:true,bevelSize:.015,bevelThickness:.015,bevelSegments:2});
-  starGeo.center();
-  const star=new THREE.Mesh(starGeo,matStar);
-  star.position.set(0,0,.45);
-  star.scale.set(.7,.7,1);
-  grp.add(star);
-
-  // Partículas laranja
-  const pCount=80;
-  const pPos=new Float32Array(pCount*3);
-  const pSp=[];
-  for(let i=0;i<pCount;i++){
-    pPos[i*3]=(Math.random()-.5)*3.5;
-    pPos[i*3+1]=(Math.random()-.5)*3.5;
-    pPos[i*3+2]=(Math.random()-.5)*2;
-    pSp.push(Math.random()*.008+.003);
-  }
-  const pGeo=new THREE.BufferGeometry();
-  pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
-  const pts=new THREE.Points(pGeo,new THREE.PointsMaterial({color:0xFE8F1C,size:.04,transparent:true,opacity:.7,blending:THREE.AdditiveBlending}));
-  scene.add(pts);
-
-  // Sombra no chão
-  const shC=document.createElement('canvas');shC.width=shC.height=128;
-  const sx=shC.getContext('2d'),sg=sx.createRadialGradient(64,64,0,64,64,64);
-  sg.addColorStop(0,'rgba(102,19,208,.6)');sg.addColorStop(1,'rgba(0,0,0,0)');
-  sx.fillStyle=sg;sx.fillRect(0,0,128,128);
-  const shMesh=new THREE.Mesh(
-    new THREE.PlaneGeometry(2.8,2.8),
-    new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shC),transparent:true,opacity:.5,depthWrite:false})
-  );
-  shMesh.position.set(0,-1.5,-.4);shMesh.rotation.x=-Math.PI/2.5;
-  scene.add(shMesh);
-
-  // Animação de entrada
-  grp.scale.set(0,0,0);
-  grp.position.y=0;
-  gsap.to(grp.scale,{x:1,y:1,z:1,duration:1.5,ease:'elastic.out(1,.65)',delay:.2});
-
-  // Loop — só levitação e rotação própria, SEM reação ao mouse/scroll
-  const clk=new THREE.Clock();
-  (function loop(){
-    requestAnimationFrame(loop);
-    const t=clk.getElapsedTime();
-
-    // Levitação suave
-    grp.position.y=Math.sin(t*1.2)*.12;
-
-    // Rotação lenta e contínua
-    grp.rotation.y=t*.35;
-    grp.rotation.x=Math.sin(t*.5)*.08;
-
-    // Estrela gira no eixo próprio
-    star.rotation.z=t*.9;
-
-    // Partículas sobem
-    const p=pts.geometry.attributes.position.array;
-    for(let i=0;i<pCount;i++){
-      p[i*3+1]+=pSp[i];
-      if(p[i*3+1]>2.5){p[i*3+1]=-2;p[i*3]=(Math.random()-.5)*3.5}
-    }
-    pts.geometry.attributes.position.needsUpdate=true;
-
-    renderer.render(scene,camera);
-  })();
-
-  // Resize
-  window.addEventListener('resize',()=>{
-    const w2=container.clientWidth||420;
-    const h2=container.clientHeight||500;
-    camera.aspect=w2/h2;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w2,h2);
-  });
-}
-window.initThree=initThree;
 </script>
 
-<!-- FIREBASE -->
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -453,11 +269,7 @@ onAuthStateChanged(auth,user=>{
     document.getElementById('siteHeader').classList.add('v');
     if(user.photoURL)document.getElementById('headerAvatar').src=user.photoURL;
     document.getElementById('headerName').textContent=(user.displayName||user.email).split(' ')[0];
-    // Three.js depois de 2 frames
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      window.initThree();
-      setTimeout(()=>document.getElementById('formSide').classList.add('v'),300);
-    }));
+    setTimeout(()=>document.getElementById('formSide').classList.add('v'),300);
   }else{
     window._cu=null;
     document.getElementById('authScreen').style.display='flex';
