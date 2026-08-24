@@ -177,144 +177,230 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
   const W = cv.width, H = cv.height, cx = W/2, cy = H/2;
   let t = 0;
 
-  // Estrelas
-  const stars = Array.from({length:140}, () => ({
-    x:(Math.random()-.5)*W*1.4, y:(Math.random()-.5)*H*1.4,
-    r:Math.random()*.9+.2,
-    col:Math.random()>.5?'254,143,28':'200,180,255',
-    a:Math.random()*.3+.05, ph:Math.random()*Math.PI*2, sp:Math.random()*.003+.001
+  // Estrelas de fundo — mix de branco e laranja bem sutil
+  const stars = Array.from({length:160}, () => ({
+    x:(Math.random()-.5)*W*1.5, y:(Math.random()-.5)*H*1.5,
+    r:Math.random()*.8+.15,
+    col:Math.random()>.6?'254,143,28':'230,210,255',
+    a:Math.random()*.28+.04, ph:Math.random()*Math.PI*2, sp:Math.random()*.002+.0008
   }));
 
-  // Rede de pontos ao redor do cristal
-  const NET = Array.from({length:14}, (_,i) => {
-    const a=(i/14)*Math.PI*2, r=62+Math.random()*20;
-    return {bx:Math.cos(a)*r, by:Math.sin(a)*r, ph:Math.random()*Math.PI*2};
+  // Rede de pontos orbitando o cristal
+  const NET = Array.from({length:16}, (_,i) => {
+    const rings = [55, 75, 95];
+    const ring = rings[i % rings.length];
+    const offset = (i % rings.length) * 0.3;
+    return {
+      bx: Math.cos((i/16)*Math.PI*2 + offset) * ring,
+      by: Math.sin((i/16)*Math.PI*2 + offset) * ring,
+      ph: Math.random()*Math.PI*2,
+      size: Math.random()*.8+1.2
+    };
   });
+
+  // Halo orbital (círculo pontilhado ao redor)
+  function drawOrbits(float) {
+    ctx.save();
+    ctx.translate(0, float);
+    [72, 100].forEach((r, ri) => {
+      ctx.beginPath();
+      ctx.setLineDash([3, 8]);
+      ctx.arc(0, 0, r, 0, Math.PI*2);
+      ctx.strokeStyle = ri===0
+        ? `rgba(254,143,28,${.18 + Math.sin(t*.5)*.06})`
+        : `rgba(200,160,255,${.12 + Math.sin(t*.4+1)*.05})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+    ctx.restore();
+  }
 
   function frame(){
     ctx.clearRect(0,0,W,H);
-    const float = Math.sin(t*.85)*12;
+    const float = Math.sin(t*.85)*13;
 
-    // Glow de fundo
-    const bg = ctx.createRadialGradient(cx,cy,0,cx,cy,W*.6);
-    bg.addColorStop(0,'rgba(45,8,93,.42)');
-    bg.addColorStop(.55,'rgba(102,19,208,.07)');
-    bg.addColorStop(1,'rgba(0,0,0,0)');
+    // Glow de fundo profundo
+    const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, W*.62);
+    bg.addColorStop(0, 'rgba(45,8,93,.5)');
+    bg.addColorStop(.4, 'rgba(102,19,208,.1)');
+    bg.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
-    // Estrelas
+    // Estrelas pulsando
     stars.forEach(s=>{
-      const a=s.a*(.5+Math.sin(t*s.sp*55+s.ph)*.5);
-      ctx.beginPath(); ctx.arc(cx+s.x,cy+s.y,s.r,0,Math.PI*2);
+      const a=s.a*(.4+Math.sin(t*s.sp*60+s.ph)*.6);
+      ctx.beginPath(); ctx.arc(cx+s.x, cy+s.y, s.r, 0, Math.PI*2);
       ctx.fillStyle=`rgba(${s.col},${a})`; ctx.fill();
     });
 
-    ctx.save(); ctx.translate(cx, cy+float);
+    ctx.save(); ctx.translate(cx, cy);
 
-    // ── ONDAS ──
-    for(let w=0;w<2;w++){
-      const orange=w===1;
-      const col=orange?'254,143,28':'210,195,255';
-      const yOff=orange?32:-32;
-      const spd=orange?1.25:1.65;
-      for(let i=0;i<120;i++){
-        const p=((i/120)+t*.052*(orange?1:-1)+1)%1;
-        const x=(p-.5)*(W*1.15);
-        const y=Math.sin(p*Math.PI*3+(orange?1.5:0)+t*spd)*55*Math.sin(p*Math.PI);
-        const a=Math.sin(p*Math.PI)*(orange?.62:.4);
-        if(a<.02)continue;
-        const sz=(p>.42&&p<.58)?1.8:.85;
-        ctx.beginPath(); ctx.arc(x,y+yOff,sz,0,Math.PI*2);
+    // ── ONDAS — duas cruzando, bem expressivas ──
+    for(let w=0; w<2; w++){
+      const orange = w===1;
+      const col = orange ? '254,143,28' : '200,185,255';
+      const yBase = orange ? 38 : -38;
+      const spd = orange ? 1.2 : 1.6;
+      const amp = orange ? 58 : 48;
+      const count = 130;
+      for(let i=0; i<count; i++){
+        const p = ((i/count) + t*.048*(orange?1:-1) + 1) % 1;
+        const x = (p-.5) * (W*1.15);
+        const fade = Math.sin(p*Math.PI);
+        const y = Math.sin(p*Math.PI*3 + (orange?1.6:0) + t*spd) * amp * fade;
+        const a = fade * (orange?.65:.42);
+        if(a<.018) continue;
+        // Tamanho varia — maior no centro
+        const sz = .5 + fade * (orange?1.5:1.1);
+        ctx.beginPath(); ctx.arc(x, y+yBase+float, sz, 0, Math.PI*2);
         ctx.fillStyle=`rgba(${col},${a})`; ctx.fill();
       }
     }
 
-    // ── CRISTAL ROXO ──
-    const S=75, spin=t*.12;
-    const glow=ctx.createRadialGradient(0,0,0,0,0,S*1.35);
-    glow.addColorStop(0,'rgba(142,68,237,.6)');
-    glow.addColorStop(.5,'rgba(102,19,208,.25)');
-    glow.addColorStop(1,'rgba(45,8,93,0)');
-    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(0,0,S*1.35,0,Math.PI*2); ctx.fill();
+    // Halos orbitais
+    drawOrbits(float);
 
-    const fc=['rgba(145,75,255,.95)','rgba(85,25,198,.9)','rgba(175,110,255,.88)','rgba(70,12,186,.92)','rgba(160,90,255,.9)','rgba(105,40,210,.93)','rgba(188,128,255,.85)','rgba(78,16,192,.9)'];
-    for(let i=0;i<8;i++){
-      const a1=spin+(i/8)*Math.PI*2, a2=spin+((i+1)/8)*Math.PI*2;
-      ctx.beginPath(); ctx.moveTo(0,0);
-      ctx.lineTo(Math.cos(a1)*S,Math.sin(a1)*S);
-      ctx.lineTo(Math.cos(a2)*S,Math.sin(a2)*S);
-      ctx.closePath(); ctx.fillStyle=fc[i]; ctx.fill();
-      ctx.strokeStyle='rgba(200,160,255,.15)'; ctx.lineWidth=.5; ctx.stroke();
+    ctx.save(); ctx.translate(0, float);
+
+    // ── CRISTAL ROXO — mais detalhado, com bordas brilhantes ──
+    const S = 80;
+    const spin = t * .10; // rotação mais lenta e elegante
+
+    // Glow externo multicamadas
+    [[S*1.6,'rgba(142,68,237,.35)'],[S*1.2,'rgba(102,19,208,.5)'],[S*.95,'rgba(180,100,255,.2)']].forEach(([r,c])=>{
+      const g = ctx.createRadialGradient(0,0,0,0,0,r);
+      g.addColorStop(0,c); g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+    });
+
+    // Facetas com variação de brilho baseada no ângulo de rotação
+    const faceData = [
+      {dark:'rgba(60,10,160,.96)',  light:'rgba(140,70,255,.92)'},
+      {dark:'rgba(45,5,145,.93)',   light:'rgba(160,90,255,.9)'},
+      {dark:'rgba(75,15,175,.95)',  light:'rgba(130,60,250,.92)'},
+      {dark:'rgba(55,8,155,.94)',   light:'rgba(155,85,255,.9)'},
+      {dark:'rgba(70,12,168,.95)',  light:'rgba(145,75,252,.91)'},
+      {dark:'rgba(48,6,150,.93)',   light:'rgba(165,95,255,.9)'},
+      {dark:'rgba(80,18,178,.96)',  light:'rgba(125,55,248,.92)'},
+      {dark:'rgba(52,7,152,.94)',   light:'rgba(158,88,255,.9)'},
+    ];
+    for(let i=0; i<8; i++){
+      const a1 = spin + (i/8)*Math.PI*2;
+      const a2 = spin + ((i+1)/8)*Math.PI*2;
+      // Alterna claro/escuro baseado na posição da faceta
+      const bright = Math.sin(a1 + t*.2) > 0;
+      const col = bright ? faceData[i].light : faceData[i].dark;
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.lineTo(Math.cos(a1)*S, Math.sin(a1)*S);
+      ctx.lineTo(Math.cos(a2)*S, Math.sin(a2)*S);
+      ctx.closePath();
+      ctx.fillStyle = col; ctx.fill();
+      // Borda de brilho nas arestas
+      ctx.strokeStyle='rgba(220,180,255,.22)'; ctx.lineWidth=.8; ctx.stroke();
     }
-    const shine=ctx.createRadialGradient(-S*.3,-S*.3,0,0,0,S);
-    shine.addColorStop(0,'rgba(255,255,255,.52)');
-    shine.addColorStop(.4,'rgba(255,255,255,.1)');
+
+    // Anel de brilho nas bordas do cristal (efeito gem)
+    ctx.beginPath(); ctx.arc(0,0,S,0,Math.PI*2);
+    ctx.strokeStyle='rgba(200,160,255,.35)'; ctx.lineWidth=1.5; ctx.stroke();
+
+    // Reflexo interno
+    const shine = ctx.createRadialGradient(-S*.32, -S*.32, 0, 0, 0, S);
+    shine.addColorStop(0,'rgba(255,255,255,.55)');
+    shine.addColorStop(.3,'rgba(255,255,255,.12)');
+    shine.addColorStop(.7,'rgba(200,170,255,.05)');
     shine.addColorStop(1,'rgba(255,255,255,0)');
     ctx.fillStyle=shine; ctx.beginPath(); ctx.arc(0,0,S,0,Math.PI*2); ctx.fill();
 
-    // ── REDE LARANJA ──
-    const pts=NET.map(p=>({x:p.bx+Math.sin(t*.38+p.ph)*5,y:p.by+Math.cos(t*.33+p.ph)*5}));
-    pts.push({x:0,y:0});
-    for(let i=0;i<pts.length;i++) for(let j=i+1;j<pts.length;j++){
-      const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);
-      if(d<85){
+    // Segundo reflexo menor (brilho especular)
+    const shine2 = ctx.createRadialGradient(S*.2, S*.15, 0, S*.2, S*.15, S*.35);
+    shine2.addColorStop(0,'rgba(255,255,255,.2)');
+    shine2.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=shine2; ctx.beginPath(); ctx.arc(0,0,S,0,Math.PI*2); ctx.fill();
+
+    // ── REDE LARANJA — mais pontos, linhas mais vivas ──
+    const pts = NET.map(p=>({
+      x: p.bx + Math.sin(t*.42+p.ph)*6,
+      y: p.by + Math.cos(t*.38+p.ph)*6,
+      sz: p.size
+    }));
+    pts.push({x:0, y:0, sz:2.5}); // centro maior
+
+    // Linhas
+    for(let i=0; i<pts.length; i++) for(let j=i+1; j<pts.length; j++){
+      const d = Math.hypot(pts[i].x-pts[j].x, pts[i].y-pts[j].y);
+      if(d<90){
+        const a = (1-d/90) * .5;
         ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y);
-        ctx.strokeStyle=`rgba(254,185,55,${(1-d/85)*.45})`; ctx.lineWidth=.8; ctx.stroke();
+        ctx.strokeStyle=`rgba(254,190,60,${a})`; ctx.lineWidth=.75; ctx.stroke();
       }
     }
+    // Nós com glow
     pts.forEach(p=>{
-      ctx.beginPath(); ctx.arc(p.x,p.y,2,0,Math.PI*2);
-      ctx.fillStyle='rgba(254,175,50,.88)';
-      ctx.shadowColor='rgba(254,143,28,.65)'; ctx.shadowBlur=5;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, Math.PI*2);
+      ctx.fillStyle='rgba(254,180,50,.92)';
+      ctx.shadowColor='rgba(254,143,28,.7)'; ctx.shadowBlur=7;
       ctx.fill(); ctx.shadowBlur=0;
     });
 
-    // ── LOGO — L com ponto, estilo prata/branco ──
-    const LS = 165;
-    const silver=ctx.createLinearGradient(-LS*.5,-LS*.6,LS*.4,LS*.4);
-    silver.addColorStop(0,'rgba(255,255,255,1)');
-    silver.addColorStop(.3,'rgba(240,240,255,.98)');
-    silver.addColorStop(.65,'rgba(210,210,240,.93)');
-    silver.addColorStop(1,'rgba(180,180,220,.87)');
+    ctx.restore(); // float
 
-    ctx.shadowColor='rgba(210,220,255,.35)'; ctx.shadowBlur=18;
-    ctx.strokeStyle=silver; ctx.lineWidth=16; ctx.lineCap='round'; ctx.lineJoin='round';
+    // ── LOGO — L com ponto, estilo metálico branco ──
+    const LS = 168;
 
-    // L esquerdo: vertical + horizontal
+    // Gradiente metálico — varia sutilmente com o tempo
+    const metalShift = Math.sin(t*.3) * 10;
+    const metal = ctx.createLinearGradient(
+      -LS*.5 + metalShift, -LS*.6,
+       LS*.4 + metalShift,  LS*.4
+    );
+    metal.addColorStop(0,   'rgba(255,255,255,1)');
+    metal.addColorStop(.25, 'rgba(245,245,255,.98)');
+    metal.addColorStop(.5,  'rgba(215,215,245,.95)');
+    metal.addColorStop(.75, 'rgba(235,235,255,.97)');
+    metal.addColorStop(1,   'rgba(185,185,225,.88)');
+
+    ctx.shadowColor='rgba(220,225,255,.4)'; ctx.shadowBlur=20;
+    ctx.strokeStyle=metal;
+    ctx.lineWidth=15; ctx.lineCap='round'; ctx.lineJoin='round';
+
+    // L esquerdo — traço vertical + horizontal
     ctx.beginPath();
-    ctx.moveTo(-LS*.47,-LS*.56);
-    ctx.lineTo(-LS*.47, LS*.31);
-    ctx.lineTo( LS*.31, LS*.31);
+    ctx.moveTo(-LS*.47, -LS*.56 + float);
+    ctx.lineTo(-LS*.47,  LS*.31 + float);
+    ctx.lineTo( LS*.31,  LS*.31 + float);
     ctx.stroke();
 
-    // L topo-direito: horizontal + vertical curta
+    // L topo-direito — horizontal + vertical curta
     ctx.beginPath();
-    ctx.moveTo(-LS*.08,-LS*.56);
-    ctx.lineTo( LS*.31,-LS*.56);
-    ctx.lineTo( LS*.31,-LS*.07);
+    ctx.moveTo(-LS*.08, -LS*.56 + float);
+    ctx.lineTo( LS*.31, -LS*.56 + float);
+    ctx.lineTo( LS*.31, -LS*.07 + float);
     ctx.stroke();
 
     ctx.shadowBlur=0;
 
-    // Ponto quadrado
-    const px=LS*.5, py=LS*.5, ps=LS*.22, pr=5;
-    ctx.shadowColor='rgba(210,220,255,.22)'; ctx.shadowBlur=10;
+    // Ponto quadrado (canto inferior direito)
+    const px=LS*.5, py=LS*.5+float, ps=LS*.22, pr=5;
+    ctx.shadowColor='rgba(220,225,255,.28)'; ctx.shadowBlur=12;
     ctx.fillStyle='#0B0D19';
-    ctx.strokeStyle='rgba(230,230,252,.9)'; ctx.lineWidth=5;
+    ctx.strokeStyle='rgba(232,232,255,.92)'; ctx.lineWidth=5;
     ctx.beginPath();
-    ctx.moveTo(px-ps/2+pr,py-ps/2); ctx.lineTo(px+ps/2-pr,py-ps/2);
-    ctx.arcTo(px+ps/2,py-ps/2,px+ps/2,py-ps/2+pr,pr);
-    ctx.lineTo(px+ps/2,py+ps/2-pr);
-    ctx.arcTo(px+ps/2,py+ps/2,px+ps/2-pr,py+ps/2,pr);
-    ctx.lineTo(px-ps/2+pr,py+ps/2);
-    ctx.arcTo(px-ps/2,py+ps/2,px-ps/2,py+ps/2-pr,pr);
-    ctx.lineTo(px-ps/2,py-ps/2+pr);
-    ctx.arcTo(px-ps/2,py-ps/2,px-ps/2+pr,py-ps/2,pr);
+    ctx.moveTo(px-ps/2+pr, py-ps/2); ctx.lineTo(px+ps/2-pr, py-ps/2);
+    ctx.arcTo(px+ps/2, py-ps/2, px+ps/2, py-ps/2+pr, pr);
+    ctx.lineTo(px+ps/2, py+ps/2-pr);
+    ctx.arcTo(px+ps/2, py+ps/2, px+ps/2-pr, py+ps/2, pr);
+    ctx.lineTo(px-ps/2+pr, py+ps/2);
+    ctx.arcTo(px-ps/2, py+ps/2, px-ps/2, py+ps/2-pr, pr);
+    ctx.lineTo(px-ps/2, py-ps/2+pr);
+    ctx.arcTo(px-ps/2, py-ps/2, px-ps/2+pr, py-ps/2, pr);
     ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.shadowBlur=0;
 
-    ctx.restore();
-    t+=.016;
+    ctx.restore(); // translate(cx, cy)
+
+    t += .016;
     requestAnimationFrame(frame);
   }
   frame();
