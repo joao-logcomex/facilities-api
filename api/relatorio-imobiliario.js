@@ -314,11 +314,8 @@ async function classificarCategoriaQR(descricao, localNome) {
           role: 'user',
           content: `Você é um classificador de chamados de Facilities. Com base na descrição, retorne APENAS uma das categorias abaixo (só a palavra, sem explicação):
 
-suprimentos - papel, sabonete, papel toalha, copos, caneta, material de escritório, itens de consumo
-manutencao - torneira, lâmpada, ar condicionado, equipamento quebrado, vazamento, elétrica, conserto, porta, janela, fechadura
-limpeza - sujeira, lixo, higiene, cheiro, manchas
-reforma - obra, pintura, melhoria estrutural, instalação de móvel
-outros - qualquer coisa que não se encaixe acima
+suprimentos - papel higiênico, sabonete, papel toalha, copos, material de escritório, itens de consumo que acabaram
+manutencao - torneira, lâmpada, ar condicionado, vazamento, elétrica, conserto, porta, janela, fechadura, equipamento quebrado
 
 Local: ${localNome}
 Descrição: "${descricao}"
@@ -329,8 +326,7 @@ Categoria:`,
     });
     const data = await resp.json();
     const cat = (data.content?.[0]?.text || '').trim().toLowerCase().replace(/[^a-z]/g, '');
-    const validas = ['suprimentos', 'manutencao', 'limpeza', 'reforma', 'outros'];
-    return validas.includes(cat) ? cat : 'outros';
+    return cat === 'suprimentos' ? 'suprimentos' : 'manutencao';
   } catch(e) {
     return 'outros';
   }
