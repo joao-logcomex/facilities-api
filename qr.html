@@ -11,143 +11,142 @@
 <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--purple:#6613D0;--purple-light:#8E44ED;--orange:#FE8F1C;--r:14px;--rs:10px}
-html,body{width:100%;height:100%;overflow:hidden;background:#0B0D19;font-family:'Poppins',sans-serif;color:#fff}
-@media(max-width:768px){html,body{overflow-y:auto;height:auto}}
+:root{--purple:#6613D0;--purple-light:#8E44ED;--purple-deep:#2D085D;--orange:#FE8F1C;--r:14px;--rs:10px}
+html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sans-serif;color:#fff;overflow-x:hidden}
 
-#loading{position:fixed;inset:0;background:#0B0D19;display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s,visibility .5s}
-#loading.h{opacity:0;visibility:hidden;pointer-events:none}
-.li{display:flex;flex-direction:column;align-items:center;gap:14px;animation:lp 1.4s ease-in-out infinite}
-@keyframes lp{0%,100%{opacity:.3;transform:scale(.96)}50%{opacity:1;transform:scale(1)}}
-.lt{color:rgba(255,255,255,.2);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase}
-
-#authScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:998;padding:1rem;background:radial-gradient(circle at 50% 30%,#2D085D 0%,#0B0D19 70%)}
-.ab{background:rgba(13,15,30,.95);border:1px solid rgba(102,19,208,.3);border-radius:20px;padding:2.5rem;width:100%;max-width:340px;box-shadow:0 0 60px rgba(102,19,208,.2);animation:aa .5s cubic-bezier(.16,1,.3,1) both}
-@keyframes aa{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.at{color:#fff;font-family:'Funnel Display',sans-serif;font-size:1.35rem;font-weight:800;text-align:center;margin-bottom:.3rem;letter-spacing:-.03em}
-.as{color:rgba(255,255,255,.3);font-size:.8rem;text-align:center;margin-bottom:1.5rem;line-height:1.6}
-.bg{width:100%;padding:12px;border-radius:var(--rs);border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);font-family:'Poppins',sans-serif;font-size:.9rem;font-weight:600;color:rgba(255,255,255,.8);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s}
-.bg:hover{background:rgba(255,255,255,.1)}
-.ae{color:#f87171;font-size:.8rem;margin-top:.8rem;text-align:center;display:none}
-.af{text-align:center;margin-top:1rem;font-size:.7rem;color:rgba(255,255,255,.12)}
-
-#siteHeader{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;background:rgba(11,13,25,.8);backdrop-filter:blur(20px);border-bottom:1px solid rgba(102,19,208,.1);opacity:0;transform:translateY(-100%);transition:opacity .5s,transform .5s cubic-bezier(.16,1,.3,1)}
-#siteHeader.v{opacity:1;transform:translateY(0)}
+/* HEADER */
+#siteHeader{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;background:rgba(11,13,25,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(102,19,208,.12)}
 .lh{display:flex;align-items:center;gap:10px;text-decoration:none}
 .ld{width:1px;height:14px;background:rgba(255,255,255,.15)}
 .lf{font-size:.78rem;font-weight:500;color:rgba(255,255,255,.4)}
-.hu{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.45);font-size:.8rem}
-.ha{width:28px;height:28px;border-radius:50%;border:2px solid rgba(102,19,208,.4);object-fit:cover}
+.local-badge{font-size:.72rem;color:rgba(255,255,255,.35);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);padding:4px 12px;border-radius:100px}
 
-#app{display:none;width:100%;height:100vh;background:radial-gradient(circle at 30% 50%,#2D085D 0%,#0B0D19 65%);padding-top:56px}
-.app-inner{display:flex;align-items:center;justify-content:center;height:100%;max-width:1100px;margin:0 auto;padding:0 2rem;gap:2rem}
+/* APP */
+#app{min-height:100vh;padding-top:56px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 25% 60%,rgba(45,8,93,0.6) 0%,transparent 60%),radial-gradient(ellipse at 75% 40%,rgba(102,19,208,0.15) 0%,transparent 50%),#0B0D19}
 
-.hero-side{flex:0 0 auto;width:460px;display:flex;align-items:center;justify-content:center}
-#heroCanvas{width:460px;height:460px;display:block}
+.app-inner{display:flex;align-items:center;justify-content:center;width:100%;max-width:1080px;padding:2rem;gap:3rem}
 
-.form-side{flex:1;max-width:460px;opacity:0;transform:translateX(30px);transition:opacity .7s ease .3s,transform .7s cubic-bezier(.16,1,.3,1) .3s}
-.form-side.v{opacity:1;transform:translateX(0)}
-.hero-eyebrow{display:inline-flex;align-items:center;gap:.5rem;background:rgba(254,143,28,.1);border:1px solid rgba(254,143,28,.3);padding:.4rem 1rem;border-radius:100px;font-size:.7rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:1rem}
-.hero-title{font-family:'Funnel Display',sans-serif;font-size:clamp(1.8rem,3.2vw,3rem);font-weight:800;line-height:1.05;margin-bottom:1.4rem;background:linear-gradient(150deg,#fff 40%,#C4A1FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.04em}
+/* LADO ESQUERDO — canvas animado */
+.hero-side{flex:0 0 auto;width:440px;height:440px;position:relative;display:flex;align-items:center;justify-content:center}
+#heroCanvas{width:440px;height:440px;display:block}
 
-.fcard{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);overflow:hidden;backdrop-filter:blur(12px)}
-.fcard-head{padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px}
-.fcard-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--purple),var(--purple-light));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
-.fcard-title{font-weight:700;font-size:.88rem;color:#fff}
-.fcard-sub{font-size:.72rem;color:rgba(255,255,255,.35);margin-top:1px}
+/* LADO DIREITO — formulário */
+.form-side{flex:1;max-width:440px}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:.5rem;background:rgba(254,143,28,.1);border:1px solid rgba(254,143,28,.28);padding:.4rem 1rem;border-radius:100px;font-size:.68rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--orange);margin-bottom:1.1rem}
+.hero-title{font-family:'Funnel Display',sans-serif;font-size:clamp(1.9rem,3.2vw,3rem);font-weight:800;line-height:1.05;margin-bottom:.5rem;background:linear-gradient(135deg,#fff 35%,#C4A1FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.04em}
+.hero-sub{font-size:.85rem;color:rgba(255,255,255,.35);margin-bottom:1.6rem;line-height:1.6}
+
+/* CARD */
+.fcard{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);overflow:hidden;backdrop-filter:blur(16px)}
+.fcard-head{padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:10px}
+.fcard-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--purple),var(--purple-light));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0;box-shadow:0 4px 12px rgba(102,19,208,.3)}
+.fcard-title{font-weight:700;font-size:.88rem;color:#fff;letter-spacing:-.01em}
+.fcard-sub{font-size:.72rem;color:rgba(255,255,255,.3);margin-top:1px}
 .fcard-body{padding:1.25rem}
-.tip{background:rgba(102,19,208,.1);border:1px solid rgba(102,19,208,.2);border-radius:var(--rs);padding:10px 13px;margin-bottom:1rem}
-.tip p{font-size:.75rem;color:rgba(255,255,255,.5);line-height:1.6}
-.tip strong{color:var(--purple-light)}
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:.9rem}
-.field label{font-size:.76rem;font-weight:600;color:rgba(255,255,255,.4)}
-textarea{width:100%;padding:11px 13px;border:1.5px solid rgba(255,255,255,.08);border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.85rem;color:#fff;background:rgba(255,255,255,.05);outline:none;transition:border-color .2s,box-shadow .2s;resize:none;height:100px}
-textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(102,19,208,.15)}
-textarea::placeholder{color:rgba(255,255,255,.2)}
-.cc{font-size:.68rem;color:rgba(255,255,255,.25);text-align:right;margin-top:2px}
-.btn-s{width:100%;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;border:none;padding:13px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 18px rgba(102,19,208,.4)}
-.btn-s:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 26px rgba(102,19,208,.5)}
-.btn-s:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+/* CAMPOS */
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:.85rem}
+.field label{font-size:.74rem;font-weight:600;color:rgba(255,255,255,.35);letter-spacing:.02em}
+.field input,.field textarea{width:100%;padding:11px 13px;border:1.5px solid rgba(255,255,255,.07);border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.85rem;color:#fff;background:rgba(255,255,255,.05);outline:none;transition:border-color .2s,box-shadow .2s}
+.field input:focus,.field textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(102,19,208,.12)}
+.field input::placeholder,.field textarea::placeholder{color:rgba(255,255,255,.18)}
+.field textarea{resize:none;height:96px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.cc{font-size:.68rem;color:rgba(255,255,255,.2);text-align:right;margin-top:2px}
+
+/* BOTÃO */
+.btn-s{width:100%;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;border:none;padding:14px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.92rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 20px rgba(102,19,208,.4);margin-top:.25rem}
+.btn-s:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 28px rgba(102,19,208,.5)}
+.btn-s:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .bsp{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
-.scard{display:none;text-align:center;padding:2rem 1.5rem}
-.sicon{width:60px;height:60px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .9rem;font-size:1.7rem}
-.scard h2{font-family:'Funnel Display',sans-serif;font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:.4rem}
-.scard p{color:rgba(255,255,255,.4);font-size:.83rem;line-height:1.7;margin-bottom:.3rem}
-.stk{display:inline-block;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;font-weight:700;font-size:.95rem;padding:5px 18px;border-radius:100px;margin:.7rem 0 1rem;box-shadow:0 4px 14px rgba(102,19,208,.3)}
-.btn-n{background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);padding:8px 20px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;transition:all .2s}
-.btn-n:hover{background:rgba(255,255,255,.05);color:#fff}
 
-@media(max-width:768px){
-  #app{height:auto;overflow-y:auto}
-  .app-inner{flex-direction:column;padding:1.5rem 1.25rem 3rem;gap:1rem;height:auto}
-  .hero-side{width:100%}
-  #heroCanvas{width:300px;height:300px;margin:0 auto;display:block}
-  .form-side{max-width:100%;width:100%}
-  .hero-title{font-size:1.8rem}
+/* SUCESSO */
+.scard{display:none;text-align:center;padding:2.5rem 1.5rem}
+.sicon{width:68px;height:68px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.1rem;font-size:1.9rem;box-shadow:0 8px 24px rgba(22,163,74,.15)}
+.scard h2{font-family:'Funnel Display',sans-serif;font-size:1.45rem;font-weight:800;color:#fff;margin-bottom:.4rem;letter-spacing:-.03em}
+.scard p{color:rgba(255,255,255,.35);font-size:.83rem;line-height:1.7;margin-bottom:.3rem}
+.stk{display:inline-block;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;font-weight:700;font-size:.95rem;padding:6px 20px;border-radius:100px;margin:.8rem 0 1.1rem;box-shadow:0 4px 14px rgba(102,19,208,.35)}
+.btn-n{background:transparent;color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);padding:9px 22px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-n:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.7)}
+
+/* ERRO */
+.field-error{font-size:.72rem;color:#f87171;margin-top:3px;display:none}
+
+/* MOBILE */
+@media(max-width:800px){
+  .app-inner{flex-direction:column;padding:1.25rem;gap:1.5rem;align-items:stretch}
+  .hero-side{width:100%;height:280px}
+  #heroCanvas{width:280px;height:280px;margin:0 auto;display:block}
+  .hero-title{font-size:1.9rem}
+  .row2{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
-<div id="loading">
-  <div class="li">
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#6613D0"/><path d="M6 19.5H12.5V26H6V19.5Z" fill="white"/><path d="M6 6H12.5V19.5H6V6Z" fill="white"/><path d="M6 19.5H19.5V26H6V19.5Z" fill="white"/><path d="M13 6H19.5V12.5H13V6Z" fill="#FE8F1C"/><path d="M19.5 12.5H26V19.5H19.5V12.5Z" fill="white"/><path d="M19.5 19.5H26V26H19.5V19.5Z" fill="white"/></svg>
-    <div class="lt">Carregando...</div>
-  </div>
-</div>
-
-<div id="authScreen">
-  <div class="ab">
-    <div style="display:flex;justify-content:center;margin-bottom:1.5rem">
-      <svg width="42" height="42" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="7" fill="#6613D0"/><path d="M6 19.5H12.5V26H6V19.5Z" fill="white"/><path d="M6 6H12.5V19.5H6V6Z" fill="white"/><path d="M6 19.5H19.5V26H6V19.5Z" fill="white"/><path d="M13 6H19.5V12.5H13V6Z" fill="#FE8F1C"/><path d="M19.5 12.5H26V19.5H19.5V12.5Z" fill="white"/><path d="M19.5 19.5H26V26H19.5V19.5Z" fill="white"/></svg>
-    </div>
-    <div class="at">Abrir chamado</div>
-    <p class="as">Entre com sua conta LogComex para registrar sua solicitação.</p>
-    <button class="bg" onclick="loginGoogle()">
-      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Entrar com Google
-    </button>
-    <div class="ae" id="authError">Acesso restrito a contas @logcomex.com</div>
-    <div class="af">Facilities LogComex · Sistema interno</div>
-  </div>
-</div>
-
+<!-- HEADER -->
 <header id="siteHeader">
   <a class="lh" href="/">
-    <svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#6613D0"/><path d="M6 19.5H12.5V26H6V19.5Z" fill="white"/><path d="M6 6H12.5V19.5H6V6Z" fill="white"/><path d="M6 19.5H19.5V26H6V19.5Z" fill="white"/><path d="M13 6H19.5V12.5H13V6Z" fill="#FE8F1C"/><path d="M19.5 12.5H26V19.5H19.5V12.5Z" fill="white"/><path d="M19.5 19.5H26V26H19.5V19.5Z" fill="white"/></svg>
+    <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="6" fill="#6613D0"/>
+      <path d="M6 19.5H12.5V26H6V19.5Z" fill="white"/>
+      <path d="M6 6H12.5V19.5H6V6Z" fill="white"/>
+      <path d="M6 19.5H19.5V26H6V19.5Z" fill="white"/>
+      <path d="M13 6H19.5V12.5H13V6Z" fill="#FE8F1C"/>
+      <path d="M19.5 12.5H26V19.5H19.5V12.5Z" fill="white"/>
+      <path d="M19.5 19.5H26V26H19.5V19.5Z" fill="white"/>
+    </svg>
     <span style="font-family:'Funnel Display',sans-serif;font-weight:800;font-size:.95rem;color:#fff;letter-spacing:-.02em">Logcomex</span>
     <div class="ld"></div>
     <span class="lf">Facilities</span>
   </a>
-  <div class="hu">
-    <img class="ha" id="headerAvatar" src="" alt="" onerror="this.style.display='none'">
-    <span id="headerName"></span>
-  </div>
+  <span class="local-badge" id="localBadge"></span>
 </header>
 
+<!-- APP -->
 <div id="app">
   <div class="app-inner">
+
+    <!-- Canvas animado -->
     <div class="hero-side">
-      <canvas id="heroCanvas" width="460" height="460"></canvas>
+      <canvas id="heroCanvas" width="440" height="440"></canvas>
     </div>
-    <div class="form-side" id="formSide">
+
+    <!-- Formulário -->
+    <div class="form-side">
       <div class="hero-eyebrow"><span>●</span> CHAMADO RÁPIDO</div>
       <h1 class="hero-title">O que você<br>precisa?</h1>
+      <p class="hero-sub">Registre sua solicitação em segundos.<br>O time de Facilities resolve pra você.</p>
+
       <div class="fcard">
         <div class="fcard-head">
           <div class="fcard-icon">💬</div>
           <div>
-            <div class="fcard-title">Descreva sua solicitação</div>
+            <div class="fcard-title">Nova solicitação</div>
             <div class="fcard-sub">Nossa IA classifica e encaminha automaticamente</div>
           </div>
         </div>
+
+        <!-- FORM BODY -->
         <div class="fcard-body" id="formBody">
-          <div class="tip"><p>Ex: <strong>"papel higiênico acabou"</strong>, <strong>"torneira pingando"</strong>, <strong>"lâmpada queimada"</strong>, <strong>"ar-condicionado não liga"</strong>...</p></div>
+          <div class="row2">
+            <div class="field">
+              <label>SEU NOME <span style="color:#FE8F1C">*</span></label>
+              <input type="text" id="nome" placeholder="Nome completo" autocomplete="name">
+              <div class="field-error" id="err-nome">Informe seu nome</div>
+            </div>
+            <div class="field">
+              <label>E-MAIL LOGCOMEX <span style="color:#FE8F1C">*</span></label>
+              <input type="email" id="email" placeholder="seu@logcomex.com" autocomplete="email">
+              <div class="field-error" id="err-email">E-mail inválido</div>
+            </div>
+          </div>
           <div class="field">
-            <label>Descreva o problema ou necessidade <span style="color:#FE8F1C">*</span></label>
-            <textarea id="descricao" placeholder="Conte o que está acontecendo ou o que você precisa..." maxlength="800" oninput="cnt()"></textarea>
+            <label>DESCREVA O PROBLEMA OU NECESSIDADE <span style="color:#FE8F1C">*</span></label>
+            <textarea id="descricao" placeholder="Ex: papel higiênico acabou, torneira pingando, lâmpada queimada, ar-condicionado não liga..." maxlength="800" oninput="cnt()"></textarea>
             <div class="cc"><span id="charCount">0</span>/800</div>
+            <div class="field-error" id="err-desc">Descreva o problema</div>
           </div>
           <button class="btn-s" id="btnSubmit" onclick="enviar()">
             <span id="btnText">Enviar solicitação</span>
@@ -155,277 +154,271 @@ textarea::placeholder{color:rgba(255,255,255,.2)}
             <svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
+
+        <!-- SUCESSO -->
         <div class="scard" id="successCard">
           <div class="sicon">✅</div>
-          <h2>Registrado!</h2>
-          <p>Sua solicitação foi enviada.<br>O time de Facilities vai cuidar disso.</p>
+          <h2>Chamado registrado!</h2>
+          <p>Sua solicitação foi enviada com sucesso.<br>O time de Facilities vai cuidar disso.</p>
           <div class="stk" id="successTicket">#LC-00000</div>
-          <p style="font-size:.75rem;color:rgba(255,255,255,.25)">Atualizações pelo Slack.</p><br>
+          <p style="font-size:.78rem;color:rgba(255,255,255,.2)">Fique de olho no seu Slack para atualizações.</p>
+          <br>
           <button class="btn-n" onclick="novoChamado()">Abrir outro chamado</button>
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
+<!-- ANIMAÇÃO CANVAS -->
 <script>
-// ── LÓGICA DO FORMULÁRIO ──
-const slug=new URLSearchParams(location.search).get('local')||'';
-const LOCAIS={'war-room':'🪖 War Room — 2º andar','xgh':'🧪 XGH — 2º andar','ia-2':'🤖 IA — 2º andar','deploy':'🚀 Deploy — 2º andar','root':'🌱 Root — 2º andar','roadmap':'🗺️ Roadmap — 2º andar','full-stack':'🧱 Full Stack — 1º andar','git':'🔀 Git — 1º andar','bot':'🤖 Bot — 1º andar','linux':'🐧 Linux — 1º andar','cron':'⏰ Cron — 1º andar','ia-1':'🧠 IA — 1º andar','html':'📄 HTML — 1º andar','cloud':'☁️ Cloud — 1º andar','container':'📦 Container — 1º andar','python':'🐍 Python — 1º andar','javascript':'📜 Javascript — 1º andar','php':'🐘 PHP — 1º andar','banheiro-fem-armarios-1':'🚺 Banheiro Feminino — Armários 1','banheiro-masc-armarios-1':'🚹 Banheiro Masculino — Armários 1','banheiro-fem-armarios-2':'🚺 Banheiro Feminino — Armários 2','banheiro-masc-armarios-2':'🚹 Banheiro Masculino — Armários 2','banheiro-fem-copa-1':'🚺 Banheiro Feminino — Copa/Cozinha 1','banheiro-masc-copa-1':'🚹 Banheiro Masculino — Copa/Cozinha 1','banheiro-fem-copa-2':'🚺 Banheiro Feminino — Copa/Cozinha 2','banheiro-masc-copa-2':'🚹 Banheiro Masculino — Copa/Cozinha 2','banheiro-pcd':'♿ Banheiro PCD — 2º andar','banheiro-fem-cozinha':'🚺 Banheiro Feminino — Cozinha 2º andar','banheiro-masc-root':'🚹 Banheiro Masculino — Sala Root'};
-const localNome=LOCAIS[slug]||(slug?'📍 '+slug:'');
-function cnt(){document.getElementById('charCount').textContent=document.getElementById('descricao').value.length}
-async function enviar(){
-  const desc=document.getElementById('descricao').value.trim();
-  if(!desc||desc.length<10){alert('Descreva com pelo menos 10 caracteres.');return}
-  if(!window._cu){alert('Sessão expirada. Recarregue.');return}
-  const btn=document.getElementById('btnSubmit');btn.disabled=true;
-  document.getElementById('btnText').textContent='Enviando...';
-  document.getElementById('btnSpinner').style.display='block';
-  document.getElementById('btnIcon').style.display='none';
-  try{
-    const tk=await window._cu.getIdToken();
-    const r=await fetch('/api/relatorio-imobiliario?qr=1',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},body:JSON.stringify({local:slug,localNome,descricao:desc,email:window._cu.email})});
-    const d=await r.json();
-    if(!d.ok)throw new Error(d.error||'Erro');
-    document.getElementById('formBody').style.display='none';
-    document.getElementById('successCard').style.display='block';
-    document.getElementById('successTicket').textContent=d.ticketId;
-  }catch(e){alert('Erro: '+e.message)}
-  finally{btn.disabled=false;document.getElementById('btnText').textContent='Enviar solicitação';document.getElementById('btnSpinner').style.display='none';document.getElementById('btnIcon').style.display='block'}
-}
-window.enviar=enviar;
-function novoChamado(){document.getElementById('descricao').value='';document.getElementById('charCount').textContent='0';document.getElementById('formBody').style.display='block';document.getElementById('successCard').style.display='none'}
-window.novoChamado=novoChamado;
+(function(){
+  const canvas = document.getElementById('heroCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+  let t = 0;
 
-// ── ANIMAÇÃO CANVAS — fiel à imagem ──
-function startAnimation(){
-  const canvas=document.getElementById('heroCanvas');
-  if(!canvas)return;
-  const ctx=canvas.getContext('2d');
-  const W=canvas.width,H=canvas.height;
-  const cx=W/2,cy=H/2;
-  let t=0;
-
-  // Partículas de fundo
-  const stars=Array.from({length:120},()=>({
-    x:(Math.random()-.5)*W*1.2,y:(Math.random()-.5)*H*1.2,
-    r:Math.random()*1.1+.2,
-    color:Math.random()>.5?'255,255,255':'254,143,28',
-    a:Math.random()*.4+.05,
-    phase:Math.random()*Math.PI*2,
-    speed:Math.random()*.003+.001
+  // Estrelas de fundo
+  const stars = Array.from({length:130}, () => ({
+    x: (Math.random()-.5)*W*1.3,
+    y: (Math.random()-.5)*H*1.3,
+    r: Math.random()*.9+.2,
+    col: Math.random()>.55 ? '254,143,28' : '200,180,255',
+    a: Math.random()*.35+.05,
+    ph: Math.random()*Math.PI*2,
+    sp: Math.random()*.004+.001
   }));
 
   // Pontos da rede
-  const netPts=Array.from({length:14},(_,i)=>{
-    const a=(i/14)*Math.PI*2;
-    const r=55+Math.random()*20;
-    return{bx:Math.cos(a)*r,by:Math.sin(a)*r,phase:Math.random()*Math.PI*2}
+  const NET = Array.from({length:13}, (_,i) => {
+    const a = (i/13)*Math.PI*2;
+    const r = 48 + Math.random()*18;
+    return { bx: Math.cos(a)*r, by: Math.sin(a)*r, ph: Math.random()*Math.PI*2 };
   });
 
-  function drawBackground(){
+  function frame() {
     ctx.clearRect(0,0,W,H);
-    // Fundo radial roxo sutil
-    const bg=ctx.createRadialGradient(cx,cy,0,cx,cy,W*.6);
-    bg.addColorStop(0,'rgba(45,8,93,0.35)');
+    const float = Math.sin(t*.9)*11;
+
+    // Glow de fundo
+    const bg = ctx.createRadialGradient(cx,cy+float*.3,0,cx,cy,W*.58);
+    bg.addColorStop(0,'rgba(45,8,93,0.4)');
+    bg.addColorStop(.6,'rgba(102,19,208,0.08)');
     bg.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-  }
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
-  function drawStars(){
-    stars.forEach(s=>{
-      const a=s.a*(0.5+Math.sin(t*s.speed*60+s.phase)*0.5);
-      ctx.beginPath();ctx.arc(cx+s.x,cy+s.y,s.r,0,Math.PI*2);
-      ctx.fillStyle=`rgba(${s.color},${a})`;ctx.fill();
+    // Estrelas
+    stars.forEach(s => {
+      const a = s.a * (.5 + Math.sin(t*s.sp*50+s.ph)*.5);
+      ctx.beginPath(); ctx.arc(cx+s.x, cy+s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle=`rgba(${s.col},${a})`; ctx.fill();
     });
-  }
 
-  function drawWaves(){
-    // Ondas de partículas — branca e laranja cruzando horizontalmente
-    for(let w=0;w<2;w++){
-      const isOrange=w===1;
-      const color=isOrange?'254,143,28':'220,220,255';
-      const yOff=isOrange?30:-30;
-      const speed=isOrange?1.4:1.7;
-      const amp=isOrange?52:45;
-      for(let i=0;i<100;i++){
-        const prog=(i/100+t*0.06*(isOrange?1:-1))%1;
-        const x=(prog-.5)*(W*1.15);
-        const y=Math.sin(prog*Math.PI*3+(isOrange?1.5:0)+t*speed)*amp*Math.sin(prog*Math.PI);
-        const alpha=Math.sin(prog*Math.PI)*(isOrange?.65:.45);
-        if(alpha<.01)continue;
-        const sz=prog>.42&&prog<.58?1.8:.85;
-        ctx.beginPath();ctx.arc(cx+x,cy+y+yOff,sz,0,Math.PI*2);
-        ctx.fillStyle=`rgba(${color},${alpha})`;ctx.fill();
+    ctx.save(); ctx.translate(cx, cy+float);
+
+    // ── ONDAS ──
+    for (let w=0; w<2; w++) {
+      const orange = w===1;
+      const col = orange ? '254,143,28' : '200,190,255';
+      const yOff = orange ? 28 : -28;
+      const spd = orange ? 1.3 : 1.7;
+      for (let i=0; i<110; i++) {
+        const p = (i/110 + t*.055*(orange?1:-1)+1)%1;
+        const x = (p-.5)*(W*1.1);
+        const y = Math.sin(p*Math.PI*3+(orange?1.4:0)+t*spd)*50*Math.sin(p*Math.PI);
+        const a = Math.sin(p*Math.PI)*(orange?.6:.42);
+        if(a<.02) continue;
+        const sz = (p>.4&&p<.6) ? 1.7 : .8;
+        ctx.beginPath(); ctx.arc(x, y+yOff, sz, 0, Math.PI*2);
+        ctx.fillStyle=`rgba(${col},${a})`; ctx.fill();
       }
     }
-  }
 
-  function drawCrystal(float){
-    ctx.save();ctx.translate(cx,cy+float);
-    // Glow roxo atrás
-    const glow=ctx.createRadialGradient(0,0,0,0,0,85);
-    glow.addColorStop(0,'rgba(150,80,255,0.55)');
-    glow.addColorStop(.5,'rgba(102,19,208,0.3)');
+    // ── CRISTAL ROXO ──
+    const S = 68, spin = t*.13;
+    // Glow
+    const glow = ctx.createRadialGradient(0,0,0,0,0,S*1.3);
+    glow.addColorStop(0,'rgba(142,68,237,0.55)');
+    glow.addColorStop(.55,'rgba(102,19,208,0.25)');
     glow.addColorStop(1,'rgba(45,8,93,0)');
-    ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,85,0,Math.PI*2);ctx.fill();
-
-    // Cristal girando levemente
-    const spin=t*.12;
-    const S=62;
-    const faceColors=[
-      'rgba(140,80,255,0.95)','rgba(90,30,200,0.9)','rgba(170,110,255,0.88)',
-      'rgba(75,15,185,0.92)','rgba(155,90,255,0.9)','rgba(110,45,210,0.93)',
-      'rgba(180,120,255,0.85)','rgba(85,20,195,0.9)'
-    ];
+    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(0,0,S*1.3,0,Math.PI*2); ctx.fill();
+    // Facetas
+    const cols=['rgba(145,75,255,.95)','rgba(88,28,200,.9)','rgba(172,108,255,.88)','rgba(72,14,188,.92)','rgba(158,88,255,.9)','rgba(108,42,210,.93)','rgba(185,125,255,.85)','rgba(82,18,195,.9)'];
     for(let i=0;i<8;i++){
-      const a1=spin+(i/8)*Math.PI*2;
-      const a2=spin+((i+1)/8)*Math.PI*2;
-      ctx.beginPath();ctx.moveTo(0,0);
+      const a1=spin+(i/8)*Math.PI*2, a2=spin+((i+1)/8)*Math.PI*2;
+      ctx.beginPath(); ctx.moveTo(0,0);
       ctx.lineTo(Math.cos(a1)*S,Math.sin(a1)*S);
       ctx.lineTo(Math.cos(a2)*S,Math.sin(a2)*S);
-      ctx.closePath();
-      ctx.fillStyle=faceColors[i];ctx.fill();
-      ctx.strokeStyle='rgba(200,160,255,0.2)';ctx.lineWidth=.5;ctx.stroke();
+      ctx.closePath(); ctx.fillStyle=cols[i]; ctx.fill();
+      ctx.strokeStyle='rgba(200,160,255,.18)'; ctx.lineWidth=.5; ctx.stroke();
     }
-    // Reflexo branco interno
-    const shine=ctx.createRadialGradient(-S*.3,-S*.3,0,0,0,S*.9);
-    shine.addColorStop(0,'rgba(255,255,255,0.5)');
-    shine.addColorStop(.35,'rgba(255,255,255,0.12)');
+    // Reflexo
+    const shine=ctx.createRadialGradient(-S*.28,-S*.28,0,0,0,S);
+    shine.addColorStop(0,'rgba(255,255,255,.48)');
+    shine.addColorStop(.38,'rgba(255,255,255,.1)');
     shine.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=shine;ctx.beginPath();ctx.arc(0,0,S*.9,0,Math.PI*2);ctx.fill();
-    ctx.restore();
-  }
+    ctx.fillStyle=shine; ctx.beginPath(); ctx.arc(0,0,S,0,Math.PI*2); ctx.fill();
 
-  function drawNetwork(float){
-    ctx.save();ctx.translate(cx,cy+float);
-    const pts=netPts.map(p=>({
-      x:p.bx+Math.sin(t*.4+p.phase)*4,
-      y:p.by+Math.cos(t*.35+p.phase)*4
+    // ── REDE LARANJA ──
+    const pts = NET.map(p=>({
+      x: p.bx+Math.sin(t*.38+p.ph)*4,
+      y: p.by+Math.cos(t*.33+p.ph)*4
     }));
-    pts.push({x:0,y:0}); // centro
-    // Linhas laranja
-    for(let i=0;i<pts.length;i++){
-      for(let j=i+1;j<pts.length;j++){
-        const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);
-        if(d<75){
-          const alpha=(1-d/75)*.5;
-          ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);
-          ctx.strokeStyle=`rgba(254,200,80,${alpha})`;ctx.lineWidth=.8;ctx.stroke();
-        }
+    pts.push({x:0,y:0});
+    for(let i=0;i<pts.length;i++) for(let j=i+1;j<pts.length;j++){
+      const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);
+      if(d<80){
+        ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y);
+        ctx.strokeStyle=`rgba(254,190,60,${(1-d/80)*.48})`; ctx.lineWidth=.75; ctx.stroke();
       }
     }
-    // Nós brilhantes
     pts.forEach(p=>{
-      ctx.beginPath();ctx.arc(p.x,p.y,1.8,0,Math.PI*2);
-      ctx.fillStyle='rgba(254,180,60,0.9)';
-      ctx.shadowColor='rgba(254,143,28,0.8)';ctx.shadowBlur=6;
-      ctx.fill();ctx.shadowBlur=0;
+      ctx.beginPath(); ctx.arc(p.x,p.y,1.9,0,Math.PI*2);
+      ctx.fillStyle='rgba(254,175,50,.9)';
+      ctx.shadowColor='rgba(254,143,28,.7)'; ctx.shadowBlur=5;
+      ctx.fill(); ctx.shadowBlur=0;
     });
-    ctx.restore();
-  }
 
-  function drawLogoShape(float){
-    ctx.save();ctx.translate(cx,cy+float);
+    // ── LOGO — forma do L com ponto (prata/branco) ──
+    const LS = 148;
 
-    const S=140; // tamanho do L
+    // Gradiente prata
+    const silver = ctx.createLinearGradient(-LS*.5,-LS*.6,LS*.4,LS*.4);
+    silver.addColorStop(0,'rgba(255,255,255,1)');
+    silver.addColorStop(.35,'rgba(235,235,250,.97)');
+    silver.addColorStop(.7,'rgba(200,200,230,.92)');
+    silver.addColorStop(1,'rgba(170,170,210,.85)');
 
-    // Sombra glow atrás do logo
-    ctx.shadowColor='rgba(200,200,255,0.25)';ctx.shadowBlur=20;
+    ctx.shadowColor='rgba(200,210,255,.3)'; ctx.shadowBlur=16;
+    ctx.strokeStyle=silver; ctx.lineWidth=15; ctx.lineCap='round'; ctx.lineJoin='round';
 
-    // Stroke style — prata/branco como na imagem
-    const gradient=ctx.createLinearGradient(-S*.5,-S*.6,S*.4,S*.4);
-    gradient.addColorStop(0,'rgba(255,255,255,1)');
-    gradient.addColorStop(.4,'rgba(220,220,240,0.95)');
-    gradient.addColorStop(1,'rgba(180,180,210,0.85)');
-
-    ctx.strokeStyle=gradient;
-    ctx.lineWidth=14;
-    ctx.lineCap='round';
-    ctx.lineJoin='round';
-
-    // Traço vertical esquerdo + horizontal inferior (L principal)
+    // Traço vertical esquerdo + horizontal inferior
     ctx.beginPath();
-    ctx.moveTo(-S*.48,-S*.58);
-    ctx.lineTo(-S*.48,S*.33);
-    ctx.lineTo(S*.33,S*.33);
+    ctx.moveTo(-LS*.48,-LS*.57);
+    ctx.lineTo(-LS*.48,LS*.32);
+    ctx.lineTo(LS*.32,LS*.32);
     ctx.stroke();
 
-    // Traço superior + vertical direita (completando o frame do QR)
+    // Traço superior + vertical direita
     ctx.beginPath();
-    ctx.moveTo(-S*.1,-S*.58);
-    ctx.lineTo(S*.33,-S*.58);
-    ctx.lineTo(S*.33,-S*.08);
+    ctx.moveTo(-LS*.08,-LS*.57);
+    ctx.lineTo(LS*.32,-LS*.57);
+    ctx.lineTo(LS*.32,-LS*.07);
     ctx.stroke();
 
     ctx.shadowBlur=0;
 
-    // Ponto quadrado — canto inferior direito (preto com borda prata)
-    const px=S*.52,py=S*.52,ps=S*.2,pr=4;
-    ctx.shadowColor='rgba(200,200,255,0.3)';ctx.shadowBlur=10;
+    // Ponto quadrado
+    const px=LS*.52, py=LS*.52, ps=LS*.21, pr=5;
+    ctx.shadowColor='rgba(200,210,255,.25)'; ctx.shadowBlur=10;
     ctx.fillStyle='#0B0D19';
-    ctx.strokeStyle='rgba(220,220,240,0.9)';
-    ctx.lineWidth=5;
+    ctx.strokeStyle='rgba(225,225,248,.92)'; ctx.lineWidth=5;
     ctx.beginPath();
-    ctx.moveTo(px-ps/2+pr,py-ps/2);
-    ctx.lineTo(px+ps/2-pr,py-ps/2);ctx.arcTo(px+ps/2,py-ps/2,px+ps/2,py-ps/2+pr,pr);
-    ctx.lineTo(px+ps/2,py+ps/2-pr);ctx.arcTo(px+ps/2,py+ps/2,px+ps/2-pr,py+ps/2,pr);
-    ctx.lineTo(px-ps/2+pr,py+ps/2);ctx.arcTo(px-ps/2,py+ps/2,px-ps/2,py+ps/2-pr,pr);
-    ctx.lineTo(px-ps/2,py-ps/2+pr);ctx.arcTo(px-ps/2,py-ps/2,px-ps/2+pr,py-ps/2,pr);
+    ctx.moveTo(px-ps/2+pr,py-ps/2); ctx.lineTo(px+ps/2-pr,py-ps/2);
+    ctx.arcTo(px+ps/2,py-ps/2,px+ps/2,py-ps/2+pr,pr);
+    ctx.lineTo(px+ps/2,py+ps/2-pr);
+    ctx.arcTo(px+ps/2,py+ps/2,px+ps/2-pr,py+ps/2,pr);
+    ctx.lineTo(px-ps/2+pr,py+ps/2);
+    ctx.arcTo(px-ps/2,py+ps/2,px-ps/2,py+ps/2-pr,pr);
+    ctx.lineTo(px-ps/2,py-ps/2+pr);
+    ctx.arcTo(px-ps/2,py-ps/2,px-ps/2+pr,py-ps/2,pr);
     ctx.closePath();
-    ctx.fill();ctx.stroke();
+    ctx.fill(); ctx.stroke();
     ctx.shadowBlur=0;
 
     ctx.restore();
-  }
 
-  function frame(){
-    const float=Math.sin(t*1.0)*10;
-    drawBackground();
-    drawStars();
-    drawWaves();
-    drawCrystal(float);
-    drawNetwork(float);
-    drawLogoShape(float);
-    t+=.016;
+    t += .016;
     requestAnimationFrame(frame);
   }
   frame();
-}
-window.startAnimation=startAnimation;
+})();
 </script>
 
-<script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-const app=initializeApp({apiKey:"AIzaSyCczKnSawfHiAPuMjY2L80ww_wtBMJJY30",authDomain:"facilities-logcomex.firebaseapp.com",projectId:"facilities-logcomex",storageBucket:"facilities-logcomex.firebasestorage.app",messagingSenderId:"957812645576",appId:"1:957812645576:web:80c88475cc904106d20ffd"});
-const auth=getAuth(app);
-const prov=new GoogleAuthProvider();prov.setCustomParameters({hd:'logcomex.com'});
-window._auth=auth;
-window.loginGoogle=async function(){
-  document.getElementById('authError').style.display='none';
-  try{const r=await signInWithPopup(auth,prov);if(!r.user.email.endsWith('@logcomex.com')){await signOut(auth);document.getElementById('authError').style.display='block'}}
-  catch(e){if(e.code!=='auth/popup-closed-by-user')document.getElementById('authError').style.display='block'}
+<!-- LÓGICA -->
+<script>
+const slug = new URLSearchParams(location.search).get('local') || '';
+const LOCAIS = {
+  'war-room':'🪖 War Room — 2º andar','xgh':'🧪 XGH — 2º andar','ia-2':'🤖 IA — 2º andar',
+  'deploy':'🚀 Deploy — 2º andar','root':'🌱 Root — 2º andar','roadmap':'🗺️ Roadmap — 2º andar',
+  'full-stack':'🧱 Full Stack — 1º andar','git':'🔀 Git — 1º andar','bot':'🤖 Bot — 1º andar',
+  'linux':'🐧 Linux — 1º andar','cron':'⏰ Cron — 1º andar','ia-1':'🧠 IA — 1º andar',
+  'html':'📄 HTML — 1º andar','cloud':'☁️ Cloud — 1º andar','container':'📦 Container — 1º andar',
+  'python':'🐍 Python — 1º andar','javascript':'📜 Javascript — 1º andar','php':'🐘 PHP — 1º andar',
+  'banheiro-fem-armarios-1':'🚺 Banheiro Feminino — Armários 1','banheiro-masc-armarios-1':'🚹 Banheiro Masculino — Armários 1',
+  'banheiro-fem-armarios-2':'🚺 Banheiro Feminino — Armários 2','banheiro-masc-armarios-2':'🚹 Banheiro Masculino — Armários 2',
+  'banheiro-fem-copa-1':'🚺 Banheiro Feminino — Copa/Cozinha 1','banheiro-masc-copa-1':'🚹 Banheiro Masculino — Copa/Cozinha 1',
+  'banheiro-fem-copa-2':'🚺 Banheiro Feminino — Copa/Cozinha 2','banheiro-masc-copa-2':'🚹 Banheiro Masculino — Copa/Cozinha 2',
+  'banheiro-pcd':'♿ Banheiro PCD — 2º andar','banheiro-fem-cozinha':'🚺 Banheiro Feminino — Cozinha 2º andar',
+  'banheiro-masc-root':'🚹 Banheiro Masculino — Sala Root'
 };
-onAuthStateChanged(auth,user=>{
-  document.getElementById('loading').classList.add('h');
-  if(user&&user.email&&user.email.endsWith('@logcomex.com')){
-    window._cu=user;
-    document.getElementById('authScreen').style.display='none';
-    document.getElementById('app').style.display='block';
-    document.getElementById('siteHeader').classList.add('v');
-    if(user.photoURL)document.getElementById('headerAvatar').src=user.photoURL;
-    document.getElementById('headerName').textContent=(user.displayName||user.email).split(' ')[0];
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      window.startAnimation();
-      setTimeout(()=>document.getElementById('formSide').classList.add('v'),300);
-    }));
-  }else{
-    window._cu=null;
-    document.getElementById('authScreen').style.display='flex';
-    document.getElementById('app').style.display='none';
+const localNome = LOCAIS[slug] || (slug ? '📍 '+slug : '');
+if (localNome) document.getElementById('localBadge').textContent = localNome;
+
+function cnt(){ document.getElementById('charCount').textContent = document.getElementById('descricao').value.length; }
+
+function validar() {
+  let ok = true;
+  const nome = document.getElementById('nome').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const desc = document.getElementById('descricao').value.trim();
+
+  document.getElementById('err-nome').style.display = 'none';
+  document.getElementById('err-email').style.display = 'none';
+  document.getElementById('err-desc').style.display = 'none';
+
+  if (!nome || nome.length < 2) { document.getElementById('err-nome').style.display='block'; ok=false; }
+  if (!email || !email.includes('@') || !email.toLowerCase().endsWith('@logcomex.com')) {
+    document.getElementById('err-email').style.display='block';
+    document.getElementById('err-email').textContent = email && !email.endsWith('@logcomex.com') ? 'Use seu e-mail @logcomex.com' : 'Informe seu e-mail';
+    ok=false;
   }
-});
+  if (!desc || desc.length < 5) { document.getElementById('err-desc').style.display='block'; ok=false; }
+  return ok;
+}
+
+async function enviar() {
+  if (!validar()) return;
+  const btn = document.getElementById('btnSubmit'); btn.disabled=true;
+  document.getElementById('btnText').textContent='Enviando...';
+  document.getElementById('btnSpinner').style.display='block';
+  document.getElementById('btnIcon').style.display='none';
+  try {
+    const nome = document.getElementById('nome').value.trim();
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const desc = document.getElementById('descricao').value.trim();
+    const r = await fetch('/api/relatorio-imobiliario?qr=1', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ local:slug, localNome, descricao:desc, email, nome })
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error||'Erro');
+    document.getElementById('formBody').style.display='none';
+    document.getElementById('successCard').style.display='block';
+    document.getElementById('successTicket').textContent=d.ticketId;
+  } catch(e) { alert('Erro ao enviar: '+e.message); }
+  finally {
+    btn.disabled=false;
+    document.getElementById('btnText').textContent='Enviar solicitação';
+    document.getElementById('btnSpinner').style.display='none';
+    document.getElementById('btnIcon').style.display='block';
+  }
+}
+window.enviar = enviar;
+
+function novoChamado() {
+  document.getElementById('nome').value='';
+  document.getElementById('email').value='';
+  document.getElementById('descricao').value='';
+  document.getElementById('charCount').textContent='0';
+  document.getElementById('formBody').style.display='block';
+  document.getElementById('successCard').style.display='none';
+}
+window.novoChamado = novoChamado;
 </script>
+
 </body>
 </html>
