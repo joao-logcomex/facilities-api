@@ -492,6 +492,21 @@
   .log-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
   .log-table tr:hover td { background: var(--surface2); }
 
+  /* ── QR CODES ── */
+  .qr-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; transition: box-shadow 0.2s; }
+  .qr-card:hover { box-shadow: 0 4px 20px rgba(102,19,208,0.1); }
+  .qr-card canvas { border-radius: 6px; border: 1px solid var(--border); }
+  .qr-card-nome { font-size: 0.82rem; font-weight: 600; color: var(--ink); line-height: 1.3; }
+  .qr-card-tipo { font-size: 0.72rem; color: var(--ink3); background: var(--surface2); padding: 2px 8px; border-radius: 100px; }
+  .qr-card-btns { display: flex; gap: 6px; margin-top: 2px; }
+  .qr-filtro.active { background: var(--purple) !important; color: #fff !important; border-color: var(--purple) !important; }
+  @media print {
+    .sidebar, .page-topbar button, .qr-card-btns, .qr-filtro, .nav-section-label { display: none !important; }
+    .main { margin-left: 0 !important; padding: 1rem !important; }
+    #qr-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; }
+    .qr-card { break-inside: avoid; border: 1px solid #ccc; }
+  }
+
 </style>
 </head>
 <body>
@@ -612,6 +627,13 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
       Painel de Brindes ↗
     </a>
+
+    <!-- ── QR CODES ── -->
+    <div class="nav-section-label">QR Codes</div>
+    <div class="nav-item" onclick="nav('qrcodes',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>
+      Salas e Banheiros
+    </div>
 
     <!-- ── TV / GO LIVE ── -->
     <div class="nav-section-label">TV do Setor</div>
@@ -1217,6 +1239,27 @@
         </div>
       </div>
     </div>
+
+  <!-- ── PÁGINA: QR CODES ── -->
+  <div class="page" id="page-qrcodes">
+    <div class="page-topbar">
+      <div>
+        <div class="page-title">📱 QR Codes — Salas e Banheiros</div>
+        <div style="font-size:0.82rem;color:var(--ink3);margin-top:2px;">Gere e imprima os QR codes para cada local</div>
+      </div>
+      <button class="btn btn-primary" onclick="imprimirTodosQR()">🖨️ Imprimir todos</button>
+    </div>
+
+    <!-- Filtro por tipo -->
+    <div style="display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <button class="btn btn-secondary qr-filtro active" data-filtro="todos" onclick="filtrarQR('todos',this)">Todos (29)</button>
+      <button class="btn btn-secondary qr-filtro" data-filtro="sala" onclick="filtrarQR('sala',this)">🪑 Salas (18)</button>
+      <button class="btn btn-secondary qr-filtro" data-filtro="banheiro" onclick="filtrarQR('banheiro',this)">🚻 Banheiros (11)</button>
+    </div>
+
+    <!-- Grid de QR codes -->
+    <div id="qr-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;"></div>
+  </div>
 
   <div class="page" id="page-historico">
     <div class="page-topbar">
@@ -4398,6 +4441,8 @@ window.renderHistorico = renderHistorico;
         setTimeout(() => renderSublocalizacoes(), 100);
       } else if (page === 'patrimonio') {
         setTimeout(() => renderPatrimonio(), 100);
+      } else if (page === 'qrcodes') {
+        setTimeout(() => renderQRCodes(), 100);
       }
     }
   };
@@ -5295,6 +5340,108 @@ window.renderHistorico = renderHistorico;
       document.getElementById('imob-modal').classList.remove('open');
     } catch (e) { alert('Erro: ' + e.message); }
   }
+
+  // ══════════════════════════════════════════════════════════
+  //  QR CODES — SALAS E BANHEIROS
+  // ══════════════════════════════════════════════════════════
+
+  const QR_LOCAIS = [
+    // 2º andar — salas
+    { slug: 'war-room',   nome: '🪖 War Room',   tipo: 'sala', andar: '2º andar' },
+    { slug: 'xgh',        nome: '🧪 XGH',         tipo: 'sala', andar: '2º andar' },
+    { slug: 'ia-2',       nome: '🤖 IA',           tipo: 'sala', andar: '2º andar' },
+    { slug: 'deploy',     nome: '🚀 Deploy',       tipo: 'sala', andar: '2º andar' },
+    { slug: 'root',       nome: '🌱 Root',         tipo: 'sala', andar: '2º andar' },
+    { slug: 'roadmap',    nome: '🗺️ Roadmap',      tipo: 'sala', andar: '2º andar' },
+    // 1º andar — salas
+    { slug: 'full-stack', nome: '🧱 Full Stack',   tipo: 'sala', andar: '1º andar' },
+    { slug: 'git',        nome: '🔀 Git',           tipo: 'sala', andar: '1º andar' },
+    { slug: 'bot',        nome: '🤖 Bot',           tipo: 'sala', andar: '1º andar' },
+    { slug: 'linux',      nome: '🐧 Linux',         tipo: 'sala', andar: '1º andar' },
+    { slug: 'cron',       nome: '⏰ Cron',          tipo: 'sala', andar: '1º andar' },
+    { slug: 'ia-1',       nome: '🧠 IA',            tipo: 'sala', andar: '1º andar' },
+    { slug: 'html',       nome: '📄 HTML',          tipo: 'sala', andar: '1º andar' },
+    { slug: 'cloud',      nome: '☁️ Cloud',          tipo: 'sala', andar: '1º andar' },
+    { slug: 'container',  nome: '📦 Container',     tipo: 'sala', andar: '1º andar' },
+    { slug: 'python',     nome: '🐍 Python',        tipo: 'sala', andar: '1º andar' },
+    { slug: 'javascript', nome: '📜 Javascript',    tipo: 'sala', andar: '1º andar' },
+    { slug: 'php',        nome: '🐘 PHP',            tipo: 'sala', andar: '1º andar' },
+    // 1º andar — banheiros
+    { slug: 'banheiro-fem-armarios-1',  nome: '🚺 Feminino — Armários 1',      tipo: 'banheiro', andar: '1º andar' },
+    { slug: 'banheiro-masc-armarios-1', nome: '🚹 Masculino — Armários 1',     tipo: 'banheiro', andar: '1º andar' },
+    { slug: 'banheiro-fem-armarios-2',  nome: '🚺 Feminino — Armários 2',      tipo: 'banheiro', andar: '1º andar' },
+    { slug: 'banheiro-masc-armarios-2', nome: '🚹 Masculino — Armários 2',     tipo: 'banheiro', andar: '1º andar' },
+    { slug: 'banheiro-fem-copa-1',      nome: '🚺 Feminino — Copa/Cozinha 1',  tipo: 'banheiro', andar: '1º andar' },
+    { slug: 'banheiro-masc-copa-1',     nome: '🚹 Masculino — Copa/Cozinha 1', tipo: 'banheiro', andar: '1º andar' },
+    { slug: 'banheiro-fem-copa-2',      nome: '🚺 Feminino — Copa/Cozinha 2',  tipo: 'banheiro', andar: '1º andar' },
+    { slug: 'banheiro-masc-copa-2',     nome: '🚹 Masculino — Copa/Cozinha 2', tipo: 'banheiro', andar: '1º andar' },
+    // 2º andar — banheiros
+    { slug: 'banheiro-pcd',         nome: '♿ PCD',                          tipo: 'banheiro', andar: '2º andar' },
+    { slug: 'banheiro-fem-cozinha', nome: '🚺 Feminino — Cozinha',           tipo: 'banheiro', andar: '2º andar' },
+    { slug: 'banheiro-masc-root',   nome: '🚹 Masculino — Sala Root',        tipo: 'banheiro', andar: '2º andar' },
+  ];
+
+  let qrFiltroAtivo = 'todos';
+
+  // Gera QR code usando a API do QR Server (gratuita, sem instalação)
+  function gerarQRUrl(slug) {
+    const url = encodeURIComponent(`https://facilities-api.vercel.app/qr.html?local=${slug}`);
+    return `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${url}&bgcolor=ffffff&color=1e1b4b&margin=10`;
+  }
+
+  function renderQRCodes() {
+    const grid = document.getElementById('qr-grid');
+    if (!grid) return;
+
+    const locais = qrFiltroAtivo === 'todos'
+      ? QR_LOCAIS
+      : QR_LOCAIS.filter(l => l.tipo === qrFiltroAtivo);
+
+    grid.innerHTML = locais.map(local => {
+      const qrUrl = gerarQRUrl(local.slug);
+      const linkUrl = `https://facilities-api.vercel.app/qr.html?local=${local.slug}`;
+      return `<div class="qr-card" data-tipo="${local.tipo}">
+        <img src="${qrUrl}" alt="QR ${local.nome}" width="160" height="160" style="border-radius:6px;border:1px solid var(--border);" loading="lazy">
+        <div class="qr-card-nome">${local.nome}</div>
+        <div class="qr-card-tipo">${local.andar}</div>
+        <div class="qr-card-btns">
+          <a href="${linkUrl}" target="_blank" class="btn btn-secondary" style="font-size:0.75rem;padding:5px 10px;">🔗 Abrir</a>
+          <button class="btn btn-secondary" style="font-size:0.75rem;padding:5px 10px;" onclick="baixarQR('${qrUrl}','${local.slug}')">⬇️ Baixar</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function filtrarQR(tipo, btn) {
+    qrFiltroAtivo = tipo;
+    document.querySelectorAll('.qr-filtro').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderQRCodes();
+  }
+  window.filtrarQR = filtrarQR;
+
+  function baixarQR(qrUrl, slug) {
+    const a = document.createElement('a');
+    a.href = qrUrl;
+    a.download = `qrcode-${slug}.png`;
+    a.target = '_blank';
+    a.click();
+  }
+  window.baixarQR = baixarQR;
+
+  function imprimirTodosQR() {
+    // Mostra todos antes de imprimir
+    const filtroAnterior = qrFiltroAtivo;
+    qrFiltroAtivo = 'todos';
+    renderQRCodes();
+    setTimeout(() => {
+      window.print();
+      // Restaura filtro anterior
+      qrFiltroAtivo = filtroAnterior;
+      renderQRCodes();
+    }, 500);
+  }
+  window.imprimirTodosQR = imprimirTodosQR;
 </script>
 </body>
 </html>
