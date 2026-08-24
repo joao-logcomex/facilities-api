@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#6613D0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Facilities · LogComex</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Funnel+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple: #6613D0; --purple-dark: #5B11BA; --purple-light: #F1E9FD; --purple-mid: #E2D0FA;
+    --orange: #FE8F1C; --black: #0B0D19;
+    --ink: #1e1b4b; --ink2: #6b7280; --ink3: #9ca3af;
+    --surface: #ffffff; --surface2: #f5f3ff; --surface3: #ede9fe;
+    --border: rgba(102,19,208,0.12);
+    --success: #16a34a;
+    --radius: 14px; --radius-sm: 9px;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Poppins', sans-serif; background: var(--surface2); color: var(--ink); min-height: 100vh; line-height: 1.6; }
+
+  /* LOADING */
+  .loading-screen { position: fixed; inset: 0; background: var(--black); display: flex; align-items: center; justify-content: center; z-index: 999; }
+  .loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(102,19,208,0.3); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* AUTH */
+  .auth-screen { position: fixed; inset: 0; background: var(--black); display: none; align-items: center; justify-content: center; z-index: 998; padding: 1rem; }
+  .auth-box { background: #13152a; border: 1px solid rgba(102,19,208,0.3); border-radius: 20px; padding: 2.5rem; width: 100%; max-width: 360px; box-shadow: 0 0 60px rgba(102,19,208,0.12); }
+  .auth-logo { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+  .auth-logo-mark { width: 44px; height: 44px; background: var(--purple); border-radius: 12px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; flex-shrink: 0; }
+  .auth-logo-mark::before { content: ''; position: absolute; width: 12px; height: 12px; background: var(--orange); border-radius: 50%; top: 3px; right: 3px; }
+  .auth-logo-mark::after { content: 'L'; position: absolute; bottom: 3px; left: 9px; color: #fff; font-size: 16px; font-weight: 700; }
+  .auth-logo-text { font-weight: 700; font-size: 1.1rem; color: #fff; }
+  .auth-logo-text span { color: var(--orange); font-weight: 400; }
+  .auth-title { color: #fff; font-family: 'Funnel Display', sans-serif; font-size: 1.3rem; font-weight: 700; text-align: center; margin-bottom: 0.3rem; }
+  .auth-sub { color: rgba(255,255,255,0.4); font-size: 0.82rem; text-align: center; margin-bottom: 1rem; line-height: 1.5; }
+  .auth-local-badge { background: rgba(102,19,208,0.2); border: 1px solid rgba(102,19,208,0.4); border-radius: 100px; padding: 5px 14px; font-size: 0.78rem; color: var(--purple-mid); font-weight: 600; text-align: center; margin-bottom: 1.5rem; }
+  .btn-google { width: 100%; padding: 12px; border-radius: var(--radius-sm); border: 1.5px solid #e8e4f5; background: #fff; font-family: 'Poppins', sans-serif; font-size: 0.9rem; font-weight: 600; color: #3c4043; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.15s; }
+  .btn-google:hover { background: #f8f9fa; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  .auth-error { color: #f87171; font-size: 0.82rem; margin-top: 0.8rem; text-align: center; display: none; }
+  .auth-footer { text-align: center; margin-top: 1.2rem; font-size: 0.75rem; color: rgba(255,255,255,0.2); }
+
+  /* HEADER */
+  .site-header { background: linear-gradient(135deg, #2D085D 0%, #5B11BA 100%); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 58px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(45,8,93,0.25); }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .logo-mark { width: 32px; height: 32px; background: rgba(255,255,255,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; flex-shrink: 0; }
+  .logo-mark::before { content: ''; position: absolute; width: 8px; height: 8px; background: var(--orange); border-radius: 50%; top: 2px; right: 2px; }
+  .logo-mark::after { content: 'L'; position: absolute; bottom: 2px; left: 6px; color: #fff; font-size: 11px; font-weight: 700; }
+  .logo-text { font-weight: 800; font-size: 1rem; color: #fff; letter-spacing: -0.03em; }
+  .logo-text span { color: var(--orange); font-weight: 400; }
+  .header-user { color: rgba(255,255,255,0.6); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; }
+  .header-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); object-fit: cover; }
+
+  /* HERO */
+  .hero { background: linear-gradient(160deg, #0B0D19 0%, #2D085D 100%); padding: 2.5rem 1.5rem 4rem; text-align: center; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -80px; left: 50%; transform: translateX(-50%); width: 500px; height: 300px; background: radial-gradient(ellipse, rgba(102,19,208,0.35) 0%, transparent 65%); pointer-events: none; }
+  .hero-eyebrow { display: inline-flex; align-items: center; gap: 7px; background: rgba(102,19,208,0.2); color: var(--purple-mid); font-size: 0.72rem; font-weight: 600; padding: 5px 14px; border-radius: 100px; border: 1px solid rgba(102,19,208,0.35); margin-bottom: 1rem; letter-spacing: 0.06em; text-transform: uppercase; position: relative; z-index: 1; }
+  .eyebrow-dot { width: 6px; height: 6px; background: var(--orange); border-radius: 50%; }
+  .hero h1 { font-family: 'Funnel Display', 'Poppins', sans-serif; font-weight: 700; font-size: clamp(1.6rem, 4vw, 2.4rem); color: #fff; letter-spacing: -0.04em; line-height: 1.15; margin-bottom: 0.75rem; position: relative; z-index: 1; }
+  .hero h1 em { font-style: normal; color: var(--purple-mid); }
+  .local-chip { display: inline-flex; align-items: center; gap: 8px; background: rgba(254,143,28,0.15); border: 1px solid rgba(254,143,28,0.35); border-radius: 100px; padding: 6px 16px; color: var(--orange); font-size: 0.82rem; font-weight: 600; position: relative; z-index: 1; margin-top: 0.5rem; }
+
+  /* MAIN */
+  .main { max-width: 560px; margin: -2rem auto 0; padding: 0 1.25rem 4rem; }
+
+  /* FORM CARD */
+  .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: 0 4px 24px rgba(102,19,208,0.08); }
+  .form-card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); background: #faf8ff; display: flex; align-items: center; gap: 12px; }
+  .fch-icon { width: 44px; height: 44px; background: var(--purple-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .fch-title { font-weight: 700; font-size: 0.95rem; letter-spacing: -0.02em; }
+  .fch-sub { font-size: 0.77rem; color: var(--ink3); margin-top: 1px; }
+  .form-body { padding: 1.5rem; }
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 1rem; }
+  .field label { font-size: 0.8rem; font-weight: 600; color: var(--ink2); }
+  textarea { width: 100%; padding: 12px 14px; border: 1.5px solid #e8e4f5; border-radius: var(--radius-sm); font-family: 'Poppins', sans-serif; font-size: 0.88rem; color: var(--ink); background: var(--surface); outline: none; transition: border-color 0.18s, box-shadow 0.18s; resize: vertical; min-height: 130px; }
+  textarea:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(102,19,208,0.08); }
+  textarea::placeholder { color: var(--ink3); }
+  .char-count { font-size: 0.72rem; color: var(--ink3); text-align: right; }
+  .tip-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 1.2rem; }
+  .tip-box p { font-size: 0.78rem; color: var(--ink2); line-height: 1.6; }
+  .tip-box strong { color: var(--purple); }
+  .btn-submit { width: 100%; background: var(--purple); color: #fff; border: none; padding: 14px; border-radius: var(--radius-sm); font-family: 'Poppins', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.18s; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 14px rgba(102,19,208,0.3); margin-top: 0.25rem; }
+  .btn-submit:hover:not(:disabled) { background: var(--purple-dark); transform: translateY(-1px); }
+  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+
+  /* SUCCESS */
+  .success-card { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem 2rem; text-align: center; box-shadow: 0 4px 24px rgba(102,19,208,0.08); }
+  .success-icon { width: 72px; height: 72px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.2rem; font-size: 2rem; }
+  .success-card h2 { font-family: 'Funnel Display', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--ink); margin-bottom: 0.5rem; letter-spacing: -0.03em; }
+  .success-card p { color: var(--ink2); font-size: 0.88rem; margin-bottom: 0.4rem; line-height: 1.6; }
+  .success-ticket { display: inline-block; background: var(--purple-light); color: var(--purple-dark); font-weight: 700; font-size: 1rem; padding: 6px 18px; border-radius: 100px; margin: 0.8rem 0 1.2rem; border: 1px solid rgba(102,19,208,0.2); }
+  .btn-novo { background: transparent; color: var(--purple); border: 1.5px solid rgba(102,19,208,0.3); padding: 10px 24px; border-radius: var(--radius-sm); font-family: 'Poppins', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.18s; }
+  .btn-novo:hover { background: var(--purple-light); border-color: var(--purple); }
+
+  /* FOOTER */
+  .page-footer { text-align: center; padding: 1rem 1rem 3rem; color: var(--ink3); font-size: 0.75rem; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-screen" id="loading">
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- AUTH -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-mark"></div>
+      <span class="auth-logo-text">Logcomex<span> · Facilities</span></span>
+    </div>
+    <div class="auth-title">Abrir chamado</div>
+    <p class="auth-sub">Entre com sua conta LogComex para registrar sua solicitação.</p>
+    <div class="auth-local-badge" id="authLocalBadge">📍 Carregando...</div>
+    <button class="btn-google" id="btnGoogle" onclick="loginGoogle()">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Entrar com Google
+    </button>
+    <div class="auth-error" id="authError">Acesso restrito a contas @logcomex.com</div>
+    <div class="auth-footer">Facilities LogComex · Sistema interno</div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="site-header" id="siteHeader" style="display:none">
+  <a class="logo" href="/">
+    <div class="logo-mark"></div>
+    <span class="logo-text">Logcomex<span> · Facilities</span></span>
+  </a>
+  <div class="header-user">
+    <img class="header-avatar" id="headerAvatar" src="" alt="" onerror="this.style.display='none'">
+    <span id="headerName"></span>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="heroSection" style="display:none">
+  <div class="hero-eyebrow"><span class="eyebrow-dot"></span>Chamado rápido</div>
+  <h1>O que você<br><em>precisa?</em></h1>
+  <div class="local-chip" id="localChip">📍 Carregando...</div>
+</section>
+
+<!-- MAIN -->
+<main class="main" id="mainSection" style="display:none">
+
+  <div class="form-card" id="formCard">
+    <div class="form-card-header">
+      <div class="fch-icon">💬</div>
+      <div>
+        <div class="fch-title">Descreva sua solicitação</div>
+        <div class="fch-sub">Nossa IA vai classificar e encaminhar automaticamente</div>
+      </div>
+    </div>
+    <div class="form-body">
+      <div class="tip-box">
+        <p>Seja específico! Exemplos: <strong>"papel higiênico acabou"</strong>, <strong>"torneira pingando"</strong>, <strong>"falta sabonete"</strong>, <strong>"lâmpada queimada"</strong>, <strong>"ar-condicionado não liga"</strong>...</p>
+      </div>
+      <div class="field">
+        <label>Descreva o problema ou necessidade <span style="color:var(--orange)">*</span></label>
+        <textarea id="descricao" placeholder="Conte com detalhes o que está acontecendo ou o que você precisa..." maxlength="800" oninput="atualizarContador()"></textarea>
+        <div class="char-count"><span id="charCount">0</span>/800</div>
+      </div>
+      <button class="btn-submit" id="btnSubmit" onclick="enviarChamado()">
+        <span id="btnText">Enviar solicitação</span>
+        <div class="btn-spinner" id="btnSpinner"></div>
+        <svg id="btnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="success-card" id="successCard">
+    <div class="success-icon">✅</div>
+    <h2>Chamado registrado!</h2>
+    <p>Sua solicitação foi enviada com sucesso.<br>O time de Facilities vai cuidar disso em breve.</p>
+    <div class="success-ticket" id="successTicket">#LC-00000</div>
+    <p style="font-size:0.8rem;color:var(--ink3)">Você vai receber atualizações pelo Slack quando o status mudar.</p>
+    <br>
+    <button class="btn-novo" onclick="novoChamado()">Abrir outro chamado</button>
+  </div>
+
+</main>
+
+<div class="page-footer" id="pageFooter" style="display:none">
+  Facilities LogComex &nbsp;·&nbsp; <a href="/" style="color:var(--purple);text-decoration:none">Ver meus chamados</a>
+</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCczKnSawfHiAPuMjY2L80ww_wtBMJJY30",
+    authDomain: "facilities-logcomex.firebaseapp.com",
+    projectId: "facilities-logcomex",
+    storageBucket: "facilities-logcomex.firebasestorage.app",
+    messagingSenderId: "957812645576",
+    appId: "1:957812645576:web:80c88475cc904106d20ffd"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ hd: 'logcomex.com' });
+
+  window._auth = auth;
+
+  window.loginGoogle = async function() {
+    document.getElementById('authError').style.display = 'none';
+    try {
+      const result = await signInWithPopup(auth, provider);
+      if (!result.user.email.endsWith('@logcomex.com')) {
+        await signOut(auth);
+        document.getElementById('authError').style.display = 'block';
+        document.getElementById('authError').textContent = 'Acesso restrito a contas @logcomex.com';
+      }
+    } catch(e) {
+      if (e.code !== 'auth/popup-closed-by-user') {
+        document.getElementById('authError').style.display = 'block';
+        document.getElementById('authError').textContent = 'Erro ao fazer login. Tente novamente.';
+      }
+    }
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('loading').style.display = 'none';
+    if (user && user.email && user.email.endsWith('@logcomex.com')) {
+      window._currentUser = user;
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('siteHeader').style.display = 'flex';
+      document.getElementById('heroSection').style.display = 'block';
+      document.getElementById('mainSection').style.display = 'block';
+      document.getElementById('pageFooter').style.display = 'block';
+      if (user.photoURL) document.getElementById('headerAvatar').src = user.photoURL;
+      const firstName = (user.displayName || user.email).split(' ')[0];
+      document.getElementById('headerName').textContent = firstName;
+    } else {
+      window._currentUser = null;
+      document.getElementById('authScreen').style.display = 'flex';
+      document.getElementById('siteHeader').style.display = 'none';
+      document.getElementById('heroSection').style.display = 'none';
+      document.getElementById('mainSection').style.display = 'none';
+      document.getElementById('pageFooter').style.display = 'none';
+    }
+  });
+</script>
+
+<script>
+  // ── Locais disponíveis ──
+  const LOCAIS = {
+    // 2º andar — salas
+    'war-room':   '🪖 War Room — 2º andar',
+    'xgh':        '🧪 XGH — 2º andar',
+    'ia-2':       '🤖 IA — 2º andar',
+    'deploy':     '🚀 Deploy — 2º andar',
+    'root':       '🌱 Root — 2º andar',
+    'roadmap':    '🗺️ Roadmap — 2º andar',
+    // 1º andar — salas
+    'full-stack': '🧱 Full Stack — 1º andar',
+    'git':        '🔀 Git — 1º andar',
+    'bot':        '🤖 Bot — 1º andar',
+    'linux':      '🐧 Linux — 1º andar',
+    'cron':       '⏰ Cron — 1º andar',
+    'ia-1':       '🧠 IA — 1º andar',
+    'html':       '📄 HTML — 1º andar',
+    'cloud':      '☁️ Cloud — 1º andar',
+    'container':  '📦 Container — 1º andar',
+    'python':     '🐍 Python — 1º andar',
+    'javascript': '📜 Javascript — 1º andar',
+    'php':        '🐘 PHP — 1º andar',
+    // 1º andar — banheiros
+    'banheiro-fem-armarios-1':  '🚺 Banheiro Feminino — Armários 1',
+    'banheiro-masc-armarios-1': '🚹 Banheiro Masculino — Armários 1',
+    'banheiro-fem-armarios-2':  '🚺 Banheiro Feminino — Armários 2',
+    'banheiro-masc-armarios-2': '🚹 Banheiro Masculino — Armários 2',
+    'banheiro-fem-copa-1':      '🚺 Banheiro Feminino — Copa/Cozinha 1',
+    'banheiro-masc-copa-1':     '🚹 Banheiro Masculino — Copa/Cozinha 1',
+    'banheiro-fem-copa-2':      '🚺 Banheiro Feminino — Copa/Cozinha 2',
+    'banheiro-masc-copa-2':     '🚹 Banheiro Masculino — Copa/Cozinha 2',
+    // 2º andar — banheiros
+    'banheiro-pcd':         '♿ Banheiro PCD — 2º andar',
+    'banheiro-fem-cozinha': '🚺 Banheiro Feminino — Cozinha 2º andar',
+    'banheiro-masc-root':   '🚹 Banheiro Masculino — Sala Root',
+  };
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const localSlug = urlParams.get('local') || '';
+  const localNome = LOCAIS[localSlug] || (localSlug ? '📍 ' + localSlug : '📍 Local não identificado');
+
+  // Preenche badges
+  document.getElementById('localChip').textContent = localNome;
+  document.getElementById('authLocalBadge').textContent = localNome;
+
+  function atualizarContador() {
+    document.getElementById('charCount').textContent = document.getElementById('descricao').value.length;
+  }
+
+  async function enviarChamado() {
+    const descricao = document.getElementById('descricao').value.trim();
+    if (!descricao || descricao.length < 10) {
+      alert('Por favor, descreva sua solicitação com pelo menos 10 caracteres.');
+      return;
+    }
+    if (!window._currentUser) {
+      alert('Sessão expirada. Recarregue a página e faça login novamente.');
+      return;
+    }
+
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    document.getElementById('btnText').textContent = 'Enviando...';
+    document.getElementById('btnSpinner').style.display = 'block';
+    document.getElementById('btnIcon').style.display = 'none';
+
+    try {
+      const token = await window._currentUser.getIdToken();
+      const resp = await fetch('/api/relatorio-imobiliario?qr=1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token,
+        },
+        body: JSON.stringify({
+          local: localSlug,
+          localNome: localNome,
+          descricao: descricao,
+          email: window._currentUser.email,
+        }),
+      });
+      const data = await resp.json();
+      if (!data.ok) throw new Error(data.error || 'Erro desconhecido');
+
+      document.getElementById('formCard').style.display = 'none';
+      document.getElementById('successCard').style.display = 'block';
+      document.getElementById('successTicket').textContent = data.ticketId;
+
+    } catch(e) {
+      alert('Erro ao enviar: ' + e.message + '\nTente novamente.');
+    } finally {
+      btn.disabled = false;
+      document.getElementById('btnText').textContent = 'Enviar solicitação';
+      document.getElementById('btnSpinner').style.display = 'none';
+      document.getElementById('btnIcon').style.display = 'block';
+    }
+  }
+
+  window.enviarChamado = enviarChamado;
+
+  function novoChamado() {
+    document.getElementById('descricao').value = '';
+    document.getElementById('charCount').textContent = '0';
+    document.getElementById('formCard').style.display = 'block';
+    document.getElementById('successCard').style.display = 'none';
+  }
+  window.novoChamado = novoChamado;
+</script>
+
+</body>
+</html>
