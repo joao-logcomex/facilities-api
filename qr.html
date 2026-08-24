@@ -381,9 +381,14 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
 
     ctx.shadowBlur=0;
 
-    // Ponto quadrado (canto inferior direito)
-    const px=LS*.5, py=LS*.5+float, ps=LS*.22, pr=5;
-    ctx.shadowColor='rgba(220,225,255,.28)'; ctx.shadowBlur=12;
+    // Ponto quadrado — posicionado junto ao L, canto inferior direito
+    // L termina à direita em LS*.31, embaixo em LS*.31
+    // Ponto fica com gap pequeno, alinhado com o float do logo
+    const ps=LS*.2, pr=4;
+    // Centro do ponto: ligeiramente separado do canto do L
+    const px = LS*.31 + ps*.5 + LS*.04;  // gap de LS*.04 do canto direito do L
+    const py = LS*.31 + ps*.5 + LS*.04 + float; // mesmo gap embaixo + float
+    ctx.shadowColor='rgba(220,225,255,.3)'; ctx.shadowBlur=14;
     ctx.fillStyle='#0B0D19';
     ctx.strokeStyle='rgba(232,232,255,.92)'; ctx.lineWidth=5;
     ctx.beginPath();
