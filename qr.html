@@ -11,85 +11,81 @@
 <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--purple:#6613D0;--purple-light:#8E44ED;--purple-deep:#2D085D;--orange:#FE8F1C;--r:14px;--rs:10px}
+:root{--purple:#6613D0;--purple-light:#8E44ED;--orange:#FE8F1C;--r:14px;--rs:10px}
 html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sans-serif;color:#fff;overflow-x:hidden}
 
 /* HEADER */
 #siteHeader{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;background:rgba(11,13,25,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(102,19,208,.12)}
 .lh{display:flex;align-items:center;gap:10px;text-decoration:none}
-.ld{width:1px;height:14px;background:rgba(255,255,255,.15)}
+.logo-txt{font-family:'Funnel Display',sans-serif;font-weight:800;font-size:1rem;color:#fff;letter-spacing:-.02em}
+.ld{width:1px;height:14px;background:rgba(255,255,255,.15);margin:0 2px}
 .lf{font-size:.78rem;font-weight:500;color:rgba(255,255,255,.4)}
-.local-badge{font-size:.72rem;color:rgba(255,255,255,.35);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);padding:4px 12px;border-radius:100px}
+.local-badge{font-size:.72rem;color:rgba(255,255,255,.4);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);padding:4px 12px;border-radius:100px;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* APP */
-#app{min-height:100vh;padding-top:56px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 25% 60%,rgba(45,8,93,0.6) 0%,transparent 60%),radial-gradient(ellipse at 75% 40%,rgba(102,19,208,0.15) 0%,transparent 50%),#0B0D19}
+#app{min-height:100vh;padding-top:56px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 22% 55%,rgba(45,8,93,.65) 0%,transparent 55%),radial-gradient(ellipse at 78% 40%,rgba(102,19,208,.12) 0%,transparent 50%),#0B0D19}
+.app-inner{display:flex;align-items:center;width:100%;max-width:1080px;padding:2rem;gap:2.5rem}
 
-.app-inner{display:flex;align-items:center;justify-content:center;width:100%;max-width:1080px;padding:2rem;gap:3rem}
+/* CANVAS */
+.hero-side{flex:0 0 480px;height:480px;display:flex;align-items:center;justify-content:center}
+#heroCanvas{width:480px;height:480px;display:block}
 
-/* LADO ESQUERDO — canvas animado */
-.hero-side{flex:0 0 auto;width:440px;height:440px;position:relative;display:flex;align-items:center;justify-content:center}
-#heroCanvas{width:440px;height:440px;display:block}
+/* FORMULÁRIO */
+.form-side{flex:1;min-width:0;max-width:460px}
+.eyebrow{display:inline-flex;align-items:center;gap:.5rem;background:rgba(254,143,28,.1);border:1px solid rgba(254,143,28,.28);padding:.42rem 1rem;border-radius:100px;font-size:.68rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--orange);margin-bottom:1.1rem}
+.hero-title{font-family:'Funnel Display',sans-serif;font-size:clamp(2rem,3.5vw,3.2rem);font-weight:800;line-height:1.05;margin-bottom:.5rem;background:linear-gradient(135deg,#fff 35%,#C4A1FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.04em}
+.hero-sub{font-size:.83rem;color:rgba(255,255,255,.32);margin-bottom:1.6rem;line-height:1.65}
+.hero-sub strong{color:rgba(255,255,255,.65);font-weight:600}
 
-/* LADO DIREITO — formulário */
-.form-side{flex:1;max-width:440px}
-.hero-eyebrow{display:inline-flex;align-items:center;gap:.5rem;background:rgba(254,143,28,.1);border:1px solid rgba(254,143,28,.28);padding:.4rem 1rem;border-radius:100px;font-size:.68rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--orange);margin-bottom:1.1rem}
-.hero-title{font-family:'Funnel Display',sans-serif;font-size:clamp(1.9rem,3.2vw,3rem);font-weight:800;line-height:1.05;margin-bottom:.5rem;background:linear-gradient(135deg,#fff 35%,#C4A1FF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.04em}
-.hero-sub{font-size:.85rem;color:rgba(255,255,255,.35);margin-bottom:1.6rem;line-height:1.6}
-
-/* CARD */
 .fcard{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);overflow:hidden;backdrop-filter:blur(16px)}
 .fcard-head{padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:10px}
 .fcard-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--purple),var(--purple-light));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0;box-shadow:0 4px 12px rgba(102,19,208,.3)}
-.fcard-title{font-weight:700;font-size:.88rem;color:#fff;letter-spacing:-.01em}
-.fcard-sub{font-size:.72rem;color:rgba(255,255,255,.3);margin-top:1px}
+.fcard-title{font-weight:700;font-size:.88rem;color:#fff}
+.fcard-sub{font-size:.72rem;color:rgba(255,255,255,.28);margin-top:1px}
 .fcard-body{padding:1.25rem}
-
-/* CAMPOS */
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:.85rem}
-.field label{font-size:.74rem;font-weight:600;color:rgba(255,255,255,.35);letter-spacing:.02em}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:.8rem}
+.field label{font-size:.7rem;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.06em;text-transform:uppercase}
 .field input,.field textarea{width:100%;padding:11px 13px;border:1.5px solid rgba(255,255,255,.07);border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.85rem;color:#fff;background:rgba(255,255,255,.05);outline:none;transition:border-color .2s,box-shadow .2s}
 .field input:focus,.field textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(102,19,208,.12)}
 .field input::placeholder,.field textarea::placeholder{color:rgba(255,255,255,.18)}
 .field textarea{resize:none;height:96px}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.field-error{font-size:.71rem;color:#f87171;margin-top:3px;display:none}
 .cc{font-size:.68rem;color:rgba(255,255,255,.2);text-align:right;margin-top:2px}
+.hint{background:rgba(102,19,208,.1);border:1px solid rgba(102,19,208,.18);border-radius:var(--rs);padding:9px 12px;margin-bottom:.9rem;font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.6}
+.hint b{color:rgba(255,255,255,.6);font-weight:600}
 
-/* BOTÃO */
-.btn-s{width:100%;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;border:none;padding:14px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.92rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 20px rgba(102,19,208,.4);margin-top:.25rem}
+.btn-s{width:100%;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;border:none;padding:14px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.92rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 20px rgba(102,19,208,.4);margin-top:.1rem}
 .btn-s:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 28px rgba(102,19,208,.5)}
 .btn-s:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .bsp{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* SUCESSO */
 .scard{display:none;text-align:center;padding:2.5rem 1.5rem}
-.sicon{width:68px;height:68px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.1rem;font-size:1.9rem;box-shadow:0 8px 24px rgba(22,163,74,.15)}
-.scard h2{font-family:'Funnel Display',sans-serif;font-size:1.45rem;font-weight:800;color:#fff;margin-bottom:.4rem;letter-spacing:-.03em}
+.sicon{width:68px;height:68px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.1rem;font-size:1.9rem}
+.scard h2{font-family:'Funnel Display',sans-serif;font-size:1.45rem;font-weight:800;color:#fff;margin-bottom:.4rem}
 .scard p{color:rgba(255,255,255,.35);font-size:.83rem;line-height:1.7;margin-bottom:.3rem}
 .stk{display:inline-block;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;font-weight:700;font-size:.95rem;padding:6px 20px;border-radius:100px;margin:.8rem 0 1.1rem;box-shadow:0 4px 14px rgba(102,19,208,.35)}
-.btn-n{background:transparent;color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);padding:9px 22px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;transition:all .2s}
-.btn-n:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.7)}
+.btn-n{background:transparent;color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.08);padding:9px 22px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.83rem;cursor:pointer;transition:all .2s}
+.btn-n:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.6)}
 
-/* ERRO */
-.field-error{font-size:.72rem;color:#f87171;margin-top:3px;display:none}
-
-/* MOBILE */
-@media(max-width:800px){
-  .app-inner{flex-direction:column;padding:1.25rem;gap:1.5rem;align-items:stretch}
-  .hero-side{width:100%;height:280px}
-  #heroCanvas{width:280px;height:280px;margin:0 auto;display:block}
-  .hero-title{font-size:1.9rem}
+@media(max-width:860px){
+  .app-inner{flex-direction:column;padding:1.25rem;gap:1.5rem}
+  .hero-side{flex:0 0 auto;width:100%;height:300px}
+  #heroCanvas{width:300px;height:300px;margin:0 auto;display:block}
+  .form-side{max-width:100%;width:100%}
   .row2{grid-template-columns:1fr}
+  .hero-title{font-size:2rem}
 }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header id="siteHeader">
   <a class="lh" href="/">
-    <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="6" fill="#6613D0"/>
+    <!-- Logo LogComex correta — ícone + texto -->
+    <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="7" fill="#6613D0"/>
       <path d="M6 19.5H12.5V26H6V19.5Z" fill="white"/>
       <path d="M6 6H12.5V19.5H6V6Z" fill="white"/>
       <path d="M6 19.5H19.5V26H6V19.5Z" fill="white"/>
@@ -97,27 +93,24 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
       <path d="M19.5 12.5H26V19.5H19.5V12.5Z" fill="white"/>
       <path d="M19.5 19.5H26V26H19.5V19.5Z" fill="white"/>
     </svg>
-    <span style="font-family:'Funnel Display',sans-serif;font-weight:800;font-size:.95rem;color:#fff;letter-spacing:-.02em">Logcomex</span>
+    <span class="logo-txt">Logcomex</span>
     <div class="ld"></div>
     <span class="lf">Facilities</span>
   </a>
   <span class="local-badge" id="localBadge"></span>
 </header>
 
-<!-- APP -->
 <div id="app">
   <div class="app-inner">
 
-    <!-- Canvas animado -->
     <div class="hero-side">
-      <canvas id="heroCanvas" width="440" height="440"></canvas>
+      <canvas id="heroCanvas" width="480" height="480"></canvas>
     </div>
 
-    <!-- Formulário -->
     <div class="form-side">
-      <div class="hero-eyebrow"><span>●</span> CHAMADO RÁPIDO</div>
+      <div class="eyebrow"><span>●</span> CHAMADO RÁPIDO</div>
       <h1 class="hero-title">O que você<br>precisa?</h1>
-      <p class="hero-sub">Reporte um problema de <strong style="color:rgba(255,255,255,.7)">manutenção</strong> ou <strong style="color:rgba(255,255,255,.7)">suprimentos</strong> neste local.<br>O time de Facilities resolve pra você.</p>
+      <p class="hero-sub">Reporte um problema de <strong>manutenção</strong> ou <strong>suprimentos</strong> neste local. O time de Facilities resolve pra você.</p>
 
       <div class="fcard">
         <div class="fcard-head">
@@ -127,24 +120,26 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
             <div class="fcard-sub">Nossa IA classifica e encaminha automaticamente</div>
           </div>
         </div>
-
-        <!-- FORM BODY -->
         <div class="fcard-body" id="formBody">
+          <div class="hint">
+            🔧 <b>Manutenção:</b> torneira, lâmpada, ar-condicionado, porta, fechadura...<br>
+            📎 <b>Suprimentos:</b> papel higiênico, sabonete, papel toalha, copos...
+          </div>
           <div class="row2">
             <div class="field">
-              <label>SEU NOME <span style="color:#FE8F1C">*</span></label>
+              <label>Seu nome <span style="color:#FE8F1C">*</span></label>
               <input type="text" id="nome" placeholder="Nome completo" autocomplete="name">
               <div class="field-error" id="err-nome">Informe seu nome</div>
             </div>
             <div class="field">
-              <label>E-MAIL LOGCOMEX <span style="color:#FE8F1C">*</span></label>
+              <label>E-mail LogComex <span style="color:#FE8F1C">*</span></label>
               <input type="email" id="email" placeholder="seu@logcomex.com" autocomplete="email">
-              <div class="field-error" id="err-email">E-mail inválido</div>
+              <div class="field-error" id="err-email">Use seu e-mail @logcomex.com</div>
             </div>
           </div>
           <div class="field">
-            <label>DESCREVA O PROBLEMA OU NECESSIDADE <span style="color:#FE8F1C">*</span></label>
-            <textarea id="descricao" placeholder="Ex: papel higiênico acabou, torneira pingando, lâmpada queimada, ar-condicionado não liga, sabonete acabou..." maxlength="800" oninput="cnt()"></textarea>
+            <label>Descreva o problema <span style="color:#FE8F1C">*</span></label>
+            <textarea id="descricao" placeholder="Ex: torneira do banheiro está pingando / papel higiênico acabou / lâmpada queimada..." maxlength="800" oninput="cnt()"></textarea>
             <div class="cc"><span id="charCount">0</span>/800</div>
             <div class="field-error" id="err-desc">Descreva o problema</div>
           </div>
@@ -154,167 +149,151 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
             <svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
-
-        <!-- SUCESSO -->
         <div class="scard" id="successCard">
           <div class="sicon">✅</div>
           <h2>Chamado registrado!</h2>
-          <p>Sua solicitação foi enviada com sucesso.<br>O time de Facilities vai cuidar disso.</p>
+          <p>Sua solicitação foi enviada.<br>O time de Facilities vai resolver.</p>
           <div class="stk" id="successTicket">#LC-00000</div>
-          <p style="font-size:.78rem;color:rgba(255,255,255,.2)">Fique de olho no seu Slack para atualizações.</p>
-          <br>
+          <p style="font-size:.78rem;color:rgba(255,255,255,.2)">Acompanhe pelo Slack.</p><br>
           <button class="btn-n" onclick="novoChamado()">Abrir outro chamado</button>
         </div>
       </div>
     </div>
-
   </div>
 </div>
 
 <!-- ANIMAÇÃO CANVAS -->
 <script>
 (function(){
-  const canvas = document.getElementById('heroCanvas');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const cx = W/2, cy = H/2;
+  const cv = document.getElementById('heroCanvas');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height, cx = W/2, cy = H/2;
   let t = 0;
 
-  // Estrelas de fundo
-  const stars = Array.from({length:130}, () => ({
-    x: (Math.random()-.5)*W*1.3,
-    y: (Math.random()-.5)*H*1.3,
-    r: Math.random()*.9+.2,
-    col: Math.random()>.55 ? '254,143,28' : '200,180,255',
-    a: Math.random()*.35+.05,
-    ph: Math.random()*Math.PI*2,
-    sp: Math.random()*.004+.001
+  // Estrelas
+  const stars = Array.from({length:140}, () => ({
+    x:(Math.random()-.5)*W*1.4, y:(Math.random()-.5)*H*1.4,
+    r:Math.random()*.9+.2,
+    col:Math.random()>.5?'254,143,28':'200,180,255',
+    a:Math.random()*.3+.05, ph:Math.random()*Math.PI*2, sp:Math.random()*.003+.001
   }));
 
-  // Pontos da rede
-  const NET = Array.from({length:13}, (_,i) => {
-    const a = (i/13)*Math.PI*2;
-    const r = 48 + Math.random()*18;
-    return { bx: Math.cos(a)*r, by: Math.sin(a)*r, ph: Math.random()*Math.PI*2 };
+  // Rede de pontos ao redor do cristal
+  const NET = Array.from({length:14}, (_,i) => {
+    const a=(i/14)*Math.PI*2, r=62+Math.random()*20;
+    return {bx:Math.cos(a)*r, by:Math.sin(a)*r, ph:Math.random()*Math.PI*2};
   });
 
-  function frame() {
+  function frame(){
     ctx.clearRect(0,0,W,H);
-    const float = Math.sin(t*.9)*11;
+    const float = Math.sin(t*.85)*12;
 
     // Glow de fundo
-    const bg = ctx.createRadialGradient(cx,cy+float*.3,0,cx,cy,W*.58);
-    bg.addColorStop(0,'rgba(45,8,93,0.4)');
-    bg.addColorStop(.6,'rgba(102,19,208,0.08)');
+    const bg = ctx.createRadialGradient(cx,cy,0,cx,cy,W*.6);
+    bg.addColorStop(0,'rgba(45,8,93,.42)');
+    bg.addColorStop(.55,'rgba(102,19,208,.07)');
     bg.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
     // Estrelas
-    stars.forEach(s => {
-      const a = s.a * (.5 + Math.sin(t*s.sp*50+s.ph)*.5);
-      ctx.beginPath(); ctx.arc(cx+s.x, cy+s.y, s.r, 0, Math.PI*2);
+    stars.forEach(s=>{
+      const a=s.a*(.5+Math.sin(t*s.sp*55+s.ph)*.5);
+      ctx.beginPath(); ctx.arc(cx+s.x,cy+s.y,s.r,0,Math.PI*2);
       ctx.fillStyle=`rgba(${s.col},${a})`; ctx.fill();
     });
 
     ctx.save(); ctx.translate(cx, cy+float);
 
     // ── ONDAS ──
-    for (let w=0; w<2; w++) {
-      const orange = w===1;
-      const col = orange ? '254,143,28' : '200,190,255';
-      const yOff = orange ? 28 : -28;
-      const spd = orange ? 1.3 : 1.7;
-      for (let i=0; i<110; i++) {
-        const p = (i/110 + t*.055*(orange?1:-1)+1)%1;
-        const x = (p-.5)*(W*1.1);
-        const y = Math.sin(p*Math.PI*3+(orange?1.4:0)+t*spd)*50*Math.sin(p*Math.PI);
-        const a = Math.sin(p*Math.PI)*(orange?.6:.42);
-        if(a<.02) continue;
-        const sz = (p>.4&&p<.6) ? 1.7 : .8;
-        ctx.beginPath(); ctx.arc(x, y+yOff, sz, 0, Math.PI*2);
+    for(let w=0;w<2;w++){
+      const orange=w===1;
+      const col=orange?'254,143,28':'210,195,255';
+      const yOff=orange?32:-32;
+      const spd=orange?1.25:1.65;
+      for(let i=0;i<120;i++){
+        const p=((i/120)+t*.052*(orange?1:-1)+1)%1;
+        const x=(p-.5)*(W*1.15);
+        const y=Math.sin(p*Math.PI*3+(orange?1.5:0)+t*spd)*55*Math.sin(p*Math.PI);
+        const a=Math.sin(p*Math.PI)*(orange?.62:.4);
+        if(a<.02)continue;
+        const sz=(p>.42&&p<.58)?1.8:.85;
+        ctx.beginPath(); ctx.arc(x,y+yOff,sz,0,Math.PI*2);
         ctx.fillStyle=`rgba(${col},${a})`; ctx.fill();
       }
     }
 
     // ── CRISTAL ROXO ──
-    const S = 68, spin = t*.13;
-    // Glow
-    const glow = ctx.createRadialGradient(0,0,0,0,0,S*1.3);
-    glow.addColorStop(0,'rgba(142,68,237,0.55)');
-    glow.addColorStop(.55,'rgba(102,19,208,0.25)');
+    const S=75, spin=t*.12;
+    const glow=ctx.createRadialGradient(0,0,0,0,0,S*1.35);
+    glow.addColorStop(0,'rgba(142,68,237,.6)');
+    glow.addColorStop(.5,'rgba(102,19,208,.25)');
     glow.addColorStop(1,'rgba(45,8,93,0)');
-    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(0,0,S*1.3,0,Math.PI*2); ctx.fill();
-    // Facetas
-    const cols=['rgba(145,75,255,.95)','rgba(88,28,200,.9)','rgba(172,108,255,.88)','rgba(72,14,188,.92)','rgba(158,88,255,.9)','rgba(108,42,210,.93)','rgba(185,125,255,.85)','rgba(82,18,195,.9)'];
+    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(0,0,S*1.35,0,Math.PI*2); ctx.fill();
+
+    const fc=['rgba(145,75,255,.95)','rgba(85,25,198,.9)','rgba(175,110,255,.88)','rgba(70,12,186,.92)','rgba(160,90,255,.9)','rgba(105,40,210,.93)','rgba(188,128,255,.85)','rgba(78,16,192,.9)'];
     for(let i=0;i<8;i++){
       const a1=spin+(i/8)*Math.PI*2, a2=spin+((i+1)/8)*Math.PI*2;
       ctx.beginPath(); ctx.moveTo(0,0);
       ctx.lineTo(Math.cos(a1)*S,Math.sin(a1)*S);
       ctx.lineTo(Math.cos(a2)*S,Math.sin(a2)*S);
-      ctx.closePath(); ctx.fillStyle=cols[i]; ctx.fill();
-      ctx.strokeStyle='rgba(200,160,255,.18)'; ctx.lineWidth=.5; ctx.stroke();
+      ctx.closePath(); ctx.fillStyle=fc[i]; ctx.fill();
+      ctx.strokeStyle='rgba(200,160,255,.15)'; ctx.lineWidth=.5; ctx.stroke();
     }
-    // Reflexo
-    const shine=ctx.createRadialGradient(-S*.28,-S*.28,0,0,0,S);
-    shine.addColorStop(0,'rgba(255,255,255,.48)');
-    shine.addColorStop(.38,'rgba(255,255,255,.1)');
+    const shine=ctx.createRadialGradient(-S*.3,-S*.3,0,0,0,S);
+    shine.addColorStop(0,'rgba(255,255,255,.52)');
+    shine.addColorStop(.4,'rgba(255,255,255,.1)');
     shine.addColorStop(1,'rgba(255,255,255,0)');
     ctx.fillStyle=shine; ctx.beginPath(); ctx.arc(0,0,S,0,Math.PI*2); ctx.fill();
 
     // ── REDE LARANJA ──
-    const pts = NET.map(p=>({
-      x: p.bx+Math.sin(t*.38+p.ph)*4,
-      y: p.by+Math.cos(t*.33+p.ph)*4
-    }));
+    const pts=NET.map(p=>({x:p.bx+Math.sin(t*.38+p.ph)*5,y:p.by+Math.cos(t*.33+p.ph)*5}));
     pts.push({x:0,y:0});
     for(let i=0;i<pts.length;i++) for(let j=i+1;j<pts.length;j++){
       const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);
-      if(d<80){
+      if(d<85){
         ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y);
-        ctx.strokeStyle=`rgba(254,190,60,${(1-d/80)*.48})`; ctx.lineWidth=.75; ctx.stroke();
+        ctx.strokeStyle=`rgba(254,185,55,${(1-d/85)*.45})`; ctx.lineWidth=.8; ctx.stroke();
       }
     }
     pts.forEach(p=>{
-      ctx.beginPath(); ctx.arc(p.x,p.y,1.9,0,Math.PI*2);
-      ctx.fillStyle='rgba(254,175,50,.9)';
-      ctx.shadowColor='rgba(254,143,28,.7)'; ctx.shadowBlur=5;
+      ctx.beginPath(); ctx.arc(p.x,p.y,2,0,Math.PI*2);
+      ctx.fillStyle='rgba(254,175,50,.88)';
+      ctx.shadowColor='rgba(254,143,28,.65)'; ctx.shadowBlur=5;
       ctx.fill(); ctx.shadowBlur=0;
     });
 
-    // ── LOGO — forma do L com ponto (prata/branco) ──
-    const LS = 148;
-
-    // Gradiente prata
-    const silver = ctx.createLinearGradient(-LS*.5,-LS*.6,LS*.4,LS*.4);
+    // ── LOGO — L com ponto, estilo prata/branco ──
+    const LS = 165;
+    const silver=ctx.createLinearGradient(-LS*.5,-LS*.6,LS*.4,LS*.4);
     silver.addColorStop(0,'rgba(255,255,255,1)');
-    silver.addColorStop(.35,'rgba(235,235,250,.97)');
-    silver.addColorStop(.7,'rgba(200,200,230,.92)');
-    silver.addColorStop(1,'rgba(170,170,210,.85)');
+    silver.addColorStop(.3,'rgba(240,240,255,.98)');
+    silver.addColorStop(.65,'rgba(210,210,240,.93)');
+    silver.addColorStop(1,'rgba(180,180,220,.87)');
 
-    ctx.shadowColor='rgba(200,210,255,.3)'; ctx.shadowBlur=16;
-    ctx.strokeStyle=silver; ctx.lineWidth=15; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.shadowColor='rgba(210,220,255,.35)'; ctx.shadowBlur=18;
+    ctx.strokeStyle=silver; ctx.lineWidth=16; ctx.lineCap='round'; ctx.lineJoin='round';
 
-    // Traço vertical esquerdo + horizontal inferior
+    // L esquerdo: vertical + horizontal
     ctx.beginPath();
-    ctx.moveTo(-LS*.48,-LS*.57);
-    ctx.lineTo(-LS*.48,LS*.32);
-    ctx.lineTo(LS*.32,LS*.32);
+    ctx.moveTo(-LS*.47,-LS*.56);
+    ctx.lineTo(-LS*.47, LS*.31);
+    ctx.lineTo( LS*.31, LS*.31);
     ctx.stroke();
 
-    // Traço superior + vertical direita
+    // L topo-direito: horizontal + vertical curta
     ctx.beginPath();
-    ctx.moveTo(-LS*.08,-LS*.57);
-    ctx.lineTo(LS*.32,-LS*.57);
-    ctx.lineTo(LS*.32,-LS*.07);
+    ctx.moveTo(-LS*.08,-LS*.56);
+    ctx.lineTo( LS*.31,-LS*.56);
+    ctx.lineTo( LS*.31,-LS*.07);
     ctx.stroke();
 
     ctx.shadowBlur=0;
 
     // Ponto quadrado
-    const px=LS*.52, py=LS*.52, ps=LS*.21, pr=5;
-    ctx.shadowColor='rgba(200,210,255,.25)'; ctx.shadowBlur=10;
+    const px=LS*.5, py=LS*.5, ps=LS*.22, pr=5;
+    ctx.shadowColor='rgba(210,220,255,.22)'; ctx.shadowBlur=10;
     ctx.fillStyle='#0B0D19';
-    ctx.strokeStyle='rgba(225,225,248,.92)'; ctx.lineWidth=5;
+    ctx.strokeStyle='rgba(230,230,252,.9)'; ctx.lineWidth=5;
     ctx.beginPath();
     ctx.moveTo(px-ps/2+pr,py-ps/2); ctx.lineTo(px+ps/2-pr,py-ps/2);
     ctx.arcTo(px+ps/2,py-ps/2,px+ps/2,py-ps/2+pr,pr);
@@ -324,13 +303,11 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
     ctx.arcTo(px-ps/2,py+ps/2,px-ps/2,py+ps/2-pr,pr);
     ctx.lineTo(px-ps/2,py-ps/2+pr);
     ctx.arcTo(px-ps/2,py-ps/2,px-ps/2+pr,py-ps/2,pr);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
+    ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.shadowBlur=0;
 
     ctx.restore();
-
-    t += .016;
+    t+=.016;
     requestAnimationFrame(frame);
   }
   frame();
@@ -339,77 +316,47 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
 
 <!-- LÓGICA -->
 <script>
-const slug = new URLSearchParams(location.search).get('local') || '';
-const LOCAIS = {
-  'war-room':'🪖 War Room — 2º andar','xgh':'🧪 XGH — 2º andar','ia-2':'🤖 IA — 2º andar',
-  'deploy':'🚀 Deploy — 2º andar','root':'🌱 Root — 2º andar','roadmap':'🗺️ Roadmap — 2º andar',
-  'full-stack':'🧱 Full Stack — 1º andar','git':'🔀 Git — 1º andar','bot':'🤖 Bot — 1º andar',
-  'linux':'🐧 Linux — 1º andar','cron':'⏰ Cron — 1º andar','ia-1':'🧠 IA — 1º andar',
-  'html':'📄 HTML — 1º andar','cloud':'☁️ Cloud — 1º andar','container':'📦 Container — 1º andar',
-  'python':'🐍 Python — 1º andar','javascript':'📜 Javascript — 1º andar','php':'🐘 PHP — 1º andar',
-  'banheiro-fem-armarios-1':'🚺 Banheiro Feminino — Armários 1','banheiro-masc-armarios-1':'🚹 Banheiro Masculino — Armários 1',
-  'banheiro-fem-armarios-2':'🚺 Banheiro Feminino — Armários 2','banheiro-masc-armarios-2':'🚹 Banheiro Masculino — Armários 2',
-  'banheiro-fem-copa-1':'🚺 Banheiro Feminino — Copa/Cozinha 1','banheiro-masc-copa-1':'🚹 Banheiro Masculino — Copa/Cozinha 1',
-  'banheiro-fem-copa-2':'🚺 Banheiro Feminino — Copa/Cozinha 2','banheiro-masc-copa-2':'🚹 Banheiro Masculino — Copa/Cozinha 2',
-  'banheiro-pcd':'♿ Banheiro PCD — 2º andar','banheiro-fem-cozinha':'🚺 Banheiro Feminino — Cozinha 2º andar',
-  'banheiro-masc-root':'🚹 Banheiro Masculino — Sala Root'
-};
-const localNome = LOCAIS[slug] || (slug ? '📍 '+slug : '');
-if (localNome) document.getElementById('localBadge').textContent = localNome;
+const slug=new URLSearchParams(location.search).get('local')||'';
+const LOCAIS={'war-room':'🪖 War Room — 2º andar','xgh':'🧪 XGH — 2º andar','ia-2':'🤖 IA — 2º andar','deploy':'🚀 Deploy — 2º andar','root':'🌱 Root — 2º andar','roadmap':'🗺️ Roadmap — 2º andar','full-stack':'🧱 Full Stack — 1º andar','git':'🔀 Git — 1º andar','bot':'🤖 Bot — 1º andar','linux':'🐧 Linux — 1º andar','cron':'⏰ Cron — 1º andar','ia-1':'🧠 IA — 1º andar','html':'📄 HTML — 1º andar','cloud':'☁️ Cloud — 1º andar','container':'📦 Container — 1º andar','python':'🐍 Python — 1º andar','javascript':'📜 Javascript — 1º andar','php':'🐘 PHP — 1º andar','banheiro-fem-armarios-1':'🚺 Banheiro Feminino — Armários 1','banheiro-masc-armarios-1':'🚹 Banheiro Masculino — Armários 1','banheiro-fem-armarios-2':'🚺 Banheiro Feminino — Armários 2','banheiro-masc-armarios-2':'🚹 Banheiro Masculino — Armários 2','banheiro-fem-copa-1':'🚺 Banheiro Feminino — Copa/Cozinha 1','banheiro-masc-copa-1':'🚹 Banheiro Masculino — Copa/Cozinha 1','banheiro-fem-copa-2':'🚺 Banheiro Feminino — Copa/Cozinha 2','banheiro-masc-copa-2':'🚹 Banheiro Masculino — Copa/Cozinha 2','banheiro-pcd':'♿ Banheiro PCD — 2º andar','banheiro-fem-cozinha':'🚺 Banheiro Feminino — Cozinha 2º andar','banheiro-masc-root':'🚹 Banheiro Masculino — Sala Root'};
+const localNome=LOCAIS[slug]||(slug?'📍 '+slug:'');
+if(localNome) document.getElementById('localBadge').textContent=localNome;
 
-function cnt(){ document.getElementById('charCount').textContent = document.getElementById('descricao').value.length; }
+function cnt(){document.getElementById('charCount').textContent=document.getElementById('descricao').value.length}
 
-function validar() {
-  let ok = true;
-  const nome = document.getElementById('nome').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const desc = document.getElementById('descricao').value.trim();
-
-  document.getElementById('err-nome').style.display = 'none';
-  document.getElementById('err-email').style.display = 'none';
-  document.getElementById('err-desc').style.display = 'none';
-
-  if (!nome || nome.length < 2) { document.getElementById('err-nome').style.display='block'; ok=false; }
-  if (!email || !email.includes('@') || !email.toLowerCase().endsWith('@logcomex.com')) {
-    document.getElementById('err-email').style.display='block';
-    document.getElementById('err-email').textContent = email && !email.endsWith('@logcomex.com') ? 'Use seu e-mail @logcomex.com' : 'Informe seu e-mail';
-    ok=false;
-  }
-  if (!desc || desc.length < 5) { document.getElementById('err-desc').style.display='block'; ok=false; }
+function validar(){
+  let ok=true;
+  const nome=document.getElementById('nome').value.trim();
+  const email=document.getElementById('email').value.trim().toLowerCase();
+  const desc=document.getElementById('descricao').value.trim();
+  ['err-nome','err-email','err-desc'].forEach(id=>document.getElementById(id).style.display='none');
+  if(!nome||nome.length<2){document.getElementById('err-nome').style.display='block';ok=false}
+  if(!email||!email.endsWith('@logcomex.com')){document.getElementById('err-email').style.display='block';ok=false}
+  if(!desc||desc.length<5){document.getElementById('err-desc').style.display='block';ok=false}
   return ok;
 }
 
-async function enviar() {
-  if (!validar()) return;
-  const btn = document.getElementById('btnSubmit'); btn.disabled=true;
+async function enviar(){
+  if(!validar())return;
+  const btn=document.getElementById('btnSubmit'); btn.disabled=true;
   document.getElementById('btnText').textContent='Enviando...';
   document.getElementById('btnSpinner').style.display='block';
   document.getElementById('btnIcon').style.display='none';
-  try {
-    const nome = document.getElementById('nome').value.trim();
-    const email = document.getElementById('email').value.trim().toLowerCase();
-    const desc = document.getElementById('descricao').value.trim();
-    const r = await fetch('/api/relatorio-imobiliario?qr=1', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ local:slug, localNome, descricao:desc, email, nome })
-    });
-    const d = await r.json();
-    if (!d.ok) throw new Error(d.error||'Erro');
+  try{
+    const nome=document.getElementById('nome').value.trim();
+    const email=document.getElementById('email').value.trim().toLowerCase();
+    const desc=document.getElementById('descricao').value.trim();
+    const r=await fetch('/api/relatorio-imobiliario?qr=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({local:slug,localNome,descricao:desc,email,nome})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'Erro');
     document.getElementById('formBody').style.display='none';
     document.getElementById('successCard').style.display='block';
     document.getElementById('successTicket').textContent=d.ticketId;
-  } catch(e) { alert('Erro ao enviar: '+e.message); }
-  finally {
-    btn.disabled=false;
-    document.getElementById('btnText').textContent='Enviar solicitação';
-    document.getElementById('btnSpinner').style.display='none';
-    document.getElementById('btnIcon').style.display='block';
-  }
+  }catch(e){alert('Erro ao enviar: '+e.message)}
+  finally{btn.disabled=false;document.getElementById('btnText').textContent='Enviar solicitação';document.getElementById('btnSpinner').style.display='none';document.getElementById('btnIcon').style.display='block'}
 }
-window.enviar = enviar;
+window.enviar=enviar;
 
-function novoChamado() {
+function novoChamado(){
   document.getElementById('nome').value='';
   document.getElementById('email').value='';
   document.getElementById('descricao').value='';
@@ -417,8 +364,7 @@ function novoChamado() {
   document.getElementById('formBody').style.display='block';
   document.getElementById('successCard').style.display='none';
 }
-window.novoChamado = novoChamado;
+window.novoChamado=novoChamado;
 </script>
-
 </body>
 </html>
