@@ -177,147 +177,92 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
   const W = cv.width, H = cv.height, cx = W/2, cy = H/2;
   let t = 0;
 
-  // Estrelas de fundo — branco e roxo suave
-  const stars = Array.from({length:120}, () => ({
+  // Estrelas
+  const stars = Array.from({length:130}, () => ({
     x:(Math.random()-.5)*W*1.4, y:(Math.random()-.5)*H*1.4,
     r:Math.random()*.7+.15,
-    col:Math.random()>.7?'180,140,255':'255,255,255',
-    a:Math.random()*.25+.04, ph:Math.random()*Math.PI*2, sp:Math.random()*.002+.0008
+    col:Math.random()>.7?'160,120,255':'255,255,255',
+    a:Math.random()*.25+.04, ph:Math.random()*Math.PI*2, sp:Math.random()*.002+.001
   }));
 
   // Partículas orbitando
-  const ORBS = Array.from({length:40}, (_,i) => ({
-    angle: (i/40)*Math.PI*2,
-    r: 95 + Math.random()*30,
-    speed: .008 + Math.random()*.006,
-    size: Math.random()*.8+.4,
-    col: Math.random()>.5 ? '180,140,255' : '255,255,255'
+  const ORBS = Array.from({length:35}, (_,i) => ({
+    angle:(i/35)*Math.PI*2,
+    r:115+Math.random()*25,
+    speed:.007+Math.random()*.005,
+    size:Math.random()*.9+.4,
+    col:Math.random()>.5?'150,100,255':'230,220,255'
   }));
 
-  // Projeção 3D simples (perspectiva)
-  function project(x, y, z, fov=420, tz=350) {
-    const scale = fov / (fov + z + tz);
-    return { x: x * scale, y: y * scale, scale };
+  // Projeção perspectiva
+  function proj(x, y, z) {
+    const fov = 500;
+    const dist = 600;
+    const scale = fov / (fov + z + dist);
+    return { sx: cx + x * scale, sy: cy + y * scale, scale, z };
   }
 
-  // Rotação em Y (horizontal)
-  function rotY(x, z, angle) {
-    return {
-      x: x * Math.cos(angle) - z * Math.sin(angle),
-      z: x * Math.sin(angle) + z * Math.cos(angle)
-    };
+  // Rotação em Y
+  function rotY(x, z, a) {
+    return { rx: x*Math.cos(a) - z*Math.sin(a), rz: x*Math.sin(a) + z*Math.cos(a) };
   }
 
-  // Desenha o ícone da LogComex em 3D girando
-  // Baseado no favicon: blocos brancos formando L + quadradinho
-  function drawLogo3D(rotAngle, float) {
-    const depth = 28; // espessura do logo
-    const S = 1.9;    // escala geral
+  // Polígono 3D
+  function poly3D(pts, fill, stroke) {
+    ctx.beginPath();
+    pts.forEach((p,i) => i===0 ? ctx.moveTo(p.sx,p.sy) : ctx.lineTo(p.sx,p.sy));
+    ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill();
+    if(stroke){ ctx.strokeStyle=stroke; ctx.lineWidth=.6; ctx.stroke(); }
+  }
 
-    // Define os blocos do favicon em coordenadas 2D (origem no centro)
-    // Convertendo de (0-32) para (-16 a +16)
-    const blocks = [
-      // Bloco vertical esquerdo (M6 6H12.5V26H6)
-      { x:6, y:6, w:6.5, h:20, col:'white' },
-      // Bloco horizontal inferior (M6 19.5H19.5V26H6)  
-      { x:6, y:19.5, w:13.5, h:6.5, col:'white' },
-      // Bloco direito vertical (M19.5 12.5H26V19.5)
-      { x:19.5, y:12.5, w:6.5, h:7, col:'white' },
-      // Bloco direito inferior (M19.5 19.5H26V26)
-      { x:19.5, y:19.5, w:6.5, h:6.5, col:'white' },
-      // Laranja/roxo — quadrado superior direito (M13 6H19.5V12.5H13)
-      { x:13, y:6, w:6.5, h:6.5, col:'purple' },
+  // Cubo/bloco 3D em perspectiva
+  function drawBlock(bx, by, bw, bh, rotAngle, float, colFront, colSide, colTop) {
+    const d = 32; // profundidade
+    // Vértices locais (centrados)
+    const vLocal = [
+      [bx,      by,      -d/2],
+      [bx+bw,   by,      -d/2],
+      [bx+bw,   by+bh,   -d/2],
+      [bx,      by+bh,   -d/2],
+      [bx,      by,       d/2],
+      [bx+bw,   by,       d/2],
+      [bx+bw,   by+bh,   d/2],
+      [bx,      by+bh,   d/2],
     ];
-
-    // Converter para coordenadas centradas e escaladas
-    const toCenter = (bx, by, bw, bh) => ({
-      cx: (bx + bw/2 - 16) * S,
-      cy: (by + bh/2 - 16) * S,
-      hw: (bw/2) * S,
-      hh: (bh/2) * S
+    // Rotaciona e projeta
+    const v = vLocal.map(([vx,vy,vz]) => {
+      const r = rotY(vx, vz, rotAngle);
+      return proj(r.rx, vy + float, r.rz);
     });
 
-    // Para cada bloco, desenha um paralelepípedo 3D
-    blocks.forEach(b => {
-      const { cx: bcx, cy: bcy, hw, hh } = toCenter(b.x, b.y, b.w, b.h);
+    const sinA = Math.sin(rotAngle);
+    const cosA = Math.cos(rotAngle);
 
-      // 8 vértices do cubo
-      const verts = [
-        [-hw, -hh, -depth/2], [ hw, -hh, -depth/2],
-        [ hw,  hh, -depth/2], [-hw,  hh, -depth/2],
-        [-hw, -hh,  depth/2], [ hw, -hh,  depth/2],
-        [ hw,  hh,  depth/2], [-hw,  hh,  depth/2],
-      ].map(([vx, vy, vz]) => {
-        const rx = vx + bcx;
-        const rz = vz;
-        const rot = rotY(rx, rz, rotAngle);
-        const p = project(rot.x, vy + bcy + float, rot.z);
-        return { sx: cx + p.x, sy: cy + p.y, scale: p.scale, z: rot.z };
-      });
+    // Face traseira (se visível)
+    if(cosA < 0) poly3D([v[4],v[5],v[6],v[7]], colFront, 'rgba(255,255,255,.1)');
 
-      // Cores baseadas na face e na cor do bloco
-      const isWhite = b.col === 'white';
-      const frontColor = isWhite ? 'rgba(255,255,255,1)' : 'rgba(102,19,208,0.9)';
-      const sideColor  = isWhite ? 'rgba(210,210,235,0.95)' : 'rgba(70,12,168,0.9)';
-      const topColor   = isWhite ? 'rgba(240,240,255,0.98)' : 'rgba(130,60,220,0.9)';
-      const darkColor  = isWhite ? 'rgba(160,160,195,0.9)' : 'rgba(45,8,93,0.9)';
+    // Face lateral esquerda
+    if(sinA < 0) poly3D([v[0],v[4],v[7],v[3]], colSide, 'rgba(255,255,255,.08)');
+    // Face lateral direita
+    if(sinA > 0) poly3D([v[1],v[5],v[6],v[2]], colSide, 'rgba(255,255,255,.08)');
 
-      // Determina se mostramos frente ou costas
-      const showFront = Math.cos(rotAngle) >= 0;
+    // Face superior
+    poly3D([v[0],v[1],v[5],v[4]], colTop, 'rgba(255,255,255,.08)');
 
-      // Face frontal ou traseira
-      const face = showFront
-        ? [verts[0],verts[1],verts[2],verts[3]]
-        : [verts[4],verts[5],verts[6],verts[7]];
-      ctx.beginPath();
-      face.forEach((v,i) => i===0 ? ctx.moveTo(v.sx,v.sy) : ctx.lineTo(v.sx,v.sy));
-      ctx.closePath();
-      ctx.fillStyle = showFront ? frontColor : darkColor;
-      ctx.fill();
-      ctx.strokeStyle = isWhite ? 'rgba(180,180,210,.3)' : 'rgba(80,20,160,.3)';
-      ctx.lineWidth = .5; ctx.stroke();
-
-      // Face lateral direita
-      const rightFace = [verts[1],verts[5],verts[6],verts[2]];
-      const rightVis = showFront ? Math.sin(rotAngle) > 0 : Math.sin(rotAngle) < 0;
-      if(rightVis) {
-        ctx.beginPath();
-        rightFace.forEach((v,i) => i===0 ? ctx.moveTo(v.sx,v.sy) : ctx.lineTo(v.sx,v.sy));
-        ctx.closePath();
-        ctx.fillStyle = sideColor; ctx.fill();
-        ctx.strokeStyle='rgba(180,180,210,.2)'; ctx.lineWidth=.5; ctx.stroke();
-      }
-
-      // Face lateral esquerda
-      const leftFace = [verts[0],verts[4],verts[7],verts[3]];
-      const leftVis = showFront ? Math.sin(rotAngle) < 0 : Math.sin(rotAngle) > 0;
-      if(leftVis) {
-        ctx.beginPath();
-        leftFace.forEach((v,i) => i===0 ? ctx.moveTo(v.sx,v.sy) : ctx.lineTo(v.sx,v.sy));
-        ctx.closePath();
-        ctx.fillStyle = darkColor; ctx.fill();
-        ctx.strokeStyle='rgba(180,180,210,.2)'; ctx.lineWidth=.5; ctx.stroke();
-      }
-
-      // Face superior
-      const topFace = [verts[0],verts[1],verts[5],verts[4]];
-      ctx.beginPath();
-      topFace.forEach((v,i) => i===0 ? ctx.moveTo(v.sx,v.sy) : ctx.lineTo(v.sx,v.sy));
-      ctx.closePath();
-      ctx.fillStyle = topColor; ctx.fill();
-      ctx.strokeStyle='rgba(180,180,210,.2)'; ctx.lineWidth=.5; ctx.stroke();
-    });
+    // Face frontal (se visível)
+    if(cosA >= 0) poly3D([v[0],v[1],v[2],v[3]], colFront, 'rgba(255,255,255,.1)');
   }
 
   function frame(){
     ctx.clearRect(0,0,W,H);
-    const float = Math.sin(t*.7)*10;
-    const rotAngle = t * .5; // rotação contínua 360°
+    const float = Math.sin(t*.75)*12;
+    const rot = t * .45; // rotação contínua
 
-    // Glow de fundo roxo escuro
-    const bg = ctx.createRadialGradient(cx,cy,0,cx,cy,W*.6);
-    bg.addColorStop(0,'rgba(45,8,93,.45)');
-    bg.addColorStop(.5,'rgba(20,5,50,.15)');
+    // Glow de fundo
+    const bg = ctx.createRadialGradient(cx,cy,0,cx,cy,W*.58);
+    bg.addColorStop(0,'rgba(45,8,93,.5)');
+    bg.addColorStop(.45,'rgba(20,5,50,.15)');
     bg.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
@@ -328,39 +273,68 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
       ctx.fillStyle=`rgba(${s.col},${a})`; ctx.fill();
     });
 
-    // Halos orbitais pontilhados
+    // Halos orbitais
     ctx.save(); ctx.translate(cx, cy+float);
-    [88,118].forEach((r,ri)=>{
-      ctx.beginPath();
-      ctx.setLineDash([2,7]);
+    [95,125].forEach((r,ri)=>{
+      ctx.beginPath(); ctx.setLineDash([2,8]);
       ctx.arc(0,0,r,0,Math.PI*2);
-      ctx.strokeStyle=ri===0?`rgba(102,19,208,${.2+Math.sin(t*.4)*.08})`:`rgba(200,180,255,${.1+Math.sin(t*.3+1)*.05})`;
-      ctx.lineWidth=1; ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.strokeStyle=ri===0
+        ?`rgba(102,19,208,${.22+Math.sin(t*.4)*.08})`
+        :`rgba(180,150,255,${.12+Math.sin(t*.3+1)*.05})`;
+      ctx.lineWidth=1; ctx.stroke(); ctx.setLineDash([]);
     });
     ctx.restore();
 
     // Partículas orbitando
     ORBS.forEach(o=>{
-      o.angle += o.speed;
-      const ox = cx + Math.cos(o.angle)*o.r;
-      const oy = cy + Math.sin(o.angle)*o.r*0.35 + float;
-      const a = .15 + Math.sin(o.angle*2+t)*.1;
+      o.angle+=o.speed;
+      const ox=cx+Math.cos(o.angle)*o.r;
+      const oy=cy+Math.sin(o.angle)*o.r*.38+float;
+      const a=.12+Math.sin(o.angle*2+t)*.08;
       ctx.beginPath(); ctx.arc(ox,oy,o.size,0,Math.PI*2);
       ctx.fillStyle=`rgba(${o.col},${a})`; ctx.fill();
     });
 
-    // Logo 3D girando
-    drawLogo3D(rotAngle, float);
+    // ── LOGO 3D — favicon LogComex em blocos 3D ──
+    // Origem centrada em (0,0), coordenadas originais 0-32
+    // Centralizamos subtraindo 16 de x e y, multiplicamos por escala
+    const S = 7.5; // escala: cada pixel do favicon = 7.5px na tela
+
+    // Cores das faces
+    const wF = 'rgba(255,255,255,.97)';   // branco frente
+    const wS = 'rgba(200,200,230,.92)';   // branco lado
+    const wT = 'rgba(245,245,255,.99)';   // branco topo
+    const pF = 'rgba(102,19,208,.95)';    // roxo frente
+    const pS = 'rgba(65,10,160,.9)';      // roxo lado
+    const pT = 'rgba(130,55,220,.95)';    // roxo topo
+
+    // Blocos do favicon (x, y, w, h em coords 0-32, convertidas para centradas)
+    const blocks = [
+      // Bloco vertical esquerdo: M6 6H12.5V19.5H6
+      { x:(6-16)*S,  y:(6-16)*S,  w:6.5*S, h:13.5*S, cf:wF, cs:wS, ct:wT },
+      // Barra horizontal baixo: M6 19.5H19.5V26H6
+      { x:(6-16)*S,  y:(19.5-16)*S, w:13.5*S, h:6.5*S, cf:wF, cs:wS, ct:wT },
+      // Bloco direito meio: M19.5 12.5H26V19.5
+      { x:(19.5-16)*S, y:(12.5-16)*S, w:6.5*S, h:7*S, cf:wF, cs:wS, ct:wT },
+      // Bloco direito baixo: M19.5 19.5H26V26
+      { x:(19.5-16)*S, y:(19.5-16)*S, w:6.5*S, h:6.5*S, cf:wF, cs:wS, ct:wT },
+      // Bloco laranja/roxo: M13 6H19.5V12.5H13
+      { x:(13-16)*S, y:(6-16)*S,  w:6.5*S, h:6.5*S, cf:pF, cs:pS, ct:pT },
+    ];
 
     // Sombra embaixo
-    ctx.save(); ctx.translate(cx, cy+float);
-    const shad = ctx.createRadialGradient(0,52,0,0,52,75);
-    shad.addColorStop(0,'rgba(102,19,208,.25)');
+    ctx.save(); ctx.translate(cx, cy);
+    const shad=ctx.createRadialGradient(0,float+75,0,0,float+75,90);
+    shad.addColorStop(0,'rgba(80,10,180,.3)');
     shad.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=shad;
-    ctx.beginPath(); ctx.ellipse(0,52,75,18,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0,float+72,90,20,0,0,Math.PI*2); ctx.fill();
     ctx.restore();
+
+    // Desenha cada bloco
+    blocks.forEach(b => {
+      drawBlock(b.x, b.y, b.w, b.h, rot, float, b.cf, b.cs, b.ct);
+    });
 
     t+=.016;
     requestAnimationFrame(frame);
