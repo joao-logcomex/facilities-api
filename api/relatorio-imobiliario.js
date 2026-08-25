@@ -284,8 +284,25 @@ async function supabasePost(path, body) {
   });
 }
 
-// Gera ID sequencial (mesmo contador do bot Slack e formulário web)
+// Gera ID sequencial via Supabase (evita dependência do Firestore)
 async function gerarIdQR() {
+  try {
+    // Usa Supabase para pegar o próximo seq
+    const r = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/next_ticket_id`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({}),
+    });
+    if (r.ok) {
+      const seq = await r.json();
+      return 'LC-' + String(seq).padStart(5, '0');
+    }
+  } catch(e) { console.warn('gerarIdQR supabase falhou:', e.message); }
+  // Fallback: usa Firestore
   const contadorRef = db.collection('contadores').doc('tickets_lc');
   const novo = await db.runTransaction(async (tx) => {
     const snap = await tx.get(contadorRef);
@@ -387,21 +404,22 @@ module.exports = async (req, res) => {
         return res.status(400).json({ ok: false, error: 'Dados insuficientes' });
       }
 
-      // Busca dados do colaborador no Firestore pelo e-mail
-      const colabSnap = await db.collection('colaboradores')
-        .where('email', '==', email.toLowerCase().trim())
-        .limit(1)
-        .get();
-
+      // Busca dados do colaborador (best-effort)
       let colabData = { nome: nomeEnviado || email.split('@')[0], centroCusto: null, cargo: null };
-      if (!colabSnap.empty) {
-        const c = colabSnap.docs[0].data();
-        colabData = {
-          nome: c.nome || c.name || nomeEnviado || email.split('@')[0],
-          centroCusto: c.centroCusto || c.centro_custo || null,
-          cargo: c.cargo || null,
-        };
-      }
+      try {
+        const colabSnap = await db.collection('colaboradores')
+          .where('email', '==', email.toLowerCase().trim())
+          .limit(1)
+          .get();
+        if (!colabSnap.empty) {
+          const c = colabSnap.docs[0].data();
+          colabData = {
+            nome: c.nome || c.name || nomeEnviado || email.split('@')[0],
+            centroCusto: c.centroCusto || c.centro_custo || null,
+            cargo: c.cargo || null,
+          };
+        }
+      } catch(e) { console.warn('busca colaborador falhou:', e.message); }
 
       // Classifica categoria e gera título em paralelo
       const [categoria, titulo] = await Promise.all([
@@ -439,8 +457,8 @@ module.exports = async (req, res) => {
         }],
       };
 
-      // Salva no Firestore
-      await db.collection('tickets').add(docData);
+      // Salva no Firestore (best-effort — se falhar, Supabase já tem)
+      try { await db.collection('tickets').add(docData); } catch(e) { console.warn('Firestore add falhou (cota?):', e.message); }
 
       // Espelha no Supabase (não bloqueia em caso de erro)
       supabasePost('tickets?on_conflict=id', [{
