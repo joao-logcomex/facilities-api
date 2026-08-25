@@ -941,15 +941,39 @@
   // Agora: contador único no Firestore, incrementado via transação atômica.
   // Prefixo LC- é novo de propósito, para nunca colidir com IDs antigos (LOG-/F-).
   async function gerarIdSequencial() {
-    const contadorRef = doc(db, 'contadores', 'tickets_lc');
-    const novo = await runTransaction(db, async (tx) => {
-      const snap = await tx.get(contadorRef);
-      const atual = snap.exists() ? (snap.data().seq || 0) : 0;
-      const proximo = atual + 1;
-      tx.set(contadorRef, { seq: proximo }, { merge: true });
-      return proximo;
-    });
-    return 'LC-' + String(novo).padStart(5, '0');
+    // Tenta Supabase primeiro (não depende do Firestore)
+    try {
+      const r = await fetch('https://ttfribckosgruifvxwoj.supabase.co/rest/v1/rpc/next_ticket_id', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0ZnJpYmNrb3NncnVpZnZ4d29qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTM1NjMyNjYsImV4cCI6MjAyOTEzOTI2Nn0.nVhNkMbBFHR1e3HJRtXJsXbBMJQqRjfWEsLLHvXJqGY',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0ZnJpYmNrb3NncnVpZnZ4d29qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTM1NjMyNjYsImV4cCI6MjAyOTEzOTI2Nn0.nVhNkMbBFHR1e3HJRtXJsXbBMJQqRjfWEsLLHvXJqGY',
+        },
+        body: JSON.stringify({}),
+      });
+      if (r.ok) {
+        const seq = await r.json();
+        return 'LC-' + String(seq).padStart(5, '0');
+      }
+    } catch(e) { console.warn('gerarId Supabase falhou:', e.message); }
+    // Fallback Firestore com timeout
+    try {
+      const contadorRef = doc(db, 'contadores', 'tickets_lc');
+      const timeoutPromise = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000));
+      const fsPromise = runTransaction(db, async (tx) => {
+        const snap = await tx.get(contadorRef);
+        const atual = snap.exists() ? (snap.data().seq || 0) : 0;
+        const proximo = atual + 1;
+        tx.set(contadorRef, { seq: proximo }, { merge: true });
+        return proximo;
+      });
+      const novo = await Promise.race([fsPromise, timeoutPromise]);
+      return 'LC-' + String(novo).padStart(5, '0');
+    } catch(e) {
+      console.warn('gerarId Firestore falhou:', e.message);
+      return 'LC-' + String(Date.now() % 100000).padStart(5, '0');
+    }
   }
   window._gerarIdSequencial = gerarIdSequencial;
   const ADMINS = ['christian.bertolino@logcomex.com','joao.faria@logcomex.com','henrique.silva@logcomex.com','adriano.martins@logcomex.com','daniel.alle@logcomex.com'];
