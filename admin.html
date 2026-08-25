@@ -5386,7 +5386,51 @@ window.renderHistorico = renderHistorico;
   // Gera QR code usando a API do QR Server (gratuita, sem instalação)
   function gerarQRUrl(slug) {
     const url = encodeURIComponent(`https://facilities-api.vercel.app/qr.html?local=${slug}`);
-    return `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${url}&bgcolor=ffffff&color=1e1b4b&margin=10`;
+    // Roxo LogComex #6613D0 nos quadradinhos, fundo branco, com logo no centro
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${url}&bgcolor=ffffff&color=6613D0&margin=10&qzone=1&format=png`;
+  }
+
+  // Desenha QR code personalizado com logo da LogComex no centro
+  function gerarQRComLogo(slug, imgEl) {
+    const qrUrl = gerarQRUrl(slug);
+    const tmp = new Image();
+    tmp.crossOrigin = 'anonymous';
+    tmp.onload = () => {
+      const cv = document.createElement('canvas');
+      cv.width = 200; cv.height = 200;
+      const ctx = cv.getContext('2d');
+      // Desenha QR
+      ctx.drawImage(tmp, 0, 0, 200, 200);
+      // Logo no centro — quadrado roxo com L branco
+      const cx = 100, cy = 100, sz = 36, r = 6;
+      ctx.fillStyle = '#6613D0';
+      ctx.beginPath();
+      ctx.moveTo(cx-sz/2+r, cy-sz/2);
+      ctx.lineTo(cx+sz/2-r, cy-sz/2); ctx.arcTo(cx+sz/2, cy-sz/2, cx+sz/2, cy-sz/2+r, r);
+      ctx.lineTo(cx+sz/2, cy+sz/2-r); ctx.arcTo(cx+sz/2, cy+sz/2, cx+sz/2-r, cy+sz/2, r);
+      ctx.lineTo(cx-sz/2+r, cy+sz/2); ctx.arcTo(cx-sz/2, cy+sz/2, cx-sz/2, cy+sz/2-r, r);
+      ctx.lineTo(cx-sz/2, cy-sz/2+r); ctx.arcTo(cx-sz/2, cy-sz/2, cx-sz/2+r, cy-sz/2, r);
+      ctx.closePath(); ctx.fill();
+      // Blocos brancos do ícone (escala do favicon 32x32 → 26x26 centrado)
+      const s = 26/32;
+      const ox = cx - 13, oy = cy - 13;
+      ctx.fillStyle = '#ffffff';
+      // Vertical esq
+      ctx.fillRect(ox+6*s, oy+6*s, 6.5*s, 13.5*s);
+      // Horizontal baixo
+      ctx.fillRect(ox+6*s, oy+19.5*s, 13.5*s, 6.5*s);
+      // Direita meio
+      ctx.fillRect(ox+19.5*s, oy+12.5*s, 6.5*s, 7*s);
+      // Direita baixo
+      ctx.fillRect(ox+19.5*s, oy+19.5*s, 6.5*s, 6.5*s);
+      // Laranja no topo
+      ctx.fillStyle = '#FE8F1C';
+      ctx.fillRect(ox+13*s, oy+6*s, 6.5*s, 6.5*s);
+
+      imgEl.src = cv.toDataURL('image/png');
+    };
+    tmp.onerror = () => { imgEl.src = qrUrl; };
+    tmp.src = qrUrl;
   }
 
   function renderQRCodes() {
@@ -5398,18 +5442,25 @@ window.renderHistorico = renderHistorico;
       : QR_LOCAIS.filter(l => l.tipo === qrFiltroAtivo);
 
     grid.innerHTML = locais.map(local => {
-      const qrUrl = gerarQRUrl(local.slug);
       const linkUrl = `https://facilities-api.vercel.app/qr.html?local=${local.slug}`;
       return `<div class="qr-card" data-tipo="${local.tipo}">
-        <img src="${qrUrl}" alt="QR ${local.nome}" width="160" height="160" style="border-radius:6px;border:1px solid var(--border);" loading="lazy">
+        <div style="position:relative;width:160px;height:160px;border-radius:10px;overflow:hidden;border:2px solid rgba(102,19,208,0.2);box-shadow:0 4px 16px rgba(102,19,208,0.15)">
+          <img id="qrimg-${local.slug}" src="" alt="QR ${local.nome}" width="160" height="160" style="display:block;width:160px;height:160px">
+        </div>
         <div class="qr-card-nome">${local.nome}</div>
         <div class="qr-card-tipo">${local.andar}</div>
         <div class="qr-card-btns">
           <a href="${linkUrl}" target="_blank" class="btn btn-secondary" style="font-size:0.75rem;padding:5px 10px;">🔗 Abrir</a>
-          <button class="btn btn-secondary" style="font-size:0.75rem;padding:5px 10px;" onclick="baixarQR('${qrUrl}','${local.slug}')">⬇️ Baixar</button>
+          <button class="btn btn-secondary" style="font-size:0.75rem;padding:5px 10px;" onclick="baixarQR('qrimg-${local.slug}','${local.slug}')">⬇️ Baixar</button>
         </div>
       </div>`;
     }).join('');
+
+    // Gera QR codes com logo após renderizar
+    locais.forEach(local => {
+      const img = document.getElementById(`qrimg-${local.slug}`);
+      if (img) gerarQRComLogo(local.slug, img);
+    });
   }
 
   function filtrarQR(tipo, btn) {
@@ -5420,11 +5471,12 @@ window.renderHistorico = renderHistorico;
   }
   window.filtrarQR = filtrarQR;
 
-  function baixarQR(qrUrl, slug) {
+  function baixarQR(imgId, slug) {
+    const img = document.getElementById(imgId);
+    if (!img || !img.src) return;
     const a = document.createElement('a');
-    a.href = qrUrl;
-    a.download = `qrcode-${slug}.png`;
-    a.target = '_blank';
+    a.href = img.src;
+    a.download = `qrcode-logcomex-${slug}.png`;
     a.click();
   }
   window.baixarQR = baixarQR;
