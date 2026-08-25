@@ -5390,7 +5390,7 @@ window.renderHistorico = renderHistorico;
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${url}&bgcolor=ffffff&color=6613D0&margin=10&qzone=1&format=png`;
   }
 
-  // Desenha QR code personalizado com logo da LogComex no centro
+  // Desenha QR code com "Facilities" no centro
   function gerarQRComLogo(slug, imgEl) {
     const qrUrl = gerarQRUrl(slug);
     const tmp = new Image();
@@ -5399,33 +5399,30 @@ window.renderHistorico = renderHistorico;
       const cv = document.createElement('canvas');
       cv.width = 200; cv.height = 200;
       const ctx = cv.getContext('2d');
-      // Desenha QR
       ctx.drawImage(tmp, 0, 0, 200, 200);
-      // Logo no centro — quadrado roxo com L branco
-      const cx = 100, cy = 100, sz = 36, r = 6;
-      ctx.fillStyle = '#6613D0';
-      ctx.beginPath();
-      ctx.moveTo(cx-sz/2+r, cy-sz/2);
-      ctx.lineTo(cx+sz/2-r, cy-sz/2); ctx.arcTo(cx+sz/2, cy-sz/2, cx+sz/2, cy-sz/2+r, r);
-      ctx.lineTo(cx+sz/2, cy+sz/2-r); ctx.arcTo(cx+sz/2, cy+sz/2, cx+sz/2-r, cy+sz/2, r);
-      ctx.lineTo(cx-sz/2+r, cy+sz/2); ctx.arcTo(cx-sz/2, cy+sz/2, cx-sz/2, cy+sz/2-r, r);
-      ctx.lineTo(cx-sz/2, cy-sz/2+r); ctx.arcTo(cx-sz/2, cy-sz/2, cx-sz/2+r, cy-sz/2, r);
-      ctx.closePath(); ctx.fill();
-      // Blocos brancos do ícone (escala do favicon 32x32 → 26x26 centrado)
-      const s = 26/32;
-      const ox = cx - 13, oy = cy - 13;
+
+      const cx = 100, cy = 100;
+      const bw = 74, bh = 30, br = 5;
+
+      // Fundo branco
       ctx.fillStyle = '#ffffff';
-      // Vertical esq
-      ctx.fillRect(ox+6*s, oy+6*s, 6.5*s, 13.5*s);
-      // Horizontal baixo
-      ctx.fillRect(ox+6*s, oy+19.5*s, 13.5*s, 6.5*s);
-      // Direita meio
-      ctx.fillRect(ox+19.5*s, oy+12.5*s, 6.5*s, 7*s);
-      // Direita baixo
-      ctx.fillRect(ox+19.5*s, oy+19.5*s, 6.5*s, 6.5*s);
-      // Laranja no topo
-      ctx.fillStyle = '#FE8F1C';
-      ctx.fillRect(ox+13*s, oy+6*s, 6.5*s, 6.5*s);
+      ctx.beginPath();
+      ctx.roundRect(cx-bw/2, cy-bh/2, bw, bh, br);
+      ctx.fill();
+
+      // Borda roxa fina
+      ctx.strokeStyle = '#6613D0';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(cx-bw/2, cy-bh/2, bw, bh, br);
+      ctx.stroke();
+
+      // Texto "Facilities"
+      ctx.fillStyle = '#6613D0';
+      ctx.font = 'bold 12px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Facilities', cx, cy);
 
       imgEl.src = cv.toDataURL('image/png');
     };
