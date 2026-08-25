@@ -586,15 +586,39 @@ function extrairValores(view) {
 // que se repete a cada ~16.7 minutos e já causou colisão real. Prefixo LC- é novo
 // de propósito para nunca colidir com IDs antigos (LOG-/F-).
 async function gerarIdSequencial() {
-  const contadorRef = db.collection('contadores').doc('tickets_lc');
-  const novo = await db.runTransaction(async (tx) => {
-    const snap = await tx.get(contadorRef);
-    const atual = snap.exists ? (snap.data().seq || 0) : 0;
-    const proximo = atual + 1;
-    tx.set(contadorRef, { seq: proximo }, { merge: true });
-    return proximo;
-  });
-  return 'LC-' + String(novo).padStart(5, '0');
+  // Tenta Supabase primeiro (não depende do Firestore)
+  try {
+    const r = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/next_ticket_id`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({}),
+    });
+    if (r.ok) {
+      const seq = await r.json();
+      return 'LC-' + String(seq).padStart(5, '0');
+    }
+  } catch(e) { console.warn('gerarId Supabase falhou:', e.message); }
+  // Fallback Firestore com timeout de 4s
+  try {
+    const contadorRef = db.collection('contadores').doc('tickets_lc');
+    const fsPromise = db.runTransaction(async (tx) => {
+      const snap = await tx.get(contadorRef);
+      const atual = snap.exists ? (snap.data().seq || 0) : 0;
+      const proximo = atual + 1;
+      tx.set(contadorRef, { seq: proximo }, { merge: true });
+      return proximo;
+    });
+    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000));
+    const novo = await Promise.race([fsPromise, fsTimeout]);
+    return 'LC-' + String(novo).padStart(5, '0');
+  } catch(e) {
+    console.warn('gerarId Firestore falhou/timeout:', e.message);
+    return 'LC-' + String(Date.now() % 100000).padStart(5, '0');
+  }
 }
 
 async function criarTicketNoFirebase(payload) {
@@ -637,11 +661,17 @@ async function criarTicketNoFirebase(payload) {
     ...dadosExtras,
   };
 
-  const docRef = await db.collection('tickets').add(docData);
-  // escrita dupla — aguarda terminar (Vercel mata a função depois do res.send
-  // lá na frente), mas nunca deixa um erro aqui quebrar a criação do ticket
+  // Supabase é fonte de verdade — salva primeiro
   await espelharTicketNoSupabase(docData).catch(e => console.warn('espelho supabase falhou:', e.message));
-  return { docId: docRef.id, id, ...docData };
+  // Firestore com timeout de 4s — se cota esgotada, não trava o bot
+  let docId = id;
+  try {
+    const fsPromise = db.collection('tickets').add(docData);
+    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000));
+    const docRef = await Promise.race([fsPromise, fsTimeout]);
+    docId = docRef.id;
+  } catch(e) { console.warn('Firestore add falhou/timeout (cota?):', e.message); }
+  return { docId, id, ...docData };
 }
 
 // Notifica a pessoa em nome de quem um admin abriu um chamado (delegação)
