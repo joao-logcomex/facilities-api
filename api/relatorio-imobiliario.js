@@ -302,16 +302,10 @@ async function gerarIdQR() {
       return 'LC-' + String(seq).padStart(5, '0');
     }
   } catch(e) { console.warn('gerarIdQR supabase falhou:', e.message); }
-  // Fallback: usa Firestore
-  const contadorRef = db.collection('contadores').doc('tickets_lc');
-  const novo = await db.runTransaction(async (tx) => {
-    const snap = await tx.get(contadorRef);
-    const atual = snap.exists ? (snap.data().seq || 0) : 0;
-    const proximo = atual + 1;
-    tx.set(contadorRef, { seq: proximo }, { merge: true });
-    return proximo;
-  });
-  return 'LC-' + String(novo).padStart(5, '0');
+  // Fallback: gera ID baseado em timestamp (se Firestore indisponível)
+  const ts = Date.now();
+  const seq = ts % 100000;
+  return 'LC-' + String(seq).padStart(5, '0');
 }
 
 // Classifica categoria via Claude Haiku baseado na descrição
@@ -404,13 +398,15 @@ module.exports = async (req, res) => {
         return res.status(400).json({ ok: false, error: 'Dados insuficientes' });
       }
 
-      // Busca dados do colaborador (best-effort)
+      // Busca dados do colaborador (best-effort com timeout de 2s)
       let colabData = { nome: nomeEnviado || email.split('@')[0], centroCusto: null, cargo: null };
       try {
-        const colabSnap = await db.collection('colaboradores')
+        const colabPromise = db.collection('colaboradores')
           .where('email', '==', email.toLowerCase().trim())
           .limit(1)
           .get();
+        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2000));
+        const colabSnap = await Promise.race([colabPromise, timeout]);
         if (!colabSnap.empty) {
           const c = colabSnap.docs[0].data();
           colabData = {
@@ -419,7 +415,7 @@ module.exports = async (req, res) => {
             cargo: c.cargo || null,
           };
         }
-      } catch(e) { console.warn('busca colaborador falhou:', e.message); }
+      } catch(e) { console.warn('busca colaborador falhou/timeout:', e.message); }
 
       // Classifica categoria e gera título em paralelo
       const [categoria, titulo] = await Promise.all([
@@ -457,8 +453,12 @@ module.exports = async (req, res) => {
         }],
       };
 
-      // Salva no Firestore (best-effort — se falhar, Supabase já tem)
-      try { await db.collection('tickets').add(docData); } catch(e) { console.warn('Firestore add falhou (cota?):', e.message); }
+      // Salva no Firestore (best-effort com timeout de 3s — Supabase é fonte de verdade)
+      try {
+        const fsPromise = db.collection('tickets').add(docData);
+        const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000));
+        await Promise.race([fsPromise, fsTimeout]);
+      } catch(e) { console.warn('Firestore add falhou/timeout:', e.message); }
 
       // Espelha no Supabase (não bloqueia em caso de erro)
       supabasePost('tickets?on_conflict=id', [{
