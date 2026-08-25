@@ -1395,28 +1395,42 @@ function extrairDadosEnvio(texto) {
     if (!evt.user || !evt.channel) return res.status(200).send('');
 
     // Dedup (Slack pode retentar se demorar >3s)
-    // IMPORTANTE: se essa checagem falhar (ex: cota do Firestore esgotada),
-    // NÃO seguimos processando — isso é o que causava mensagens duplicadas
-    // exatamente quando o banco estava sob estresse (a rede de segurança
-    // se desligava silenciosamente bem quando mais precisava dela).
+    // Dedup via Supabase — evita reprocessamento de eventos duplicados do Slack
     if (eventId) {
       try {
-        const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
-        const exists = await dedupeDoc.get();
-        if (exists.exists) return res.status(200).send('');
-        await dedupeDoc.set({ at: new Date(), user: evt.user });
-      } catch (e) {
-        console.warn('dedup falhou, abortando por segurança:', e.message);
-        // Evita spam de aviso: só manda o aviso se ainda não mandou um
-        // recentemente pra esse usuário (usa memória do processo, best-effort).
-        const agora = Date.now();
-        global.__ultimoAvisoCotaPorUser = global.__ultimoAvisoCotaPorUser || {};
-        const ultimoAviso = global.__ultimoAvisoCotaPorUser[evt.user] || 0;
-        if (agora - ultimoAviso > 30000) {
-          global.__ultimoAvisoCotaPorUser[evt.user] = agora;
-          await enviarMensagem(evt.channel, '⚠️ Sistema temporariamente sobrecarregado. Tenta de novo em alguns minutos — se persistir, usa o formulário: facilities-api.vercel.app').catch(() => {});
+        const SUPA_URL = process.env.SUPABASE_URL;
+        const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        // Tenta inserir — se já existe (conflict), retorna 409 e ignoramos
+        const r = await fetch(`${SUPA_URL}/rest/v1/slack_eventos_processados`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPA_KEY,
+            'Authorization': `Bearer ${SUPA_KEY}`,
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({ event_id: eventId, user_id: evt.user, at: new Date().toISOString() }),
+        });
+        if (r.status === 409) return res.status(200).send(''); // duplicado
+        if (!r.ok && r.status !== 201) {
+          // Supabase falhou — usa fallback no Firestore
+          const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
+          const exists = await dedupeDoc.get();
+          if (exists.exists) return res.status(200).send('');
+          await dedupeDoc.set({ at: new Date(), user: evt.user });
         }
-        return res.status(200).send('');
+      } catch (e) {
+        console.warn('dedup falhou:', e.message);
+        // Em caso de falha total, tenta Firestore como fallback
+        try {
+          const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
+          const exists = await dedupeDoc.get();
+          if (exists.exists) return res.status(200).send('');
+          await dedupeDoc.set({ at: new Date(), user: evt.user });
+        } catch (e2) {
+          console.warn('dedup fallback Firestore também falhou:', e2.message);
+          // Continua processando — melhor arriscar duplicata do que travar
+        }
       }
     }
 
