@@ -1241,8 +1241,8 @@
       <button class="btn btn-primary" onclick="imprimirTodosQR()">🖨️ Imprimir todos</button>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap">
-      <button class="btn btn-secondary qr-filtro active" data-filtro="todos" onclick="filtrarQR('todos',this)">Todos (24)</button>
-      <button class="btn btn-secondary qr-filtro" data-filtro="sala" onclick="filtrarQR('sala',this)">🪑 Salas (13)</button>
+      <button class="btn btn-secondary qr-filtro active" data-filtro="todos" onclick="filtrarQR('todos',this)">Todos (28)</button>
+      <button class="btn btn-secondary qr-filtro" data-filtro="sala" onclick="filtrarQR('sala',this)">🪑 Salas (17)</button>
       <button class="btn btn-secondary qr-filtro" data-filtro="banheiro" onclick="filtrarQR('banheiro',this)">🚻 Banheiros (11)</button>
     </div>
     <div id="qr-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;"></div>
@@ -5331,20 +5331,24 @@ window.renderHistorico = renderHistorico;
   // ══ QR CODES ══
   const QR_LOCAIS = [
     // 2º Andar — salas reais
-    {slug:'war-room',nome:'🪖 War Room',tipo:'sala',andar:'2º andar'},
-    {slug:'finance',nome:'💰 Finance',tipo:'sala',andar:'2º andar'},
-    {slug:'planning',nome:'📋 Planning',tipo:'sala',andar:'2º andar'},
-    {slug:'tech-2',nome:'💻 Tech',tipo:'sala',andar:'2º andar'},
+    {slug:'war-room',  nome:'🪖 War Room',   tipo:'sala', andar:'2º andar'},
+    {slug:'xgh',       nome:'🧪 XGH',         tipo:'sala', andar:'2º andar'},
+    {slug:'ia',        nome:'🤖 IA',           tipo:'sala', andar:'2º andar'},
+    {slug:'deploy',    nome:'🚀 Deploy',       tipo:'sala', andar:'2º andar'},
+    {slug:'root',      nome:'🌱 Root',         tipo:'sala', andar:'2º andar'},
     // 1º Andar — salas reais
-    {slug:'cs01',nome:'🏢 CS01',tipo:'sala',andar:'1º andar'},
-    {slug:'cs02',nome:'🏢 CS02',tipo:'sala',andar:'1º andar'},
-    {slug:'tech-1',nome:'💻 Tech',tipo:'sala',andar:'1º andar'},
-    {slug:'descompressao',nome:'🎮 Descompressão',tipo:'sala',andar:'1º andar'},
-    {slug:'externo',nome:'🌐 Externo',tipo:'sala',andar:'1º andar'},
-    {slug:'sales02',nome:'📈 Sales 02',tipo:'sala',andar:'1º andar'},
-    {slug:'sales1',nome:'📈 Sales 1',tipo:'sala',andar:'1º andar'},
-    {slug:'sales2',nome:'📈 Sales 2',tipo:'sala',andar:'1º andar'},
-    {slug:'tech1',nome:'💻 Tech 1',tipo:'sala',andar:'1º andar'},
+    {slug:'php',        nome:'🐘 PHP',         tipo:'sala', andar:'1º andar'},
+    {slug:'javascript', nome:'📜 Javascript',  tipo:'sala', andar:'1º andar'},
+    {slug:'python',     nome:'🐍 Python',      tipo:'sala', andar:'1º andar'},
+    {slug:'container',  nome:'📦 Container',   tipo:'sala', andar:'1º andar'},
+    {slug:'api',        nome:'⚡ API',          tipo:'sala', andar:'1º andar'},
+    {slug:'cloud',      nome:'☁️ Cloud',        tipo:'sala', andar:'1º andar'},
+    {slug:'html',       nome:'📄 HTML',         tipo:'sala', andar:'1º andar'},
+    {slug:'cron',       nome:'⏰ Cron',         tipo:'sala', andar:'1º andar'},
+    {slug:'linux',      nome:'🐧 Linux',        tipo:'sala', andar:'1º andar'},
+    {slug:'bot',        nome:'🤖 Bot',          tipo:'sala', andar:'1º andar'},
+    {slug:'git',        nome:'🔀 Git',          tipo:'sala', andar:'1º andar'},
+    {slug:'fullstack',  nome:'🧱 Fullstack',    tipo:'sala', andar:'1º andar'},
     {slug:'banheiro-fem-armarios-1',nome:'🚺 Feminino — Armários 1',tipo:'banheiro',andar:'1º andar'},
     {slug:'banheiro-masc-armarios-1',nome:'🚹 Masculino — Armários 1',tipo:'banheiro',andar:'1º andar'},
     {slug:'banheiro-fem-armarios-2',nome:'🚺 Feminino — Armários 2',tipo:'banheiro',andar:'1º andar'},
