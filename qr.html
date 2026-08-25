@@ -346,7 +346,40 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
 <!-- LÓGICA -->
 <script>
 const slug=new URLSearchParams(location.search).get('local')||'';
-const LOCAIS={'war-room':'🪖 War Room — 2º andar','xgh':'🧪 XGH — 2º andar','ia-2':'🤖 IA — 2º andar','deploy':'🚀 Deploy — 2º andar','root':'🌱 Root — 2º andar','roadmap':'🗺️ Roadmap — 2º andar','full-stack':'🧱 Full Stack — 1º andar','git':'🔀 Git — 1º andar','bot':'🤖 Bot — 1º andar','linux':'🐧 Linux — 1º andar','cron':'⏰ Cron — 1º andar','ia-1':'🧠 IA — 1º andar','html':'📄 HTML — 1º andar','cloud':'☁️ Cloud — 1º andar','container':'📦 Container — 1º andar','python':'🐍 Python — 1º andar','javascript':'📜 Javascript — 1º andar','php':'🐘 PHP — 1º andar','banheiro-fem-armarios-1':'🚺 Banheiro Feminino — Armários 1','banheiro-masc-armarios-1':'🚹 Banheiro Masculino — Armários 1','banheiro-fem-armarios-2':'🚺 Banheiro Feminino — Armários 2','banheiro-masc-armarios-2':'🚹 Banheiro Masculino — Armários 2','banheiro-fem-copa-1':'🚺 Banheiro Feminino — Copa/Cozinha 1','banheiro-masc-copa-1':'🚹 Banheiro Masculino — Copa/Cozinha 1','banheiro-fem-copa-2':'🚺 Banheiro Feminino — Copa/Cozinha 2','banheiro-masc-copa-2':'🚹 Banheiro Masculino — Copa/Cozinha 2','banheiro-pcd':'♿ Banheiro PCD — 2º andar','banheiro-fem-cozinha':'🚺 Banheiro Feminino — Cozinha 2º andar','banheiro-masc-root':'🚹 Banheiro Masculino — Sala Root'};
+const LOCAIS={
+  // 2º Andar — salas
+  'war-room':  '🪖 War Room — 2º andar',
+  'xgh':       '🧪 XGH — 2º andar',
+  'ia':        '🤖 IA — 2º andar',
+  'deploy':    '🚀 Deploy — 2º andar',
+  'root':      '🌱 Root — 2º andar',
+  // 1º Andar — salas
+  'php':        '🐘 PHP — 1º andar',
+  'javascript': '📜 Javascript — 1º andar',
+  'python':     '🐍 Python — 1º andar',
+  'container':  '📦 Container — 1º andar',
+  'api':        '⚡ API — 1º andar',
+  'cloud':      '☁️ Cloud — 1º andar',
+  'html':       '📄 HTML — 1º andar',
+  'cron':       '⏰ Cron — 1º andar',
+  'linux':      '🐧 Linux — 1º andar',
+  'bot':        '🤖 Bot — 1º andar',
+  'git':        '🔀 Git — 1º andar',
+  'fullstack':  '🧱 Fullstack — 1º andar',
+  // Banheiros — 1º andar
+  'banheiro-fem-armarios-1':  '🚺 Banheiro Feminino — Armários 1',
+  'banheiro-masc-armarios-1': '🚹 Banheiro Masculino — Armários 1',
+  'banheiro-fem-armarios-2':  '🚺 Banheiro Feminino — Armários 2',
+  'banheiro-masc-armarios-2': '🚹 Banheiro Masculino — Armários 2',
+  'banheiro-fem-copa-1':      '🚺 Banheiro Feminino — Copa/Cozinha 1',
+  'banheiro-masc-copa-1':     '🚹 Banheiro Masculino — Copa/Cozinha 1',
+  'banheiro-fem-copa-2':      '🚺 Banheiro Feminino — Copa/Cozinha 2',
+  'banheiro-masc-copa-2':     '🚹 Banheiro Masculino — Copa/Cozinha 2',
+  // Banheiros — 2º andar
+  'banheiro-pcd':         '♿ Banheiro PCD — 2º andar',
+  'banheiro-fem-cozinha': '🚺 Banheiro Feminino — Cozinha 2º andar',
+  'banheiro-masc-root':   '🚹 Banheiro Masculino — Sala Root',
+};
 const localNome=LOCAIS[slug]||(slug?'📍 '+slug:'');
 if(localNome) document.getElementById('localBadge').textContent=localNome;
 
