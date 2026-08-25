@@ -508,6 +508,7 @@
   }
 
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -2749,7 +2750,8 @@ function exportarRelatorio() {
   const outputEl = document.getElementById('relatorio-output');
   if (!outputEl || !outputEl.innerText.trim()) { showToast('Gere o relatório primeiro!'); return; }
   const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório Facilities - ${mes} ${ano}</title><style>@page{margin:2cm}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1d2e;line-height:1.7;font-size:13px}.header{border-bottom:3px solid #6613D0;padding-bottom:16px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end}.header h1{font-size:22px;font-weight:700;color:#6613D0;margin:0}.meta{text-align:right;color:#8e91a8;font-size:11px}.periodo{font-size:15px;font-weight:600;color:#1a1d2e}.content{white-space:pre-wrap;font-size:13px;line-height:1.8}.footer{margin-top:40px;padding-top:12px;border-top:1px solid #eeeaf8;font-size:10px;color:#8e91a8;text-align:center}</style></head><body><div class="header"><div><div style="font-size:11px;color:#FF6B2B;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Facilities · LogComex</div><h1>Relatório Mensal de SLA</h1></div><div class="meta"><div class="periodo">${mes.toUpperCase()} ${ano}</div><div>Gerado em ${new Date().toLocaleDateString('pt-BR')}</div></div></div><div class="content">${outputEl.innerHTML}</div><div class="footer">Facilities LogComex · Sistema interno de gestão de chamados</div></body></html>`);
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório Facilities - ${mes} ${ano}</title><style>@page{margin:2cm}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1d2e;line-height:1.7;font-size:13px}.header{border-bottom:3px solid #6613D0;padding-bottom:16px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end}.header h1{font-size:22px;font-weight:700;color:#6613D0;margin:0}.meta{text-align:right;color:#8e91a8;font-size:11px}.periodo{font-size:15px;font-weight:600;color:#1a1d2e}.content{white-space:pre-wrap;font-size:13px;line-height:1.8}.footer{margin-top:40px;padding-top:12px;border-top:1px solid #eeeaf8;font-size:10px;color:#8e91a8;text-align:center}</style><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head><body><div class="header"><div><div style="font-size:11px;color:#FF6B2B;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Facilities · LogComex</div><h1>Relatório Mensal de SLA</h1></div><div class="meta"><div class="periodo">${mes.toUpperCase()} ${ano}</div><div>Gerado em ${new Date().toLocaleDateString('pt-BR')}</div></div></div><div class="content">${outputEl.innerHTML}</div><div class="footer">Facilities LogComex · Sistema interno de gestão de chamados</div></body></html>`);
   win.document.close(); win.focus(); setTimeout(() => win.print(), 500);
   showToast('Abrindo PDF...');
 }
@@ -5383,51 +5385,76 @@ window.renderHistorico = renderHistorico;
 
   let qrFiltroAtivo = 'todos';
 
-  // Gera QR code usando a API do QR Server (gratuita, sem instalação)
   function gerarQRUrl(slug) {
-    const url = encodeURIComponent(`https://facilities-api.vercel.app/qr.html?local=${slug}`);
-    // Roxo LogComex #6613D0 nos quadradinhos, fundo branco, com logo no centro
-    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${url}&bgcolor=ffffff&color=6613D0&margin=10&qzone=1&format=png`;
+    return `https://facilities-api.vercel.app/qr.html?local=${slug}`;
   }
 
-  // Desenha QR code com "Facilities" no centro
+  // QR code premium — quadradinhos arredondados + logo LogComex no centro
   function gerarQRComLogo(slug, imgEl) {
-    const qrUrl = gerarQRUrl(slug);
-    const tmp = new Image();
-    tmp.crossOrigin = 'anonymous';
-    tmp.onload = () => {
-      const cv = document.createElement('canvas');
-      cv.width = 200; cv.height = 200;
-      const ctx = cv.getContext('2d');
-      ctx.drawImage(tmp, 0, 0, 200, 200);
+    const url = gerarQRUrl(slug);
+    const size = 200;
 
-      const cx = 100, cy = 100;
-      const bw = 48, bh = 20, br = 4;
+    const tmpDiv = document.createElement('div');
+    tmpDiv.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+    document.body.appendChild(tmpDiv);
+
+    const qr = new QRCode(tmpDiv, {
+      text: url,
+      width: size,
+      height: size,
+      colorDark: '#6613D0',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H,
+    });
+
+    setTimeout(() => {
+      const srcCanvas = tmpDiv.querySelector('canvas');
+      if (!srcCanvas) { document.body.removeChild(tmpDiv); return; }
+
+      const cv = document.createElement('canvas');
+      cv.width = size; cv.height = size;
+      const ctx = cv.getContext('2d');
 
       // Fundo branco
       ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.roundRect(cx-bw/2, cy-bh/2, bw, bh, br);
-      ctx.fill();
+      ctx.fillRect(0, 0, size, size);
 
-      // Borda roxa fina
-      ctx.strokeStyle = '#6613D0';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(cx-bw/2, cy-bh/2, bw, bh, br);
-      ctx.stroke();
+      // QR code
+      ctx.drawImage(srcCanvas, 0, 0, size, size);
+
+      // Logo LogComex no centro com caixinha branca
+      const cx = size/2, cy = size/2;
+      const bw = 68, bh = 26, br = 6;
+
+      // Fundo branco
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.roundRect(cx-bw/2, cy-bh/2, bw, bh, br); ctx.fill();
+
+      // Borda roxa
+      ctx.strokeStyle = '#6613D0'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.roundRect(cx-bw/2, cy-bh/2, bw, bh, br); ctx.stroke();
+
+      // Ícone LogComex miniatura
+      const ic = 12, ix = cx-bw/2+5, iy = cy-ic/2;
+      ctx.fillStyle = '#6613D0';
+      ctx.beginPath(); ctx.roundRect(ix, iy, ic, ic, 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(ix+1.5, iy+1.5, 3.5, 8); // vertical esq
+      ctx.fillRect(ix+1.5, iy+7, 8, 3);     // horizontal baixo
+      ctx.fillRect(ix+6, iy+4, 4, 3);       // direita meio
+      ctx.fillStyle = '#FE8F1C';
+      ctx.fillRect(ix+5.5, iy+1.5, 4, 3.5); // laranja
 
       // Texto "Facilities"
       ctx.fillStyle = '#6613D0';
-      ctx.font = 'bold 9px Arial, sans-serif';
-      ctx.textAlign = 'center';
+      ctx.font = 'bold 9.5px Arial, sans-serif';
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText('Facilities', cx, cy);
+      ctx.fillText('Facilities', ix+ic+4, cy);
 
       imgEl.src = cv.toDataURL('image/png');
-    };
-    tmp.onerror = () => { imgEl.src = qrUrl; };
-    tmp.src = qrUrl;
+      document.body.removeChild(tmpDiv);
+    }, 150);
   }
 
   function renderQRCodes() {
