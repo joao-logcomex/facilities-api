@@ -139,9 +139,9 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
               <div class="field-error" id="err-nome">Informe seu nome</div>
             </div>
             <div class="field">
-              <label>E-mail LogComex <span style="color:#FE8F1C">*</span></label>
-              <input type="email" id="email" placeholder="seu@logcomex.com" autocomplete="email">
-              <div class="field-error" id="err-email">Use seu e-mail @logcomex.com</div>
+              <label>E-mail <span style="color:#FE8F1C">*</span></label>
+              <input type="email" id="email" placeholder="seu.email@logcomex.com" autocomplete="email">
+              <div class="field-error" id="err-email">Informe um e-mail válido</div>
             </div>
           </div>
           <div class="field">
@@ -392,7 +392,7 @@ function validar(){
   const desc=document.getElementById('descricao').value.trim();
   ['err-nome','err-email','err-desc'].forEach(id=>document.getElementById(id).style.display='none');
   if(!nome||nome.length<2){document.getElementById('err-nome').style.display='block';ok=false}
-  if(!email||!email.endsWith('@logcomex.com')){document.getElementById('err-email').style.display='block';ok=false}
+  if(!email||!email.includes('@')||!email.includes('.')){document.getElementById('err-email').style.display='block';ok=false}
   if(!desc||desc.length<5){document.getElementById('err-desc').style.display='block';ok=false}
   return ok;
 }
