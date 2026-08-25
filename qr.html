@@ -177,235 +177,192 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
   const W = cv.width, H = cv.height, cx = W/2, cy = H/2;
   let t = 0;
 
-  // Estrelas de fundo — mix de branco e laranja bem sutil
-  const stars = Array.from({length:160}, () => ({
-    x:(Math.random()-.5)*W*1.5, y:(Math.random()-.5)*H*1.5,
-    r:Math.random()*.8+.15,
-    col:Math.random()>.6?'254,143,28':'230,210,255',
-    a:Math.random()*.28+.04, ph:Math.random()*Math.PI*2, sp:Math.random()*.002+.0008
+  // Estrelas de fundo — branco e roxo suave
+  const stars = Array.from({length:120}, () => ({
+    x:(Math.random()-.5)*W*1.4, y:(Math.random()-.5)*H*1.4,
+    r:Math.random()*.7+.15,
+    col:Math.random()>.7?'180,140,255':'255,255,255',
+    a:Math.random()*.25+.04, ph:Math.random()*Math.PI*2, sp:Math.random()*.002+.0008
   }));
 
-  // Rede de pontos orbitando o cristal
-  const NET = Array.from({length:16}, (_,i) => {
-    const rings = [55, 75, 95];
-    const ring = rings[i % rings.length];
-    const offset = (i % rings.length) * 0.3;
-    return {
-      bx: Math.cos((i/16)*Math.PI*2 + offset) * ring,
-      by: Math.sin((i/16)*Math.PI*2 + offset) * ring,
-      ph: Math.random()*Math.PI*2,
-      size: Math.random()*.8+1.2
-    };
-  });
+  // Partículas orbitando
+  const ORBS = Array.from({length:40}, (_,i) => ({
+    angle: (i/40)*Math.PI*2,
+    r: 95 + Math.random()*30,
+    speed: .008 + Math.random()*.006,
+    size: Math.random()*.8+.4,
+    col: Math.random()>.5 ? '180,140,255' : '255,255,255'
+  }));
 
-  // Halo orbital (círculo pontilhado ao redor)
-  function drawOrbits(float) {
-    ctx.save();
-    ctx.translate(0, float);
-    [72, 100].forEach((r, ri) => {
-      ctx.beginPath();
-      ctx.setLineDash([3, 8]);
-      ctx.arc(0, 0, r, 0, Math.PI*2);
-      ctx.strokeStyle = ri===0
-        ? `rgba(254,143,28,${.18 + Math.sin(t*.5)*.06})`
-        : `rgba(200,160,255,${.12 + Math.sin(t*.4+1)*.05})`;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.setLineDash([]);
+  // Projeção 3D simples (perspectiva)
+  function project(x, y, z, fov=420, tz=350) {
+    const scale = fov / (fov + z + tz);
+    return { x: x * scale, y: y * scale, scale };
+  }
+
+  // Rotação em Y (horizontal)
+  function rotY(x, z, angle) {
+    return {
+      x: x * Math.cos(angle) - z * Math.sin(angle),
+      z: x * Math.sin(angle) + z * Math.cos(angle)
+    };
+  }
+
+  // Desenha o ícone da LogComex em 3D girando
+  // Baseado no favicon: blocos brancos formando L + quadradinho
+  function drawLogo3D(rotAngle, float) {
+    const depth = 28; // espessura do logo
+    const S = 1.9;    // escala geral
+
+    // Define os blocos do favicon em coordenadas 2D (origem no centro)
+    // Convertendo de (0-32) para (-16 a +16)
+    const blocks = [
+      // Bloco vertical esquerdo (M6 6H12.5V26H6)
+      { x:6, y:6, w:6.5, h:20, col:'white' },
+      // Bloco horizontal inferior (M6 19.5H19.5V26H6)  
+      { x:6, y:19.5, w:13.5, h:6.5, col:'white' },
+      // Bloco direito vertical (M19.5 12.5H26V19.5)
+      { x:19.5, y:12.5, w:6.5, h:7, col:'white' },
+      // Bloco direito inferior (M19.5 19.5H26V26)
+      { x:19.5, y:19.5, w:6.5, h:6.5, col:'white' },
+      // Laranja/roxo — quadrado superior direito (M13 6H19.5V12.5H13)
+      { x:13, y:6, w:6.5, h:6.5, col:'purple' },
+    ];
+
+    // Converter para coordenadas centradas e escaladas
+    const toCenter = (bx, by, bw, bh) => ({
+      cx: (bx + bw/2 - 16) * S,
+      cy: (by + bh/2 - 16) * S,
+      hw: (bw/2) * S,
+      hh: (bh/2) * S
     });
-    ctx.restore();
+
+    // Para cada bloco, desenha um paralelepípedo 3D
+    blocks.forEach(b => {
+      const { cx: bcx, cy: bcy, hw, hh } = toCenter(b.x, b.y, b.w, b.h);
+
+      // 8 vértices do cubo
+      const verts = [
+        [-hw, -hh, -depth/2], [ hw, -hh, -depth/2],
+        [ hw,  hh, -depth/2], [-hw,  hh, -depth/2],
+        [-hw, -hh,  depth/2], [ hw, -hh,  depth/2],
+        [ hw,  hh,  depth/2], [-hw,  hh,  depth/2],
+      ].map(([vx, vy, vz]) => {
+        const rx = vx + bcx;
+        const rz = vz;
+        const rot = rotY(rx, rz, rotAngle);
+        const p = project(rot.x, vy + bcy + float, rot.z);
+        return { sx: cx + p.x, sy: cy + p.y, scale: p.scale, z: rot.z };
+      });
+
+      // Cores baseadas na face e na cor do bloco
+      const isWhite = b.col === 'white';
+      const frontColor = isWhite ? 'rgba(255,255,255,1)' : 'rgba(102,19,208,0.9)';
+      const sideColor  = isWhite ? 'rgba(210,210,235,0.95)' : 'rgba(70,12,168,0.9)';
+      const topColor   = isWhite ? 'rgba(240,240,255,0.98)' : 'rgba(130,60,220,0.9)';
+      const darkColor  = isWhite ? 'rgba(160,160,195,0.9)' : 'rgba(45,8,93,0.9)';
+
+      // Determina se mostramos frente ou costas
+      const showFront = Math.cos(rotAngle) >= 0;
+
+      // Face frontal ou traseira
+      const face = showFront
+        ? [verts[0],verts[1],verts[2],verts[3]]
+        : [verts[4],verts[5],verts[6],verts[7]];
+      ctx.beginPath();
+      face.forEach((v,i) => i===0 ? ctx.moveTo(v.sx,v.sy) : ctx.lineTo(v.sx,v.sy));
+      ctx.closePath();
+      ctx.fillStyle = showFront ? frontColor : darkColor;
+      ctx.fill();
+      ctx.strokeStyle = isWhite ? 'rgba(180,180,210,.3)' : 'rgba(80,20,160,.3)';
+      ctx.lineWidth = .5; ctx.stroke();
+
+      // Face lateral direita
+      const rightFace = [verts[1],verts[5],verts[6],verts[2]];
+      const rightVis = showFront ? Math.sin(rotAngle) > 0 : Math.sin(rotAngle) < 0;
+      if(rightVis) {
+        ctx.beginPath();
+        rightFace.forEach((v,i) => i===0 ? ctx.moveTo(v.sx,v.sy) : ctx.lineTo(v.sx,v.sy));
+        ctx.closePath();
+        ctx.fillStyle = sideColor; ctx.fill();
+        ctx.strokeStyle='rgba(180,180,210,.2)'; ctx.lineWidth=.5; ctx.stroke();
+      }
+
+      // Face lateral esquerda
+      const leftFace = [verts[0],verts[4],verts[7],verts[3]];
+      const leftVis = showFront ? Math.sin(rotAngle) < 0 : Math.sin(rotAngle) > 0;
+      if(leftVis) {
+        ctx.beginPath();
+        leftFace.forEach((v,i) => i===0 ? ctx.moveTo(v.sx,v.sy) : ctx.lineTo(v.sx,v.sy));
+        ctx.closePath();
+        ctx.fillStyle = darkColor; ctx.fill();
+        ctx.strokeStyle='rgba(180,180,210,.2)'; ctx.lineWidth=.5; ctx.stroke();
+      }
+
+      // Face superior
+      const topFace = [verts[0],verts[1],verts[5],verts[4]];
+      ctx.beginPath();
+      topFace.forEach((v,i) => i===0 ? ctx.moveTo(v.sx,v.sy) : ctx.lineTo(v.sx,v.sy));
+      ctx.closePath();
+      ctx.fillStyle = topColor; ctx.fill();
+      ctx.strokeStyle='rgba(180,180,210,.2)'; ctx.lineWidth=.5; ctx.stroke();
+    });
   }
 
   function frame(){
     ctx.clearRect(0,0,W,H);
-    const float = Math.sin(t*.85)*13;
+    const float = Math.sin(t*.7)*10;
+    const rotAngle = t * .5; // rotação contínua 360°
 
-    // Glow de fundo profundo
-    const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, W*.62);
-    bg.addColorStop(0, 'rgba(45,8,93,.5)');
-    bg.addColorStop(.4, 'rgba(102,19,208,.1)');
-    bg.addColorStop(1, 'rgba(0,0,0,0)');
+    // Glow de fundo roxo escuro
+    const bg = ctx.createRadialGradient(cx,cy,0,cx,cy,W*.6);
+    bg.addColorStop(0,'rgba(45,8,93,.45)');
+    bg.addColorStop(.5,'rgba(20,5,50,.15)');
+    bg.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
-    // Estrelas pulsando
+    // Estrelas
     stars.forEach(s=>{
-      const a=s.a*(.4+Math.sin(t*s.sp*60+s.ph)*.6);
-      ctx.beginPath(); ctx.arc(cx+s.x, cy+s.y, s.r, 0, Math.PI*2);
+      const a=s.a*(.4+Math.sin(t*s.sp*55+s.ph)*.6);
+      ctx.beginPath(); ctx.arc(cx+s.x,cy+s.y,s.r,0,Math.PI*2);
       ctx.fillStyle=`rgba(${s.col},${a})`; ctx.fill();
     });
 
-    ctx.save(); ctx.translate(cx, cy);
-
-    // ── ONDAS — duas cruzando, bem expressivas ──
-    for(let w=0; w<2; w++){
-      const orange = w===1;
-      const col = orange ? '254,143,28' : '200,185,255';
-      const yBase = orange ? 38 : -38;
-      const spd = orange ? 1.2 : 1.6;
-      const amp = orange ? 58 : 48;
-      const count = 130;
-      for(let i=0; i<count; i++){
-        const p = ((i/count) + t*.048*(orange?1:-1) + 1) % 1;
-        const x = (p-.5) * (W*1.15);
-        const fade = Math.sin(p*Math.PI);
-        const y = Math.sin(p*Math.PI*3 + (orange?1.6:0) + t*spd) * amp * fade;
-        const a = fade * (orange?.65:.42);
-        if(a<.018) continue;
-        // Tamanho varia — maior no centro
-        const sz = .5 + fade * (orange?1.5:1.1);
-        ctx.beginPath(); ctx.arc(x, y+yBase+float, sz, 0, Math.PI*2);
-        ctx.fillStyle=`rgba(${col},${a})`; ctx.fill();
-      }
-    }
-
-    // Halos orbitais
-    drawOrbits(float);
-
-    ctx.save(); ctx.translate(0, float);
-
-    // ── CRISTAL ROXO — mais detalhado, com bordas brilhantes ──
-    const S = 80;
-    const spin = t * .10; // rotação mais lenta e elegante
-
-    // Glow externo multicamadas
-    [[S*1.6,'rgba(142,68,237,.35)'],[S*1.2,'rgba(102,19,208,.5)'],[S*.95,'rgba(180,100,255,.2)']].forEach(([r,c])=>{
-      const g = ctx.createRadialGradient(0,0,0,0,0,r);
-      g.addColorStop(0,c); g.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
-    });
-
-    // Facetas com variação de brilho baseada no ângulo de rotação
-    const faceData = [
-      {dark:'rgba(60,10,160,.96)',  light:'rgba(140,70,255,.92)'},
-      {dark:'rgba(45,5,145,.93)',   light:'rgba(160,90,255,.9)'},
-      {dark:'rgba(75,15,175,.95)',  light:'rgba(130,60,250,.92)'},
-      {dark:'rgba(55,8,155,.94)',   light:'rgba(155,85,255,.9)'},
-      {dark:'rgba(70,12,168,.95)',  light:'rgba(145,75,252,.91)'},
-      {dark:'rgba(48,6,150,.93)',   light:'rgba(165,95,255,.9)'},
-      {dark:'rgba(80,18,178,.96)',  light:'rgba(125,55,248,.92)'},
-      {dark:'rgba(52,7,152,.94)',   light:'rgba(158,88,255,.9)'},
-    ];
-    for(let i=0; i<8; i++){
-      const a1 = spin + (i/8)*Math.PI*2;
-      const a2 = spin + ((i+1)/8)*Math.PI*2;
-      // Alterna claro/escuro baseado na posição da faceta
-      const bright = Math.sin(a1 + t*.2) > 0;
-      const col = bright ? faceData[i].light : faceData[i].dark;
+    // Halos orbitais pontilhados
+    ctx.save(); ctx.translate(cx, cy+float);
+    [88,118].forEach((r,ri)=>{
       ctx.beginPath();
-      ctx.moveTo(0,0);
-      ctx.lineTo(Math.cos(a1)*S, Math.sin(a1)*S);
-      ctx.lineTo(Math.cos(a2)*S, Math.sin(a2)*S);
-      ctx.closePath();
-      ctx.fillStyle = col; ctx.fill();
-      // Borda de brilho nas arestas
-      ctx.strokeStyle='rgba(220,180,255,.22)'; ctx.lineWidth=.8; ctx.stroke();
-    }
+      ctx.setLineDash([2,7]);
+      ctx.arc(0,0,r,0,Math.PI*2);
+      ctx.strokeStyle=ri===0?`rgba(102,19,208,${.2+Math.sin(t*.4)*.08})`:`rgba(200,180,255,${.1+Math.sin(t*.3+1)*.05})`;
+      ctx.lineWidth=1; ctx.stroke();
+      ctx.setLineDash([]);
+    });
+    ctx.restore();
 
-    // Anel de brilho nas bordas do cristal (efeito gem)
-    ctx.beginPath(); ctx.arc(0,0,S,0,Math.PI*2);
-    ctx.strokeStyle='rgba(200,160,255,.35)'; ctx.lineWidth=1.5; ctx.stroke();
-
-    // Reflexo interno
-    const shine = ctx.createRadialGradient(-S*.32, -S*.32, 0, 0, 0, S);
-    shine.addColorStop(0,'rgba(255,255,255,.55)');
-    shine.addColorStop(.3,'rgba(255,255,255,.12)');
-    shine.addColorStop(.7,'rgba(200,170,255,.05)');
-    shine.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=shine; ctx.beginPath(); ctx.arc(0,0,S,0,Math.PI*2); ctx.fill();
-
-    // Segundo reflexo menor (brilho especular)
-    const shine2 = ctx.createRadialGradient(S*.2, S*.15, 0, S*.2, S*.15, S*.35);
-    shine2.addColorStop(0,'rgba(255,255,255,.2)');
-    shine2.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=shine2; ctx.beginPath(); ctx.arc(0,0,S,0,Math.PI*2); ctx.fill();
-
-    // ── REDE LARANJA — mais pontos, linhas mais vivas ──
-    const pts = NET.map(p=>({
-      x: p.bx + Math.sin(t*.42+p.ph)*6,
-      y: p.by + Math.cos(t*.38+p.ph)*6,
-      sz: p.size
-    }));
-    pts.push({x:0, y:0, sz:2.5}); // centro maior
-
-    // Linhas
-    for(let i=0; i<pts.length; i++) for(let j=i+1; j<pts.length; j++){
-      const d = Math.hypot(pts[i].x-pts[j].x, pts[i].y-pts[j].y);
-      if(d<90){
-        const a = (1-d/90) * .5;
-        ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y);
-        ctx.strokeStyle=`rgba(254,190,60,${a})`; ctx.lineWidth=.75; ctx.stroke();
-      }
-    }
-    // Nós com glow
-    pts.forEach(p=>{
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, Math.PI*2);
-      ctx.fillStyle='rgba(254,180,50,.92)';
-      ctx.shadowColor='rgba(254,143,28,.7)'; ctx.shadowBlur=7;
-      ctx.fill(); ctx.shadowBlur=0;
+    // Partículas orbitando
+    ORBS.forEach(o=>{
+      o.angle += o.speed;
+      const ox = cx + Math.cos(o.angle)*o.r;
+      const oy = cy + Math.sin(o.angle)*o.r*0.35 + float;
+      const a = .15 + Math.sin(o.angle*2+t)*.1;
+      ctx.beginPath(); ctx.arc(ox,oy,o.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${o.col},${a})`; ctx.fill();
     });
 
-    ctx.restore(); // float
+    // Logo 3D girando
+    drawLogo3D(rotAngle, float);
 
-    // ── LOGO — L com ponto, estilo metálico branco ──
-    const LS = 168;
+    // Sombra embaixo
+    ctx.save(); ctx.translate(cx, cy+float);
+    const shad = ctx.createRadialGradient(0,52,0,0,52,75);
+    shad.addColorStop(0,'rgba(102,19,208,.25)');
+    shad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=shad;
+    ctx.beginPath(); ctx.ellipse(0,52,75,18,0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
 
-    // Gradiente metálico — varia sutilmente com o tempo
-    const metalShift = Math.sin(t*.3) * 10;
-    const metal = ctx.createLinearGradient(
-      -LS*.5 + metalShift, -LS*.6,
-       LS*.4 + metalShift,  LS*.4
-    );
-    metal.addColorStop(0,   'rgba(255,255,255,1)');
-    metal.addColorStop(.25, 'rgba(245,245,255,.98)');
-    metal.addColorStop(.5,  'rgba(215,215,245,.95)');
-    metal.addColorStop(.75, 'rgba(235,235,255,.97)');
-    metal.addColorStop(1,   'rgba(185,185,225,.88)');
-
-    ctx.shadowColor='rgba(220,225,255,.4)'; ctx.shadowBlur=20;
-    ctx.strokeStyle=metal;
-    ctx.lineWidth=15; ctx.lineCap='round'; ctx.lineJoin='round';
-
-    // L esquerdo — traço vertical + horizontal
-    ctx.beginPath();
-    ctx.moveTo(-LS*.47, -LS*.56 + float);
-    ctx.lineTo(-LS*.47,  LS*.31 + float);
-    ctx.lineTo( LS*.31,  LS*.31 + float);
-    ctx.stroke();
-
-    // L topo-direito — horizontal + vertical curta
-    ctx.beginPath();
-    ctx.moveTo(-LS*.08, -LS*.56 + float);
-    ctx.lineTo( LS*.31, -LS*.56 + float);
-    ctx.lineTo( LS*.31, -LS*.07 + float);
-    ctx.stroke();
-
-    ctx.shadowBlur=0;
-
-    // Ponto quadrado — posicionado junto ao L, canto inferior direito
-    // L termina à direita em LS*.31, embaixo em LS*.31
-    // Ponto fica com gap pequeno, alinhado com o float do logo
-    const ps=LS*.2, pr=4;
-    // Centro do ponto: ligeiramente separado do canto do L
-    const px = LS*.31 + ps*.5 + LS*.04;  // gap de LS*.04 do canto direito do L
-    const py = LS*.31 + ps*.5 + LS*.04 + float; // mesmo gap embaixo + float
-    ctx.shadowColor='rgba(220,225,255,.3)'; ctx.shadowBlur=14;
-    ctx.fillStyle='#0B0D19';
-    ctx.strokeStyle='rgba(232,232,255,.92)'; ctx.lineWidth=5;
-    ctx.beginPath();
-    ctx.moveTo(px-ps/2+pr, py-ps/2); ctx.lineTo(px+ps/2-pr, py-ps/2);
-    ctx.arcTo(px+ps/2, py-ps/2, px+ps/2, py-ps/2+pr, pr);
-    ctx.lineTo(px+ps/2, py+ps/2-pr);
-    ctx.arcTo(px+ps/2, py+ps/2, px+ps/2-pr, py+ps/2, pr);
-    ctx.lineTo(px-ps/2+pr, py+ps/2);
-    ctx.arcTo(px-ps/2, py+ps/2, px-ps/2, py+ps/2-pr, pr);
-    ctx.lineTo(px-ps/2, py-ps/2+pr);
-    ctx.arcTo(px-ps/2, py-ps/2, px-ps/2+pr, py-ps/2, pr);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.shadowBlur=0;
-
-    ctx.restore(); // translate(cx, cy)
-
-    t += .016;
+    t+=.016;
     requestAnimationFrame(frame);
   }
   frame();
