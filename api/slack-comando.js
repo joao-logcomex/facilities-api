@@ -1829,6 +1829,59 @@ async function processarMensagemDM(evt) {
       await log('estado_erro', { err: e.message });
     }
 
+    // Detecção local de confirmação (sim/não) — evita chamar IA pra isso
+    const textoNorm = texto.toLowerCase().trim().replace(/[^a-záéíóúãõâêô]/g, '');
+    const eSim = /^(sim|s|yes|y|isso|exato|exatamente|correto|certo|pode|pode ser|quero|ok|okay|vai|bora|confirma|confirm|simj|sim+|simmm|é isso|e isso|isso mesmo|pode abrir|abre|abre sim|é|e)$/.test(textoNorm);
+    const eNao = /^(nao|n|no|nope|nao quero|cancela|cancel|cancelar|para|errado|errada|nope)$/.test(textoNorm);
+
+    if (estado?.etapa === 'aguardando_resposta' && eSim) {
+      // Pessoa confirmou — vai direto pra abertura
+      const dadosConfirmados = {
+        ...estado,
+        pronto_para_abrir: true,
+        tem_info_suficiente: true,
+      };
+      if (!dadosConfirmados.titulo) dadosConfirmados.titulo = estado.texto_original || texto;
+      if (!dadosConfirmados.descricao) dadosConfirmados.descricao = estado.texto_original || texto;
+      await limparEstado(userId);
+      await setEstado(userId, { etapa: 'confirmar', ...dadosConfirmados });
+      // Usa o mesmo fluxo de pronto_para_abrir
+      const analise = dadosConfirmados;
+      analise.pronto_para_abrir = true;
+      analise.tem_info_suficiente = true;
+      // Pular direto para o caso 3
+      const remetente = await getUserInfo(userId);
+      const slackUser = dadosConfirmados.pessoa_alvo || remetente;
+      try {
+        const ticket = await criarTicketNoFirebase({
+          titulo: dadosConfirmados.titulo,
+          descricao: dadosConfirmados.descricao,
+          categoria: dadosConfirmados.categoria || 'outros',
+          prioridade: dadosConfirmados.prioridade || 'media',
+          slackUserId: slackUser?.slackId || userId,
+          nome: slackUser?.nome || remetente?.nome || '',
+          email: slackUser?.email || remetente?.email || '',
+          centroCusto: slackUser?.centroCusto || remetente?.centroCusto || '',
+          cargo: slackUser?.cargo || remetente?.cargo || '',
+        });
+        await limparEstado(userId);
+        await enviarMensagem(channel, `✅ Chamado *${ticket.id}* aberto com sucesso!
+
+*${ticket.titulo}*
+Categoria: ${dadosConfirmados.categoria || 'outros'} | Prioridade: ${dadosConfirmados.prioridade || 'média'}`);
+      } catch(e) {
+        console.error('Erro ao criar ticket por confirmação direta:', e.message);
+        await enviarMensagem(channel, '😕 Ops! Tive um probleminha ao abrir o chamado. Tenta de novo?');
+      }
+      return;
+    }
+
+    if (estado?.etapa === 'aguardando_resposta' && eNao) {
+      await limparEstado(userId);
+      await enviarMensagem(channel, '✅ Tudo bem! Se precisar de algo é só falar.');
+      return;
+    }
+
     // Analisar a mensagem com IA (com timeout de 5s)
     console.log('[processarMensagemDM] chamando IA...');
     await log('antes_IA');
