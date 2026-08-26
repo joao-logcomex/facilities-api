@@ -1399,24 +1399,15 @@ function extrairDadosEnvio(texto) {
     // NÃO seguimos processando — isso é o que causava mensagens duplicadas
     // exatamente quando o banco estava sob estresse (a rede de segurança
     // se desligava silenciosamente bem quando mais precisava dela).
-    if (eventId) {
-      try {
-        const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
-        const exists = await dedupeDoc.get();
-        if (exists.exists) return res.status(200).send('');
-        await dedupeDoc.set({ at: new Date(), user: evt.user });
-      } catch (e) {
-        console.warn('dedup falhou, abortando por segurança:', e.message);
-        // Evita spam de aviso: só manda o aviso se ainda não mandou um
-        // recentemente pra esse usuário (usa memória do processo, best-effort).
-        const agora = Date.now();
-        global.__ultimoAvisoCotaPorUser = global.__ultimoAvisoCotaPorUser || {};
-        const ultimoAviso = global.__ultimoAvisoCotaPorUser[evt.user] || 0;
-        if (agora - ultimoAviso > 30000) {
-          global.__ultimoAvisoCotaPorUser[evt.user] = agora;
-          await enviarMensagem(evt.channel, '⚠️ Sistema temporariamente sobrecarregado. Tenta de novo em alguns minutos — se persistir, usa o formulário: facilities-api.vercel.app').catch(() => {});
-        }
-        return res.status(200).send('');
+    // Dedup em memória — zero latência, sem Firestore
+    const _dedupKey = eventId || `${evt.user}_${evt.ts}`;
+    if (!global._dedupCache) global._dedupCache = new Map();
+    if (global._dedupCache.has(_dedupKey)) return res.status(200).send('');
+    global._dedupCache.set(_dedupKey, Date.now());
+    // Limpa cache antigo (> 5min)
+    if (global._dedupCache.size > 1000) {
+      for (const [k, v] of global._dedupCache) {
+        if (Date.now() - v > 300000) global._dedupCache.delete(k);
       }
     }
 
