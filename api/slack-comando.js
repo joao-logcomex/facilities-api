@@ -1194,14 +1194,13 @@ module.exports = async function handler(req, res) {
   // ============================================================
   // ROTA 7b: app_home_opened → publicar Home Tab + boas-vindas no chat
   if (body.type === 'event_callback' && body.event?.type === 'app_home_opened') {
+    res.status(200).send(''); // ack imediato
     const userId = body.event.user;
     try {
       await publishHome(userId);
-      // Boas-vindas no chat apenas na primeira vez
-      const flagRef = db.collection('slack_home_welcomed').doc(userId);
-      const flag = await flagRef.get();
-      if (!flag.exists) {
-        await flagRef.set({ at: new Date() });
+      // Boas-vindas ignorada por ora (Firestore sem cota)
+      if (false) {
+        const _skip = true;
         // Abrir DM
         const dmResp = await fetch('https://slack.com/api/conversations.open', {
           method: 'POST',
@@ -1243,7 +1242,7 @@ module.exports = async function handler(req, res) {
         }
       }
     } catch(e) { console.error('home tab:', e.message); }
-    return res.status(200).send('');
+    return; // ack já enviado
   }
 
   // ROTA 7b1: confirmação de chamado
@@ -1462,14 +1461,15 @@ function extrairDadosEnvio(texto) {
       await enviarMensagem(evt.channel, `🎤 Ouvi: _"${textoTranscrito}"_`).catch(() => {});
     }
 
-    // Processa SÍNCRONO (Vercel mata a função após res.send, então precisa ser antes)
-    // Slack pode dar timeout >3s mas o dedup impede reprocessamento
+    // Manda ack imediato pro Slack ANTES de processar (evita duplicatas por timeout)
+    res.status(200).send('');
+    // Processa em background
     try {
       await processarMensagemDM(evt);
     } catch (err) {
       console.error('Erro processando DM:', err.message);
     }
-    return res.status(200).send('');
+    return;
   }
 
   // ============================================================
