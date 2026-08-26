@@ -1785,14 +1785,8 @@ async function processarMensagemDM(evt) {
       return;
     }
 
-    // ⚡ DETECÇÃO DE PRIMEIRA MENSAGEM
-    // Se é a primeira vez que a pessoa escreve, checar se é saudação ou pedido real
-    const flagRef2 = db.collection('slack_home_welcomed').doc(userId);
-    const flag2 = await flagRef2.get();
-    const primeiraVez = !flag2.exists;
-    if (primeiraVez) {
-      await flagRef2.set({ at: new Date() });
-    }
+    // ⚡ DETECÇÃO DE PRIMEIRA MENSAGEM — Firestore sem cota, sempre trata como não-primeira
+    const primeiraVez = false;
 
     // ⚡ DETECÇÃO RÁPIDA DE SAUDAÇÃO (sem IA, sem Firebase)
     // Responde imediato — não depende de quota nem de timeout
