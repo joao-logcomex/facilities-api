@@ -169,62 +169,145 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
   </div>
 </div>
 
-<!-- ANIMAÇÃO SVG LOGO -->
+<!-- ANIMAÇÃO 3D CSS LOGO -->
 <style>
 .hero-logo-wrap {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
   position: relative;
+  perspective: 900px;
 }
-.hero-logo-scene {
-  position: relative;
-  animation: logoFloat 3.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 32px rgba(102,19,208,0.55)) drop-shadow(0 0 64px rgba(102,19,208,0.25));
-}
-@keyframes logoFloat {
-  0%,100% { transform: translateY(0px) rotateX(0deg); }
-  50%      { transform: translateY(-18px) rotateX(4deg); }
-}
-.hero-logo-scene svg {
-  width: 220px; height: 220px;
-  animation: logoRotate 8s linear infinite;
-  transform-style: preserve-3d;
-}
-@keyframes logoRotate {
-  0%   { transform: rotateY(0deg)   scale(1); }
-  25%  { transform: rotateY(90deg)  scale(0.88); }
-  50%  { transform: rotateY(180deg) scale(1); }
-  75%  { transform: rotateY(270deg) scale(0.88); }
-  100% { transform: rotateY(360deg) scale(1); }
-}
+
+/* Anel de glow de fundo */
 .hero-glow-ring {
-  position: absolute; inset: -30px;
+  position: absolute;
+  width: 340px; height: 340px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(102,19,208,0.18) 0%, rgba(102,19,208,0.06) 50%, transparent 70%);
-  animation: glowPulse 2.8s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(102,19,208,0.22) 0%, rgba(102,19,208,0.08) 45%, transparent 70%);
+  animation: glowPulse 3s ease-in-out infinite;
+  pointer-events: none;
 }
 @keyframes glowPulse {
-  0%,100% { opacity: 0.6; transform: scale(1); }
-  50%      { opacity: 1;   transform: scale(1.12); }
+  0%,100% { transform: scale(1);   opacity: 0.7; }
+  50%      { transform: scale(1.15); opacity: 1; }
 }
+
+/* Canvas de partículas */
 .hero-particles { position: absolute; inset: -80px; pointer-events: none; }
+
+/* Cena 3D — levita + inclina suavemente */
+.logo3d-scene {
+  position: relative;
+  transform-style: preserve-3d;
+  animation: float3d 4s ease-in-out infinite;
+  filter: drop-shadow(0 24px 40px rgba(0,0,0,0.55));
+}
+@keyframes float3d {
+  0%,100% { transform: rotateX(12deg) rotateY(-18deg) translateY(0px);   }
+  25%     { transform: rotateX(10deg) rotateY(0deg)   translateY(-16px);  }
+  50%     { transform: rotateX(14deg) rotateY(18deg)  translateY(-24px);  }
+  75%     { transform: rotateX(10deg) rotateY(8deg)   translateY(-12px);  }
+}
+
+/* Bloco 3D base */
+.b3 {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+/* Face frontal */
+.b3 .f  { position: absolute; inset: 0; }
+/* Face traseira */
+.b3 .bk { position: absolute; inset: 0; }
+
+/* Wrapper de todos os blocos */
+.logo3d-blocks {
+  position: relative;
+  width: 232px; height: 242px;
+  transform-style: preserve-3d;
+}
+
+/* ── ESCALA: viewBox 23.25×24.2 → 232×242px (×10) ── */
+
+/* Bloco L esquerdo vertical: x0 y6.78 w5.46 h16.52 */
+#bLv { left:0px; top:67.8px; width:54.6px; height:165.2px; }
+/* Bloco L barra inferior: x0 y17.98 w17.28 h5.32 */
+#bLh { left:0px; top:179.8px; width:172.8px; height:53.2px; }
+/* Bloco L direito topo: x11.82 y12.66 w5.46 h5.32 */
+#bRt { left:118.2px; top:126.6px; width:54.6px; height:53.2px; }
+/* Bloco laranja: x5.46 y6.78 w6.36 h5.88 */
+#bOr { left:54.6px; top:67.8px; width:63.6px; height:58.8px; }
+/* Quadrado separado: x18.7 y19.4 w4.55 h4.8 */
+#bSq { left:187px; top:194px; width:45.5px; height:48px; }
+
+/* Profundidade dos blocos (espessura 3D) */
+:root { --d: 18px; }
+
+/* Cores de face */
+.b3.white .f  { background: #ffffff; }
+.b3.white .r  { background: #c8c8c8; }
+.b3.white .bt { background: #b0b0b0; }
+
+.b3.orange .f  { background: #FE8F1C; }
+.b3.orange .r  { background: #c86a0a; }
+.b3.orange .bt { background: #b55e08; }
+
+/* Brilho sutil na face frontal */
+.b3 .f::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 55%);
+  pointer-events: none;
+}
 </style>
 
 <div class="hero-logo-wrap">
   <div class="hero-glow-ring"></div>
   <canvas class="hero-particles" id="pCanvas"></canvas>
-  <div class="hero-logo-scene">
-    <svg viewBox="0 0 23.25 24.2" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Bloco branco principal (dois L) -->
-      <rect x="0" y="6.78" width="5.46" height="16.52" fill="white"/>
-      <rect x="0" y="17.98" width="17.28" height="5.32" fill="white"/>
-      <rect x="11.82" y="12.66" width="5.46" height="5.32" fill="white"/>
-      <rect x="11.82" y="17.98" width="5.46" height="5.32" fill="white"/>
+
+  <div class="logo3d-scene">
+    <div class="logo3d-blocks">
+
+      <!-- Bloco L esquerdo vertical (branco) -->
+      <div class="b3 white" id="bLv">
+        <div class="f"  style="transform:translateZ(9px)"></div>
+        <div class="r"  style="position:absolute;top:0;right:-9px;width:18px;height:100%;background:#c8c8c8;transform:rotateY(90deg);transform-origin:left center;"></div>
+        <div class="bt" style="position:absolute;bottom:-9px;left:0;width:100%;height:18px;background:#b0b0b0;transform:rotateX(-90deg);transform-origin:center top;"></div>
+        <div class="bk" style="position:absolute;inset:0;background:#e8e8e8;transform:translateZ(-9px)"></div>
+      </div>
+
+      <!-- Bloco L barra horizontal (branco) -->
+      <div class="b3 white" id="bLh">
+        <div class="f"  style="transform:translateZ(9px)"></div>
+        <div class="r"  style="position:absolute;top:0;right:-9px;width:18px;height:100%;background:#c8c8c8;transform:rotateY(90deg);transform-origin:left center;"></div>
+        <div class="bt" style="position:absolute;bottom:-9px;left:0;width:100%;height:18px;background:#b0b0b0;transform:rotateX(-90deg);transform-origin:center top;"></div>
+        <div class="bk" style="position:absolute;inset:0;background:#e8e8e8;transform:translateZ(-9px)"></div>
+      </div>
+
+      <!-- Bloco L direito topo (branco) -->
+      <div class="b3 white" id="bRt">
+        <div class="f"  style="transform:translateZ(9px)"></div>
+        <div class="r"  style="position:absolute;top:0;right:-9px;width:18px;height:100%;background:#c8c8c8;transform:rotateY(90deg);transform-origin:left center;"></div>
+        <div class="bt" style="position:absolute;bottom:-9px;left:0;width:100%;height:18px;background:#b0b0b0;transform:rotateX(-90deg);transform-origin:center top;"></div>
+        <div class="bk" style="position:absolute;inset:0;background:#e8e8e8;transform:translateZ(-9px)"></div>
+      </div>
+
       <!-- Bloco laranja -->
-      <rect x="5.46" y="6.78" width="6.36" height="5.88" fill="#FE8F1C"/>
-      <!-- Quadrado separado -->
-      <rect x="18.7" y="19.4" width="4.55" height="4.8" fill="white"/>
-    </svg>
+      <div class="b3 orange" id="bOr">
+        <div class="f"  style="transform:translateZ(9px)"></div>
+        <div class="r"  style="position:absolute;top:0;right:-9px;width:18px;height:100%;background:#c86a0a;transform:rotateY(90deg);transform-origin:left center;"></div>
+        <div class="bt" style="position:absolute;bottom:-9px;left:0;width:100%;height:18px;background:#b55e08;transform:rotateX(-90deg);transform-origin:center top;"></div>
+        <div class="bk" style="position:absolute;inset:0;background:#e07010;transform:translateZ(-9px)"></div>
+      </div>
+
+      <!-- Quadrado separado (branco) -->
+      <div class="b3 white" id="bSq">
+        <div class="f"  style="transform:translateZ(9px)"></div>
+        <div class="r"  style="position:absolute;top:0;right:-9px;width:18px;height:100%;background:#c8c8c8;transform:rotateY(90deg);transform-origin:left center;"></div>
+        <div class="bt" style="position:absolute;bottom:-9px;left:0;width:100%;height:18px;background:#b0b0b0;transform:rotateX(-90deg);transform-origin:center top;"></div>
+        <div class="bk" style="position:absolute;inset:0;background:#e8e8e8;transform:translateZ(-9px)"></div>
+      </div>
+
+    </div>
   </div>
 </div>
 
