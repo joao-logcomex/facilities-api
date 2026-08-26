@@ -1494,16 +1494,18 @@ async function getEstado(slackUserId) {
     const r = await fetch(`${SUPA_URL}/rest/v1/slack_conversas?slack_user_id=eq.${encodeURIComponent(slackUserId)}&limit=1`, {
       headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
     });
-    if (!r.ok) return null;
+    if (!r.ok) { console.warn('getEstado HTTP error:', r.status); return null; }
     const rows = await r.json();
-    if (!rows.length) return null;
+    if (!rows.length) { console.log('getEstado: nenhum estado para', slackUserId); return null; }
     const dados = rows[0];
     const atualizadoEm = new Date(dados.updated_at || 0);
     if (Date.now() - atualizadoEm.getTime() > 2 * 60 * 60 * 1000) {
       await limparEstado(slackUserId);
       return null;
     }
-    return typeof dados.dados === 'string' ? JSON.parse(dados.dados) : dados.dados;
+    const parsed = typeof dados.dados === 'string' ? JSON.parse(dados.dados) : dados.dados;
+    console.log('getEstado: encontrou etapa', parsed?.etapa, 'para', slackUserId);
+    return parsed;
   } catch(e) { console.warn('getEstado falhou:', e.message); return null; }
 }
 
@@ -1512,7 +1514,8 @@ async function setEstado(slackUserId, dados) {
   try {
     const SUPA_URL = process.env.SUPABASE_URL;
     const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    await fetch(`${SUPA_URL}/rest/v1/slack_conversas`, {
+    console.log('setEstado: salvando etapa', dados?.etapa, 'para', slackUserId);
+    const r = await fetch(`${SUPA_URL}/rest/v1/slack_conversas`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1526,6 +1529,7 @@ async function setEstado(slackUserId, dados) {
         updated_at: new Date().toISOString(),
       }),
     });
+    console.log('setEstado: HTTP', r.status);
   } catch(e) { console.warn('setEstado falhou:', e.message); }
 }
 
