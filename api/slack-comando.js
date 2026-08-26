@@ -1418,14 +1418,14 @@ function extrairDadosEnvio(texto) {
       return res.status(200).send('');
     }
     if (evt.channel_type !== 'im') return res.status(200).send('');
-    // Mensagem de áudio não vem com texto, só o arquivo — não descarta mais
-    // nesse caso, só quando não tem NEM texto NEM áudio de verdade.
     const arquivoAudio = (evt.files || []).find(f => (f.mimetype || '').startsWith('audio/'));
     if (!evt.text && !arquivoAudio) return res.status(200).send('');
     if (!evt.user || !evt.channel) return res.status(200).send('');
 
-    // Dedup (Slack pode retentar se demorar >3s)
-    // Dedup via Supabase — evita reprocessamento de eventos duplicados do Slack
+    // ACK IMEDIATO — Slack exige resposta em <3s ou reenvia
+    res.status(200).send('');
+
+    // Dedup via Supabase — evita reprocessamento
     if (eventId) {
       try {
         const SUPA_URL = process.env.SUPABASE_URL;
