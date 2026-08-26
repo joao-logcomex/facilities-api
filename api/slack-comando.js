@@ -1131,10 +1131,6 @@ module.exports = async function handler(req, res) {
   //         - Botões do fluxo conversacional → trata aqui
   // ============================================================
   if (body.type === 'block_actions') {
-    // ACK IMEDIATO — Slack exige <3s ou ignora
-    // Importante: enviar antes de qualquer processamento
-    res.status(200).send('');
-
     const action = body.actions?.[0] || {};
     const actionId = action.action_id || '';
 
@@ -1144,7 +1140,8 @@ module.exports = async function handler(req, res) {
         const { ticketId, nota } = JSON.parse(action.value || '{}');
         const userIdAv = body.user?.id;
         if (userIdAv) {
-          await setEstado(userIdAv, { etapa: 'aguardando_motivo_avaliacao', ticketId, nota });
+          // Não bloqueia — salva em background
+          setEstado(userIdAv, { etapa: 'aguardando_motivo_avaliacao', ticketId, nota }).catch(()=>{});
         }
         const estrelas = '⭐'.repeat(nota) + '☆'.repeat(5 - nota);
         if (body.response_url) {
