@@ -793,7 +793,7 @@ module.exports = async function handler(req, res) {
   if (req.query?.send_welcome === 'sim_joao') {
     try {
       const userId = 'U09MEN4BS0N'; // Slack ID do Joao
-      await db.collection('slack_home_welcomed').doc(userId).delete();
+      // slack_home_welcomed desabilitado — Firestore sem cota
       const dmResp = await fetch('https://slack.com/api/conversations.open', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SLACK_BOT_TOKEN}` },
@@ -824,7 +824,7 @@ module.exports = async function handler(req, res) {
         })
       });
       const msgData = await msgResp.json();
-      await db.collection('slack_home_welcomed').doc(userId).set({ at: new Date() });
+      // slack_home_welcomed desabilitado — Firestore sem cota
       return res.status(200).json({ ok: msgData.ok, channel, erro: msgData.error || null });
     } catch(e) { return res.status(500).json({ error: e.message }); }
   }
@@ -1367,7 +1367,7 @@ function extrairDadosEnvio(texto) {
       });
       const channel = (await dmResp.json()).channel?.id;
       if (!channel) return res.status(200).send('');
-      await db.collection('slack_conversas').doc(userId).set({etapa:'aguardando_descricao',categoria,updatedAt:new Date()}, {merge:true});
+      await setEstado(userId, {etapa:'aguardando_descricao',categoria,updatedAt:new Date()});
       await fetch('https://slack.com/api/chat.postMessage', {
         method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${SLACK_BOT_TOKEN}`},
         body: JSON.stringify({channel, text:`Ótimo! Você escolheu *${LABELS[categoria]||categoria}*. Me conta com mais detalhes o que você precisa — pode falar à vontade! 😊`})
