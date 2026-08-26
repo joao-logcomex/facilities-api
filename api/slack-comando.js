@@ -1422,43 +1422,45 @@ function extrairDadosEnvio(texto) {
     if (!evt.text && !arquivoAudio) return res.status(200).send('');
     if (!evt.user || !evt.channel) return res.status(200).send('');
 
-    // Dedup Supabase com timeout curto (800ms)
-    if (eventId) {
-      try {
-        const SUPA_URL = process.env.SUPABASE_URL;
-        const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const dp = fetch(`${SUPA_URL}/rest/v1/slack_eventos_processados`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ event_id: eventId, user_id: evt.user, at: new Date().toISOString() }),
-        });
-        const dt = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 800));
-        const dr = await Promise.race([dp, dt]);
-        if (dr.status === 409) return res.status(200).send(''); // já processado
-      } catch (e) { console.warn('dedup:', e.message); }
+    // Dedup em memória (in-process) — rápido, zero latência
+    // Complementado pelo Supabase assincronamente
+    const _dedupKey = eventId || `${evt.user}_${evt.ts}`;
+    if (!global._dedupCache) global._dedupCache = new Map();
+    if (global._dedupCache.has(_dedupKey)) return res.status(200).send('');
+    global._dedupCache.set(_dedupKey, Date.now());
+    // Limpa cache antigo (> 5min)
+    for (const [k, v] of global._dedupCache) {
+      if (Date.now() - v > 300000) global._dedupCache.delete(k);
     }
-
-    // ACK — depois do dedup mas antes do processamento pesado
-    res.status(200).send('');
+    // Salva no Supabase em background (não bloqueia)
+    if (eventId) {
+      const SUPA_URL = process.env.SUPABASE_URL;
+      const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      fetch(`${SUPA_URL}/rest/v1/slack_eventos_processados`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ event_id: eventId, user_id: evt.user, at: new Date().toISOString() }),
+      }).catch(() => {});
+    }
 
     // Áudio: transcreve antes de processar
     if (!evt.text && arquivoAudio) {
       const textoTranscrito = await transcreverAudioSlack(arquivoAudio.url_private_download || arquivoAudio.url_private, arquivoAudio.mimetype);
       if (!textoTranscrito) {
         await enviarMensagem(evt.channel, '🎤 Não consegui entender esse áudio. Pode tentar de novo ou escrever a mensagem?').catch(() => {});
-        return;
+        return res.status(200).send('');
       }
       evt.text = textoTranscrito;
       await enviarMensagem(evt.channel, `🎤 Ouvi: _"${textoTranscrito}"_`).catch(() => {});
     }
 
-    // Processa
+    // Processa e depois manda ack
     try {
       await processarMensagemDM(evt);
     } catch (err) {
       console.error('Erro processando DM:', err.message);
     }
-    return;
+    return res.status(200).send('');
   }
 
   // ============================================================
