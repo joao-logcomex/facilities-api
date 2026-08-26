@@ -1367,7 +1367,14 @@ function extrairDadosEnvio(texto) {
       });
       const channel = (await dmResp.json()).channel?.id;
       if (!channel) return res.status(200).send('');
-      await setEstado(userId, {etapa:'aguardando_descricao',categoria,updatedAt:new Date()});
+      // Preserva pessoa_alvo e aberto_por_admin se existirem no estado anterior
+      const estadoAtual = await getEstado(userId) || {};
+      await setEstado(userId, {
+        ...estadoAtual,
+        etapa: 'aguardando_descricao',
+        categoria,
+        updatedAt: new Date()
+      });
       await fetch('https://slack.com/api/chat.postMessage', {
         method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${SLACK_BOT_TOKEN}`},
         body: JSON.stringify({channel, text:`Ótimo! Você escolheu *${LABELS[categoria]||categoria}*. Me conta com mais detalhes o que você precisa — pode falar à vontade! 😊`})
@@ -1874,6 +1881,7 @@ async function processarMensagemDM(evt) {
         texto_original: texto,
       });
       // Usa fac_confirmar com dados embutidos no value — não depende do estado
+      console.log('[dadosConfirmar] pessoa_alvo:', JSON.stringify(estado?.pessoa_alvo));
       const dadosConfirmar = { categoria: analise.categoria, titulo: analise.titulo || texto, descricao: analise.descricao || texto, prioridade: analise.prioridade || 'media', pessoa_alvo: estado?.pessoa_alvo || null, aberto_por_admin: estado?.aberto_por_admin || null };
       await enviarMensagem(channel, analise.resposta_usuario || 'Vou abrir o chamado:', [
         { type: 'section', text: { type: 'mrkdwn', text: `${analise.resposta_usuario || 'Resumo do chamado:'}
