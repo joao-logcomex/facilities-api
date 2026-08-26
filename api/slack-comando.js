@@ -947,6 +947,21 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ challenge: body.challenge });
   }
 
+  // Debug: logar tipo e action_id de cada request
+  const _dbgAction = body.actions?.[0]?.action_id || '';
+  if (body.type === 'block_actions') {
+    console.log('[DEBUG] block_actions recebido, action_id:', _dbgAction);
+    // Mandar DM pro João se for fac_confirmar
+    if (_dbgAction === 'fac_confirmar') {
+      const _tok = process.env.SLACK_BOT_TOKEN;
+      fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${_tok}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: 'D0B0NEKTYLA', text: `🔧 fac_confirmar chegou ao início do handler!` })
+      }).catch(()=>{});
+    }
+  }
+
   // ============================================================
   // ROTA 1: Slash command /facilities
   // ============================================================
