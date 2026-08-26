@@ -1336,10 +1336,20 @@
     } catch(e) { alert('Erro ao enviar e-mail. Verifique o endereço.'); }
   };
 
+  // Proteção contra duplo envio
+  let _submitTicketEmAndamento = false;
   window.submitTicket = async (e) => {
     e.preventDefault();
+    if (_submitTicketEmAndamento) return;
+    _submitTicketEmAndamento = true;
+    const btnSubmit = document.querySelector('#ticket-form .btn-submit');
+    if (btnSubmit) { btnSubmit.disabled = true; btnSubmit.style.opacity = '0.6'; }
+    const resetBtn = () => {
+      _submitTicketEmAndamento = false;
+      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.style.opacity = '1'; }
+    };
     const prio = document.querySelector('input[name="prioridade"]:checked');
-    if (!prio) { alert('Selecione uma prioridade.'); return; }
+    if (!prio) { alert('Selecione uma prioridade.'); resetBtn(); return; }
     const cat = document.getElementById('categoria').value;
     // Anexo agora é opcional em todas as categorias
     const plats = [...document.querySelectorAll('input[name="plataforma"]:checked')].map(i => i.value);
@@ -1404,6 +1414,7 @@
         }]
       });
       document.getElementById('ticket-num').textContent = '#' + id;
+      resetBtn(); // libera o botão após sucesso
       // Espelha no Supabase (fase de transição) — nunca bloqueia a tela de sucesso
       fetch('/api/supabase-sync', {
         method: 'POST',
