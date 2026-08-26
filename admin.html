@@ -1243,7 +1243,8 @@
     <div style="display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap">
       <button class="btn btn-secondary qr-filtro active" data-filtro="todos" onclick="filtrarQR('todos',this)">Todos (28)</button>
       <button class="btn btn-secondary qr-filtro" data-filtro="sala" onclick="filtrarQR('sala',this)">🪑 Salas (17)</button>
-      <button class="btn btn-secondary qr-filtro" data-filtro="banheiro" onclick="filtrarQR('banheiro',this)">🚻 Banheiros (8)</button>
+      <button class="btn btn-secondary qr-filtro" data-filtro="banheiro" onclick="filtrarQR('banheiro',this)">🚻 Banheiros (11)</button>
+      <button class="btn btn-secondary qr-filtro" data-filtro="copa" onclick="filtrarQR('copa',this)">🍽️ Copas (2)</button>
     </div>
     <div id="qr-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;"></div>
   </div>
@@ -5353,10 +5354,15 @@ window.renderHistorico = renderHistorico;
     {slug:'banheiro-masc-armarios-1',nome:'🚹 Masculino — Armários 1',tipo:'banheiro',andar:'1º andar'},
     {slug:'banheiro-fem-armarios-2',nome:'🚺 Feminino — Armários 2',tipo:'banheiro',andar:'1º andar'},
     {slug:'banheiro-masc-armarios-2',nome:'🚹 Masculino — Armários 2',tipo:'banheiro',andar:'1º andar'},
-    {slug:'copa-cozinha',nome:'🍽️ Copa/Cozinha',tipo:'banheiro',andar:'1º andar'},
+    {slug:'banheiro-fem-copa-1',nome:'🚺 Feminino — Copa/Cozinha 1',tipo:'banheiro',andar:'1º andar'},
+    {slug:'banheiro-masc-copa-1',nome:'🚹 Masculino — Copa/Cozinha 1',tipo:'banheiro',andar:'1º andar'},
+    {slug:'banheiro-fem-copa-2',nome:'🚺 Feminino — Copa/Cozinha 2',tipo:'banheiro',andar:'1º andar'},
+    {slug:'banheiro-masc-copa-2',nome:'🚹 Masculino — Copa/Cozinha 2',tipo:'banheiro',andar:'1º andar'},
+    {slug:'copa-cozinha-1',nome:'🍽️ Copa/Cozinha — 1º andar',tipo:'copa',andar:'1º andar'},
     {slug:'banheiro-pcd',nome:'♿ PCD',tipo:'banheiro',andar:'2º andar'},
     {slug:'banheiro-fem-cozinha',nome:'🚺 Feminino — 2º andar',tipo:'banheiro',andar:'2º andar'},
     {slug:'banheiro-masc-root',nome:'🚹 Masculino — 2º andar',tipo:'banheiro',andar:'2º andar'},
+    {slug:'copa-cozinha-2',nome:'🍽️ Copa/Cozinha — 2º andar',tipo:'copa',andar:'2º andar'},
   ];
 
   let qrFiltroAtivo = 'todos';
