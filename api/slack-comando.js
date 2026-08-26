@@ -586,39 +586,15 @@ function extrairValores(view) {
 // que se repete a cada ~16.7 minutos e já causou colisão real. Prefixo LC- é novo
 // de propósito para nunca colidir com IDs antigos (LOG-/F-).
 async function gerarIdSequencial() {
-  // Tenta Supabase primeiro (não depende do Firestore)
   try {
     const r = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/next_ticket_id`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
-        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-      },
+      headers: { 'Content-Type': 'application/json', 'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
       body: JSON.stringify({}),
     });
-    if (r.ok) {
-      const seq = await r.json();
-      return 'LC-' + String(seq).padStart(5, '0');
-    }
+    if (r.ok) { const seq = await r.json(); return 'LC-' + String(seq).padStart(5, '0'); }
   } catch(e) { console.warn('gerarId Supabase falhou:', e.message); }
-  // Fallback Firestore com timeout de 4s
-  try {
-    const contadorRef = db.collection('contadores').doc('tickets_lc');
-    const fsPromise = db.runTransaction(async (tx) => {
-      const snap = await tx.get(contadorRef);
-      const atual = snap.exists ? (snap.data().seq || 0) : 0;
-      const proximo = atual + 1;
-      tx.set(contadorRef, { seq: proximo }, { merge: true });
-      return proximo;
-    });
-    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 1500));
-    const novo = await Promise.race([fsPromise, fsTimeout]);
-    return 'LC-' + String(novo).padStart(5, '0');
-  } catch(e) {
-    console.warn('gerarId Firestore falhou/timeout:', e.message);
-    return 'LC-' + String(Date.now() % 100000).padStart(5, '0');
-  }
+  return 'LC-' + String(Date.now() % 100000).padStart(5, '0');
 }
 
 async function criarTicketNoFirebase(payload) {
@@ -661,8 +637,10 @@ async function criarTicketNoFirebase(payload) {
     ...dadosExtras,
   };
 
-  // Só Supabase — Firestore sem cota, não toca nele
+  // Supabase primeiro — Firestore sem cota
   await espelharTicketNoSupabase(docData).catch(e => console.warn('espelho supabase falhou:', e.message));
+  // Tenta Firestore em background sem bloquear
+  db.collection('tickets').add(docData).catch(e => console.warn('Firestore add falhou:', e.message));
   return { docId: id, id, ...docData };
 }
 
@@ -947,21 +925,6 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ challenge: body.challenge });
   }
 
-  // Debug: logar tipo e action_id de cada request
-  const _dbgAction = body.actions?.[0]?.action_id || '';
-  if (body.type === 'block_actions') {
-    console.log('[DEBUG] block_actions recebido, action_id:', _dbgAction);
-    // Mandar DM pro João se for fac_confirmar
-    if (_dbgAction === 'fac_confirmar') {
-      const _tok = process.env.SLACK_BOT_TOKEN;
-      fetch('https://slack.com/api/chat.postMessage', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${_tok}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel: 'D0B0NEKTYLA', text: `🔧 fac_confirmar chegou ao início do handler!` })
-      }).catch(()=>{});
-    }
-  }
-
   // ============================================================
   // ROTA 1: Slash command /facilities
   // ============================================================
@@ -1140,8 +1103,7 @@ module.exports = async function handler(req, res) {
         const { ticketId, nota } = JSON.parse(action.value || '{}');
         const userIdAv = body.user?.id;
         if (userIdAv) {
-          // Não bloqueia — salva em background
-          setEstado(userIdAv, { etapa: 'aguardando_motivo_avaliacao', ticketId, nota }).catch(()=>{});
+          await setEstado(userIdAv, { etapa: 'aguardando_motivo_avaliacao', ticketId, nota });
         }
         const estrelas = '⭐'.repeat(nota) + '☆'.repeat(5 - nota);
         if (body.response_url) {
@@ -1158,7 +1120,7 @@ module.exports = async function handler(req, res) {
           });
         }
       } catch (e) { console.error('Erro no clique de avaliação:', e.message); }
-      return;
+      return res.status(200).send('');
     }
 
     // Aprovação/recusa de brinde — repassa pro endpoint legacy
@@ -1173,19 +1135,19 @@ module.exports = async function handler(req, res) {
       } catch (e) {
         console.error('Erro repassando p/ brinde-aprovacao:', e.message);
       }
-      return;
+      return res.status(200).send('');
     }
 
     // ── Botões do fluxo conversacional (Slack DM via IA) ──
     if (actionId === 'fac_confirmar' || actionId === 'fac_editar' || actionId === 'fac_cancelar' ||
         actionId === 'fac_categoria' || actionId.startsWith('fac_')) {
-      // Processa ANTES do ack — Vercel mata função após res.send()
+      // Processa SÍNCRONO (Vercel mata função após res.send)
       try {
         await tratarBotaoFluxoConversacional(body, action);
       } catch (err) {
         console.error('Erro botão fluxo:', err);
       }
-      return;
+      return res.status(200).send('');
     }
 
     // Não é brinde nem fac_* — deixa passar pra frente (não retorna aqui!).
@@ -1202,13 +1164,14 @@ module.exports = async function handler(req, res) {
   // ============================================================
   // ROTA 7b: app_home_opened → publicar Home Tab + boas-vindas no chat
   if (body.type === 'event_callback' && body.event?.type === 'app_home_opened') {
-    res.status(200).send(''); // ack imediato
     const userId = body.event.user;
     try {
       await publishHome(userId);
-      // Boas-vindas ignorada por ora (Firestore sem cota)
-      if (false) {
-        const _skip = true;
+      // Boas-vindas no chat apenas na primeira vez
+      const flagRef = db.collection('slack_home_welcomed').doc(userId);
+      const flag = await flagRef.get();
+      if (!flag.exists) {
+        await flagRef.set({ at: new Date() });
         // Abrir DM
         const dmResp = await fetch('https://slack.com/api/conversations.open', {
           method: 'POST',
@@ -1250,7 +1213,7 @@ module.exports = async function handler(req, res) {
         }
       }
     } catch(e) { console.error('home tab:', e.message); }
-    return; // ack já enviado
+    return res.status(200).send('');
   }
 
   // ROTA 7b1: confirmação de chamado
@@ -1334,8 +1297,7 @@ function extrairDadosEnvio(texto) {
       try {
         const estado2 = await getEstado(userId2);
         if (!estado2 || estado2.etapa !== 'aguardando_confirmacao') {
-          // Estado expirou ou já foi processado — ignora silenciosamente
-          console.warn('confirmar_chamado: estado não encontrado para', userId2);
+          await enviarMensagem(channel2, 'Não encontrei o chamado pendente. Tente novamente.');
           return res.status(200).send('');
         }
         await limparEstado(userId2);
@@ -1405,7 +1367,7 @@ function extrairDadosEnvio(texto) {
       });
       const channel = (await dmResp.json()).channel?.id;
       if (!channel) return res.status(200).send('');
-      await setEstado(userId, {etapa:'aguardando_descricao',categoria,updatedAt:new Date()});
+      await db.collection('slack_conversas').doc(userId).set({etapa:'aguardando_descricao',categoria,updatedAt:new Date()}, {merge:true});
       await fetch('https://slack.com/api/chat.postMessage', {
         method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${SLACK_BOT_TOKEN}`},
         body: JSON.stringify({channel, text:`Ótimo! Você escolheu *${LABELS[categoria]||categoria}*. Me conta com mais detalhes o que você precisa — pode falar à vontade! 😊`})
@@ -1426,32 +1388,40 @@ function extrairDadosEnvio(texto) {
       return res.status(200).send('');
     }
     if (evt.channel_type !== 'im') return res.status(200).send('');
+    // Mensagem de áudio não vem com texto, só o arquivo — não descarta mais
+    // nesse caso, só quando não tem NEM texto NEM áudio de verdade.
     const arquivoAudio = (evt.files || []).find(f => (f.mimetype || '').startsWith('audio/'));
     if (!evt.text && !arquivoAudio) return res.status(200).send('');
     if (!evt.user || !evt.channel) return res.status(200).send('');
 
-    // Dedup em memória (in-process) — rápido, zero latência
-    // Complementado pelo Supabase assincronamente
-    const _dedupKey = eventId || `${evt.user}_${evt.ts}`;
-    if (!global._dedupCache) global._dedupCache = new Map();
-    if (global._dedupCache.has(_dedupKey)) return res.status(200).send('');
-    global._dedupCache.set(_dedupKey, Date.now());
-    // Limpa cache antigo (> 5min)
-    for (const [k, v] of global._dedupCache) {
-      if (Date.now() - v > 300000) global._dedupCache.delete(k);
-    }
-    // Salva no Supabase em background (não bloqueia)
+    // Dedup (Slack pode retentar se demorar >3s)
+    // IMPORTANTE: se essa checagem falhar (ex: cota do Firestore esgotada),
+    // NÃO seguimos processando — isso é o que causava mensagens duplicadas
+    // exatamente quando o banco estava sob estresse (a rede de segurança
+    // se desligava silenciosamente bem quando mais precisava dela).
     if (eventId) {
-      const SUPA_URL = process.env.SUPABASE_URL;
-      const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      fetch(`${SUPA_URL}/rest/v1/slack_eventos_processados`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ event_id: eventId, user_id: evt.user, at: new Date().toISOString() }),
-      }).catch(() => {});
+      try {
+        const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
+        const exists = await dedupeDoc.get();
+        if (exists.exists) return res.status(200).send('');
+        await dedupeDoc.set({ at: new Date(), user: evt.user });
+      } catch (e) {
+        console.warn('dedup falhou, abortando por segurança:', e.message);
+        // Evita spam de aviso: só manda o aviso se ainda não mandou um
+        // recentemente pra esse usuário (usa memória do processo, best-effort).
+        const agora = Date.now();
+        global.__ultimoAvisoCotaPorUser = global.__ultimoAvisoCotaPorUser || {};
+        const ultimoAviso = global.__ultimoAvisoCotaPorUser[evt.user] || 0;
+        if (agora - ultimoAviso > 30000) {
+          global.__ultimoAvisoCotaPorUser[evt.user] = agora;
+          await enviarMensagem(evt.channel, '⚠️ Sistema temporariamente sobrecarregado. Tenta de novo em alguns minutos — se persistir, usa o formulário: facilities-api.vercel.app').catch(() => {});
+        }
+        return res.status(200).send('');
+      }
     }
 
-    // Áudio: transcreve antes de processar
+    // Se veio como áudio (sem texto), transcreve antes de seguir. O texto
+    // resultante entra no MESMO fluxo de sempre — nada mais precisa mudar.
     if (!evt.text && arquivoAudio) {
       const textoTranscrito = await transcreverAudioSlack(arquivoAudio.url_private_download || arquivoAudio.url_private, arquivoAudio.mimetype);
       if (!textoTranscrito) {
@@ -1462,7 +1432,8 @@ function extrairDadosEnvio(texto) {
       await enviarMensagem(evt.channel, `🎤 Ouvi: _"${textoTranscrito}"_`).catch(() => {});
     }
 
-    // Processa e depois manda ack
+    // Processa SÍNCRONO (Vercel mata a função após res.send, então precisa ser antes)
+    // Slack pode dar timeout >3s mas o dedup impede reprocessamento
     try {
       await processarMensagemDM(evt);
     } catch (err) {
@@ -1495,58 +1466,36 @@ module.exports.config = {
 
 // Estado da conversação armazenado no Firestore (uma doc por usuário Slack)
 async function getEstado(slackUserId) {
-  // Só Supabase — Firestore sem cota
   try {
     const SUPA_URL = process.env.SUPABASE_URL;
     const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const r = await fetch(`${SUPA_URL}/rest/v1/slack_conversas?slack_user_id=eq.${encodeURIComponent(slackUserId)}&limit=1`, {
       headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
     });
-    if (!r.ok) { console.warn('getEstado HTTP error:', r.status); return null; }
+    if (!r.ok) return null;
     const rows = await r.json();
-    if (!rows.length) { console.log('getEstado: nenhum estado para', slackUserId); return null; }
+    if (!rows.length) return null;
     const dados = rows[0];
     const atualizadoEm = new Date(dados.updated_at || 0);
     if (Date.now() - atualizadoEm.getTime() > 2 * 60 * 60 * 1000) {
       await limparEstado(slackUserId);
       return null;
     }
-    const parsed = typeof dados.dados === 'string' ? JSON.parse(dados.dados) : dados.dados;
-    console.log('getEstado: encontrou etapa', parsed?.etapa, 'para', slackUserId);
-    return parsed;
+    return typeof dados.dados === 'string' ? JSON.parse(dados.dados) : dados.dados;
   } catch(e) { console.warn('getEstado falhou:', e.message); return null; }
 }
-
 async function setEstado(slackUserId, dados) {
-  // Só Supabase — Firestore sem cota
   try {
     const SUPA_URL = process.env.SUPABASE_URL;
     const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    // Usa upsert (PUT) para garantir que atualiza se já existe
-    const r = await fetch(`${SUPA_URL}/rest/v1/slack_conversas`, {
+    await fetch(`${SUPA_URL}/rest/v1/slack_conversas`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPA_KEY,
-        'Authorization': `Bearer ${SUPA_KEY}`,
-        'Prefer': 'resolution=merge-duplicates,return=minimal',
-        'on_conflict': 'slack_user_id',
-      },
-      body: JSON.stringify({
-        slack_user_id: slackUserId,
-        dados: JSON.stringify(dados),
-        updated_at: new Date().toISOString(),
-      }),
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'resolution=merge-duplicates,return=minimal', 'on_conflict': 'slack_user_id' },
+      body: JSON.stringify({ slack_user_id: slackUserId, dados: JSON.stringify(dados), updated_at: new Date().toISOString() }),
     });
-    if (!r.ok) {
-      const errText = await r.text();
-      console.warn('setEstado HTTP', r.status, errText.substring(0, 100));
-    }
   } catch(e) { console.warn('setEstado falhou:', e.message); }
 }
-
 async function limparEstado(slackUserId) {
-  // Só Supabase — Firestore sem cota
   try {
     const SUPA_URL = process.env.SUPABASE_URL;
     const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -1554,7 +1503,7 @@ async function limparEstado(slackUserId) {
       method: 'DELETE',
       headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
     });
-  } catch(e) { console.warn('limparEstado falhou:', e.message); }
+  } catch(e) {}
 }
 
 // Análise da mensagem via Claude Haiku
@@ -1565,39 +1514,42 @@ async function analisarMensagem(texto, estadoAnterior = null) {
     return analisarPorPalavrasChave(texto);
   }
 
-  const systemPrompt = `Você é o assistente de Facilities da LogComex. Seja DIRETO e RÁPIDO — abra o chamado com o mínimo de perguntas possível.
+  const systemPrompt = `Você é o assistente de Facilities da LogComex. Converse de forma natural e amigável — como um colega prestativo, não um sistema robótico.
 
-REGRA DE OURO: Se a pessoa descreveu qualquer necessidade, confirme em UMA frase e set pronto_para_abrir=true IMEDIATAMENTE. Não faça perguntas desnecessárias.
+PERSONALIDADE: Respostas curtas (1-3 frases), use emojis com moderação, seja direto e adapte o tom da pessoa. NUNCA liste exemplos ou instruções.
 
-FLUXO CORRETO:
-1. Pessoa descreve necessidade → confirme brevemente e set pronto_para_abrir=true
-2. Só faça UMA pergunta se a descrição for completamente vaga (ex: só "ajuda")
-3. Após qualquer resposta da pessoa → pronto_para_abrir=true, não importa o quê
+SEU OBJETIVO: Ajudar a pessoa a abrir um chamado de facilities de forma conversacional.
 
-EXEMPLOS DE QUANDO ABRIR DIRETO (pronto_para_abrir=true):
-- "carregador emprestado" → abrir como suprimentos
-- "carregador lightning dell emprestado" → abrir como suprimentos  
-- "torneira pingando" → abrir como manutenção
-- "preciso de papel" → abrir como suprimentos
-- QUALQUER coisa com objeto + ação/necessidade → abrir direto
+FLUXO:
+1. Saudação simples ("oi", "olá") → responda amigável e pergunte como pode ajudar
+2. Problema/necessidade clara → entenda, confirme em uma frase, pergunte se quer abrir o chamado
+3. Dúvida sobre o que precisa → faça UMA pergunta objetiva
+4. Confirmação → pronto_para_abrir: true
 
-NUNCA PERGUNTE:
-- Tipo de conector, modelo, marca (use o que a pessoa disse)
-- Se é pra usar ou entregar
-- Centro de custo, departamento
-- Detalhes extras que não são essenciais
+REGRA CRÍTICA CONTRA LOOP DE PERGUNTAS:
+- Você tem direito a NO MÁXIMO UMA pergunta de esclarecimento na conversa inteira.
+- Assim que a pessoa responder essa pergunta — mesmo que a resposta seja curta, simples ou não 100% completa — você DEVE avançar pra confirmação (pronto_para_abrir: true) na resposta seguinte. NUNCA faça uma segunda, terceira ou quarta pergunta de esclarecimento.
+- É sempre melhor abrir um chamado com uma descrição um pouco genérica do que travar a pessoa num loop de perguntas repetidas. Na dúvida, avance.
+- Se em algum momento você perceber que já fez mais de uma pergunta sobre a mesma coisa, pare e finalize com as informações que já tem.
 
-CATEGORIAS: suprimentos, manutencao, reforma, acessos, brindes, logistica, outros
+REGRAS CRÍTICAS SOBRE OS CAMPOS FINAIS (quando pronto_para_abrir=true):
+- O campo "descricao" deve resumir TODA a necessidade da pessoa ao longo de TODA a conversa até aqui — nunca apenas a última mensagem isolada. Releia o histórico completo antes de escrever.
+- NUNCA pergunte por centro de custo, departamento ou setor administrativo da pessoa — essa informação já é obtida automaticamente pelo sistema a partir do cadastro dela, não precisa (e não deve) ser perguntada.
+- NUNCA inclua centro de custo/departamento dentro de "titulo" ou "descricao".
+- Se precisar saber uma localização física pra entrega (ex: qual sala/andar), pode perguntar isso normalmente, mas trate como detalhe do pedido, não como "centro de custo".
+
+CATEGORIAS (use internamente, não mencione):
+suprimentos, manutencao, reforma, acessos, brindes, logistica, outros
 
 RESPONDA SEMPRE COM JSON:
 {
-  "resposta_usuario": "frase curta confirmando",
+  "resposta_usuario": "mensagem natural e curta pra pessoa",
   "pronto_para_abrir": true ou false,
-  "categoria": "categoria",
-  "titulo": "titulo curto",
-  "descricao": "descricao completa baseada em TODA a conversa",
+  "categoria": "categoria ou null",
+  "titulo": "titulo curto se pronto_para_abrir=true, senao null",
+  "descricao": "descricao se pronto_para_abrir=true, senao null",
   "prioridade": "baixa/media/alta",
-  "saudacao_apenas": false
+  "saudacao_apenas": true ou false
 }`;
 
   try {
@@ -1709,10 +1661,7 @@ async function processarMensagemDM(evt) {
 
     // ⭐ Motivo da avaliação por estrelas — captura a PRÓXIMA mensagem depois
     // que a pessoa clicou numa nota, sem precisar sair do Slack pra avaliar.
-    const estadoAvaliacao = await Promise.race([
-      getEstado(userId),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2000))
-    ]).catch(() => null);
+    const estadoAvaliacao = await getEstado(userId);
     if (estadoAvaliacao?.etapa === 'aguardando_motivo_avaliacao') {
       await log('avaliacao_motivo_recebido');
       const motivo = /^(pular|não|nao|n)$/i.test(texto) ? '' : texto;
@@ -1798,7 +1747,7 @@ async function processarMensagemDM(evt) {
       return;
     }
 
-    // ⚡ DETECÇÃO DE PRIMEIRA MENSAGEM — Firestore sem cota, sempre trata como não-primeira
+    // primeiraVez desabilitado — Firestore sem cota
     const primeiraVez = false;
 
     // ⚡ DETECÇÃO RÁPIDA DE SAUDAÇÃO (sem IA, sem Firebase)
@@ -1806,13 +1755,13 @@ async function processarMensagemDM(evt) {
     const padraoSaudacao = /^(oi+|oii+|ola+|ol[áa]+|hey|hi|hello|alo|al[ôo]+|bom dia|boa tarde|boa noite|e a[ií]+|eai+|menu|ajuda|help|começar|comecar|start|teste)[\s!.?,]*$/i;
     const eSaudacaoPura = padraoSaudacao.test(texto);
 
-    // Saudação → sempre mostrar botões de categoria
-    if (eSaudacaoPura) {
-      await log('saudacao');
-      await enviarMensagem(channel, 'Olá! 👋 Sou o assistente de Facilities. Como posso te ajudar?', [
-        { type: 'section', text: { type: 'mrkdwn', text: '*Olá! 👋 Sou o assistente de Facilities da LogComex.*\n\nMe conta o que você precisa ou escolha uma categoria:' } },
+    // Se é primeira vez E é saudação pura → mostrar boas-vindas com botões
+    if (primeiraVez && eSaudacaoPura) {
+      await log('boas_vindas_primeira_vez');
+      await enviarMensagem(channel, 'Olá! Sou o assistente de Facilities da LogComex 👋', [
+        { type: 'section', text: { type: 'mrkdwn', text: '*Olá! Sou o assistente de Facilities da LogComex* 👋\n\nPode falar comigo naturalmente — me diz o que você precisa e eu cuido do resto!\n\nOu escolha uma categoria pra começar:' } },
         { type: 'actions', elements: [
-          { type: 'button', text: { type: 'plain_text', text: '🎁 Brinde', emoji: true }, style: 'primary', action_id: 'bv_brinde', value: 'brindes' },
+          { type: 'button', text: { type: 'plain_text', text: '🎁 Pedir brinde', emoji: true }, style: 'primary', action_id: 'bv_brinde', value: 'brindes' },
           { type: 'button', text: { type: 'plain_text', text: '📦 Logística', emoji: true }, action_id: 'bv_logistica', value: 'logistica' },
           { type: 'button', text: { type: 'plain_text', text: '🔧 Manutenção', emoji: true }, action_id: 'bv_manutencao', value: 'manutencao' },
         ]},
@@ -1825,6 +1774,21 @@ async function processarMensagemDM(evt) {
       return;
     }
 
+    if (eSaudacaoPura) {
+      await log('saudacao_direta');
+      console.log('[processarMensagemDM] detectada saudação direta');
+      await enviarMensagem(channel, '👋 Olá! Sou o assistente do time de Facilities.', [
+        { type: 'header', text: { type: 'plain_text', text: '👋 Olá!', emoji: true } },
+        { type: 'section', text: { type: 'mrkdwn', text: `Sou o assistente do time de *Facilities da LogComex*. Posso te ajudar a abrir um chamado rapidinho! 🎯` } },
+        { type: 'section', text: { type: 'mrkdwn', text: `*Como funciona:*\nMe conta o que você precisa em uma mensagem normal. Vou entender, organizar e abrir o chamado pra você.\n\n*Exemplos:*\n• _"Preciso de um mouse novo"_\n• _"Ar condicionado da sala 3 com problema"_\n• _"Quero pedir alguns moleskines pra equipe"_\n• _"Envio via DHL para São Paulo"_` } },
+        { type: 'divider' },
+        { type: 'context', elements: [{ type: 'mrkdwn', text: '💡 Você também pode usar o formulário: <https://facilities-api.vercel.app|facilities-api.vercel.app>' }] }
+      ]);
+      await log('saudacao_enviada');
+      console.log('[processarMensagemDM] saudação enviada ✅');
+      return;
+    }
+
     // Pega estado anterior (conversa em andamento)
     let estado = null;
     try {
@@ -1832,59 +1796,6 @@ async function processarMensagemDM(evt) {
       await log('estado_lido', { tem_estado: !!estado, etapa: estado?.etapa });
     } catch (e) {
       await log('estado_erro', { err: e.message });
-    }
-
-    // Detecção local de confirmação (sim/não) — evita chamar IA pra isso
-    const textoNorm = texto.toLowerCase().trim().replace(/[^a-záéíóúãõâêô]/g, '');
-    const eSim = /^(sim|s|yes|y|isso|exato|exatamente|correto|certo|pode|pode ser|quero|ok|okay|vai|bora|confirma|confirm|simj|sim+|simmm|é isso|e isso|isso mesmo|pode abrir|abre|abre sim|é|e)$/.test(textoNorm);
-    const eNao = /^(nao|n|no|nope|nao quero|cancela|cancel|cancelar|para|errado|errada|nope)$/.test(textoNorm);
-
-    if (estado?.etapa === 'aguardando_resposta' && eSim) {
-      // Pessoa confirmou — vai direto pra abertura
-      const dadosConfirmados = {
-        ...estado,
-        pronto_para_abrir: true,
-        tem_info_suficiente: true,
-      };
-      if (!dadosConfirmados.titulo) dadosConfirmados.titulo = estado.texto_original || texto;
-      if (!dadosConfirmados.descricao) dadosConfirmados.descricao = estado.texto_original || texto;
-      await limparEstado(userId);
-      await setEstado(userId, { etapa: 'confirmar', ...dadosConfirmados });
-      // Usa o mesmo fluxo de pronto_para_abrir
-      const analise = dadosConfirmados;
-      analise.pronto_para_abrir = true;
-      analise.tem_info_suficiente = true;
-      // Pular direto para o caso 3
-      const remetente = await getUserInfo(userId);
-      const slackUser = dadosConfirmados.pessoa_alvo || remetente;
-      try {
-        const ticket = await criarTicketNoFirebase({
-          titulo: dadosConfirmados.titulo,
-          descricao: dadosConfirmados.descricao,
-          categoria: dadosConfirmados.categoria || 'outros',
-          prioridade: dadosConfirmados.prioridade || 'media',
-          slackUserId: slackUser?.slackId || userId,
-          nome: slackUser?.nome || remetente?.nome || '',
-          email: slackUser?.email || remetente?.email || '',
-          centroCusto: slackUser?.centroCusto || remetente?.centroCusto || '',
-          cargo: slackUser?.cargo || remetente?.cargo || '',
-        });
-        await limparEstado(userId);
-        await enviarMensagem(channel, `✅ Chamado *${ticket.id}* aberto com sucesso!
-
-*${ticket.titulo}*
-Categoria: ${dadosConfirmados.categoria || 'outros'} | Prioridade: ${dadosConfirmados.prioridade || 'média'}`);
-      } catch(e) {
-        console.error('Erro ao criar ticket por confirmação direta:', e.message);
-        await enviarMensagem(channel, '😕 Ops! Tive um probleminha ao abrir o chamado. Tenta de novo?');
-      }
-      return;
-    }
-
-    if (estado?.etapa === 'aguardando_resposta' && eNao) {
-      await limparEstado(userId);
-      await enviarMensagem(channel, '✅ Tudo bem! Se precisar de algo é só falar.');
-      return;
     }
 
     // Analisar a mensagem com IA (com timeout de 5s)
@@ -2350,11 +2261,7 @@ Categoria: ${dadosConfirmados.categoria || 'outros'} | Prioridade: ${dadosConfir
   } catch (err) {
     await log('ERRO', { err: err.message, stack: err.stack?.substring(0, 400) });
     console.error('[processarMensagemDM] ERRO:', err.message, err.stack);
-    // Manda o erro pro João via DM para debug
-    try {
-      await enviarMensagem('D0B0NEKTYLA', `🐛 Erro no bot: \`${err.message}\`
-Stack: \`${(err.stack||'').substring(0,300)}\``);
-    } catch {}
+    // Tenta avisar o usuário mesmo em erro
     try {
       await enviarMensagem(channel, '😕 Ops! Tive um probleminha. Tenta de novo ou usa o formulário: facilities-api.vercel.app');
     } catch (e2) { console.error('  falha mensagem fallback:', e2.message); }
@@ -2487,10 +2394,7 @@ async function tratarBotaoFluxoConversacional(body, action) {
   // Botões de categoria (fac_cat_<categoria>)
   if (actionId.startsWith('fac_cat_')) {
     const novaCategoria = actionId.replace('fac_cat_', '');
-    const estado = await Promise.race([
-      getEstado(userId),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2000))
-    ]).catch(() => null);
+    const estado = await getEstado(userId);
     if (!estado) return;
     const dadosAtualizados = { ...estado, categoria: novaCategoria, etapa: 'confirmar' };
     await setEstado(userId, dadosAtualizados);
@@ -2502,10 +2406,7 @@ async function tratarBotaoFluxoConversacional(body, action) {
   if (actionId.startsWith('fac_transp_')) {
     await log('transportadora_clicada');
     const transportadora = action.value || actionId.replace('fac_transp_', '');
-    const estado = await Promise.race([
-      getEstado(userId),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2000))
-    ]).catch(() => null);
+    const estado = await getEstado(userId);
     if (!estado) {
       await enviarMensagem(channel, '😕 Não consegui encontrar sua solicitação. Manda nova mensagem?');
       return;
@@ -2527,11 +2428,8 @@ async function tratarBotaoFluxoConversacional(body, action) {
 
   if (actionId === 'fac_confirmar') {
     await log('confirmar_inicio');
-    // Debug: avisar que chegou aqui
-    await enviarMensagem('D0B0NEKTYLA', `🔧 fac_confirmar iniciado por ${userId}`).catch(()=>{});
     let dados;
     try { dados = JSON.parse(action.value || '{}'); } catch { dados = await getEstado(userId) || {}; }
-    await enviarMensagem('D0B0NEKTYLA', `🔧 dados: cat=${dados?.categoria}, titulo=${dados?.titulo?.substring(0,30)}`).catch(()=>{});
     await log('confirmar_dados', { cat: dados.categoria, titulo: (dados.titulo || '').substring(0, 40) });
 
     // Buscar info do usuário
@@ -2591,7 +2489,6 @@ async function tratarBotaoFluxoConversacional(body, action) {
         descricaoFinal = dados.descricao || dados.texto_original || '';
       }
 
-      console.log('[fac_confirmar] criando ticket:', dados.categoria, dados.titulo);
       const ticket = await criarTicketNoFirebase({
         categoria: dados.categoria,
         titulo: dados.titulo,
@@ -2601,7 +2498,6 @@ async function tratarBotaoFluxoConversacional(body, action) {
         dadosExtras,
         abertoPorAdmin: dados.pessoa_alvo ? dados.aberto_por_admin : null,
       });
-      console.log('[fac_confirmar] ticket criado:', ticket?.id);
       await log('confirmar_ticket_criado', { id: ticket.id });
       if (dados.pessoa_alvo) await dmNotificarDelegacao(dados.pessoa_alvo, dados.aberto_por_admin, ticket);
 
@@ -2656,10 +2552,7 @@ async function tratarBotaoFluxoConversacional(body, action) {
       await log('confirmar_msg_atualizada');
     } catch (err) {
       await log('confirmar_ERRO', { err: err.message, stack: err.stack?.substring(0, 300) });
-      console.error('Erro ao confirmar chamado:', err.message, err.stack);
-      // Manda erro pro João
-      await enviarMensagem('D0B0NEKTYLA', `🐛 Erro no fac_confirmar: \`${err.message}\`
-Stack: \`${(err.stack||'').substring(0,200)}\``).catch(()=>{});
+      console.error('Erro ao confirmar chamado:', err);
       await enviarMensagem(channel, '⚠️ Ops, tive um problema pra registrar seu chamado. Tente de novo ou use o formulário web.');
     }
     return;
