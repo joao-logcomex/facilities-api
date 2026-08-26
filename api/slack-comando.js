@@ -1797,13 +1797,13 @@ async function processarMensagemDM(evt) {
     const padraoSaudacao = /^(oi+|oii+|ola+|ol[áa]+|hey|hi|hello|alo|al[ôo]+|bom dia|boa tarde|boa noite|e a[ií]+|eai+|menu|ajuda|help|começar|comecar|start|teste)[\s!.?,]*$/i;
     const eSaudacaoPura = padraoSaudacao.test(texto);
 
-    // Se é primeira vez E é saudação pura → mostrar boas-vindas com botões
-    if (primeiraVez && eSaudacaoPura) {
-      await log('boas_vindas_primeira_vez');
-      await enviarMensagem(channel, 'Olá! Sou o assistente de Facilities da LogComex 👋', [
-        { type: 'section', text: { type: 'mrkdwn', text: '*Olá! Sou o assistente de Facilities da LogComex* 👋\n\nPode falar comigo naturalmente — me diz o que você precisa e eu cuido do resto!\n\nOu escolha uma categoria pra começar:' } },
+    // Saudação → sempre mostrar botões de categoria
+    if (eSaudacaoPura) {
+      await log('saudacao');
+      await enviarMensagem(channel, 'Olá! 👋 Sou o assistente de Facilities. Como posso te ajudar?', [
+        { type: 'section', text: { type: 'mrkdwn', text: '*Olá! 👋 Sou o assistente de Facilities da LogComex.*\n\nMe conta o que você precisa ou escolha uma categoria:' } },
         { type: 'actions', elements: [
-          { type: 'button', text: { type: 'plain_text', text: '🎁 Pedir brinde', emoji: true }, style: 'primary', action_id: 'bv_brinde', value: 'brindes' },
+          { type: 'button', text: { type: 'plain_text', text: '🎁 Brinde', emoji: true }, style: 'primary', action_id: 'bv_brinde', value: 'brindes' },
           { type: 'button', text: { type: 'plain_text', text: '📦 Logística', emoji: true }, action_id: 'bv_logistica', value: 'logistica' },
           { type: 'button', text: { type: 'plain_text', text: '🔧 Manutenção', emoji: true }, action_id: 'bv_manutencao', value: 'manutencao' },
         ]},
@@ -1813,21 +1813,6 @@ async function processarMensagemDM(evt) {
           { type: 'button', text: { type: 'plain_text', text: '📝 Outro assunto', emoji: true }, action_id: 'bv_outros', value: 'outros' },
         ]}
       ]);
-      return;
-    }
-
-    if (eSaudacaoPura) {
-      await log('saudacao_direta');
-      console.log('[processarMensagemDM] detectada saudação direta');
-      await enviarMensagem(channel, '👋 Olá! Sou o assistente do time de Facilities.', [
-        { type: 'header', text: { type: 'plain_text', text: '👋 Olá!', emoji: true } },
-        { type: 'section', text: { type: 'mrkdwn', text: `Sou o assistente do time de *Facilities da LogComex*. Posso te ajudar a abrir um chamado rapidinho! 🎯` } },
-        { type: 'section', text: { type: 'mrkdwn', text: `*Como funciona:*\nMe conta o que você precisa em uma mensagem normal. Vou entender, organizar e abrir o chamado pra você.\n\n*Exemplos:*\n• _"Preciso de um mouse novo"_\n• _"Ar condicionado da sala 3 com problema"_\n• _"Quero pedir alguns moleskines pra equipe"_\n• _"Envio via DHL para São Paulo"_` } },
-        { type: 'divider' },
-        { type: 'context', elements: [{ type: 'mrkdwn', text: '💡 Você também pode usar o formulário: <https://facilities-api.vercel.app|facilities-api.vercel.app>' }] }
-      ]);
-      await log('saudacao_enviada');
-      console.log('[processarMensagemDM] saudação enviada ✅');
       return;
     }
 
