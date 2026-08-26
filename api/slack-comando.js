@@ -612,7 +612,7 @@ async function gerarIdSequencial() {
       tx.set(contadorRef, { seq: proximo }, { merge: true });
       return proximo;
     });
-    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000));
+    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 1500));
     const novo = await Promise.race([fsPromise, fsTimeout]);
     return 'LC-' + String(novo).padStart(5, '0');
   } catch(e) {
@@ -667,7 +667,7 @@ async function criarTicketNoFirebase(payload) {
   let docId = id;
   try {
     const fsPromise = db.collection('tickets').add(docData);
-    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000));
+    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 1500));
     const docRef = await Promise.race([fsPromise, fsTimeout]);
     docId = docRef.id;
   } catch(e) { console.warn('Firestore add falhou/timeout (cota?):', e.message); }
@@ -1398,7 +1398,7 @@ function extrairDadosEnvio(texto) {
       });
       const channel = (await dmResp.json()).channel?.id;
       if (!channel) return res.status(200).send('');
-      await db.collection('slack_conversas').doc(userId).set({etapa:'aguardando_descricao',categoria,updatedAt:new Date()}, {merge:true});
+      await setEstado(userId, {etapa:'aguardando_descricao',categoria,updatedAt:new Date()});
       await fetch('https://slack.com/api/chat.postMessage', {
         method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${SLACK_BOT_TOKEN}`},
         body: JSON.stringify({channel, text:`Ótimo! Você escolheu *${LABELS[categoria]||categoria}*. Me conta com mais detalhes o que você precisa — pode falar à vontade! 😊`})
@@ -1443,25 +1443,10 @@ function extrairDadosEnvio(texto) {
           body: JSON.stringify({ event_id: eventId, user_id: evt.user, at: new Date().toISOString() }),
         });
         if (r.status === 409) return res.status(200).send(''); // duplicado
-        if (!r.ok && r.status !== 201) {
-          // Supabase falhou — usa fallback no Firestore
-          const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
-          const exists = await dedupeDoc.get();
-          if (exists.exists) return res.status(200).send('');
-          await dedupeDoc.set({ at: new Date(), user: evt.user });
-        }
+        // Se falhou mas não é conflito, continua (não bloqueia por dedup)
       } catch (e) {
-        console.warn('dedup falhou:', e.message);
-        // Em caso de falha total, tenta Firestore como fallback
-        try {
-          const dedupeDoc = db.collection('slack_eventos_processados').doc(eventId);
-          const exists = await dedupeDoc.get();
-          if (exists.exists) return res.status(200).send('');
-          await dedupeDoc.set({ at: new Date(), user: evt.user });
-        } catch (e2) {
-          console.warn('dedup fallback Firestore também falhou:', e2.message);
-          // Continua processando — melhor arriscar duplicata do que travar
-        }
+        console.warn('dedup Supabase falhou:', e.message);
+        // Continua processando — melhor arriscar duplicata do que travar o bot
       }
     }
 
@@ -1534,7 +1519,7 @@ async function getEstado(slackUserId) {
   // Fallback Firestore com timeout
   try {
     const fsPromise = db.collection('slack_conversas').doc(slackUserId).get();
-    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000));
+    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 1500));
     const doc = await Promise.race([fsPromise, fsTimeout]);
     if (!doc.exists) return null;
     const dados = doc.data();
@@ -1572,7 +1557,7 @@ async function setEstado(slackUserId, dados) {
   // Fallback Firestore com timeout
   try {
     const fsPromise = db.collection('slack_conversas').doc(slackUserId).set({ ...dados, updatedAt: new Date() }, { merge: true });
-    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000));
+    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 1500));
     await Promise.race([fsPromise, fsTimeout]);
   } catch(e) { console.warn('setEstado Firestore falhou/timeout:', e.message); }
 }
