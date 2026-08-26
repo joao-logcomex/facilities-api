@@ -2582,6 +2582,7 @@ async function tratarBotaoFluxoConversacional(body, action) {
         descricaoFinal = dados.descricao || dados.texto_original || '';
       }
 
+      console.log('[fac_confirmar] criando ticket:', dados.categoria, dados.titulo);
       const ticket = await criarTicketNoFirebase({
         categoria: dados.categoria,
         titulo: dados.titulo,
@@ -2591,6 +2592,7 @@ async function tratarBotaoFluxoConversacional(body, action) {
         dadosExtras,
         abertoPorAdmin: dados.pessoa_alvo ? dados.aberto_por_admin : null,
       });
+      console.log('[fac_confirmar] ticket criado:', ticket?.id);
       await log('confirmar_ticket_criado', { id: ticket.id });
       if (dados.pessoa_alvo) await dmNotificarDelegacao(dados.pessoa_alvo, dados.aberto_por_admin, ticket);
 
@@ -2645,7 +2647,10 @@ async function tratarBotaoFluxoConversacional(body, action) {
       await log('confirmar_msg_atualizada');
     } catch (err) {
       await log('confirmar_ERRO', { err: err.message, stack: err.stack?.substring(0, 300) });
-      console.error('Erro ao confirmar chamado:', err);
+      console.error('Erro ao confirmar chamado:', err.message, err.stack);
+      // Manda erro pro João
+      await enviarMensagem('D0B0NEKTYLA', `🐛 Erro no fac_confirmar: \`${err.message}\`
+Stack: \`${(err.stack||'').substring(0,200)}\``).catch(()=>{});
       await enviarMensagem(channel, '⚠️ Ops, tive um problema pra registrar seu chamado. Tente de novo ou use o formulário web.');
     }
     return;
