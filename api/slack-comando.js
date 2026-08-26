@@ -1887,6 +1887,8 @@ async function processarMensagemDM(evt) {
         prioridade: analise.prioridade,
         texto_original: texto,
       });
+      // Usa fac_confirmar com dados embutidos no value — não depende do estado
+      const dadosConfirmar = { categoria: analise.categoria, titulo: analise.titulo || texto, descricao: analise.descricao || texto, prioridade: analise.prioridade || 'media' };
       await enviarMensagem(channel, analise.resposta_usuario || 'Vou abrir o chamado:', [
         { type: 'section', text: { type: 'mrkdwn', text: `${analise.resposta_usuario || 'Resumo do chamado:'}
 
@@ -1894,9 +1896,9 @@ async function processarMensagemDM(evt) {
 *Título:* ${analise.titulo || texto}
 *Prioridade:* ${PRIOLABELS[analise.prioridade] || analise.prioridade}` } },
         { type: 'actions', elements: [
-          { type: 'button', text: { type: 'plain_text', text: '✅ Confirmar', emoji: true }, style: 'primary', action_id: 'confirmar_chamado', value: 'confirmar' },
-          { type: 'button', text: { type: 'plain_text', text: '✏️ Editar', emoji: true }, action_id: 'editar_chamado', value: 'editar' },
-          { type: 'button', text: { type: 'plain_text', text: '❌ Cancelar', emoji: true }, style: 'danger', action_id: 'cancelar_chamado', value: 'cancelar' },
+          { type: 'button', text: { type: 'plain_text', text: '✅ Confirmar', emoji: true }, style: 'primary', action_id: 'fac_confirmar', value: JSON.stringify(dadosConfirmar) },
+          { type: 'button', text: { type: 'plain_text', text: '✏️ Editar', emoji: true }, action_id: 'fac_editar', value: JSON.stringify(dadosConfirmar) },
+          { type: 'button', text: { type: 'plain_text', text: '❌ Cancelar', emoji: true }, style: 'danger', action_id: 'fac_cancelar', value: 'cancelar' },
         ]}
       ]);
       return;
