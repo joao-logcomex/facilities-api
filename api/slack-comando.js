@@ -1327,7 +1327,8 @@ function extrairDadosEnvio(texto) {
       try {
         const estado2 = await getEstado(userId2);
         if (!estado2 || estado2.etapa !== 'aguardando_confirmacao') {
-          await enviarMensagem(channel2, 'Não encontrei o chamado pendente. Tente novamente.');
+          // Estado expirou ou já foi processado — ignora silenciosamente
+          console.warn('confirmar_chamado: estado não encontrado para', userId2);
           return res.status(200).send('');
         }
         await limparEstado(userId2);
