@@ -1514,14 +1514,15 @@ async function setEstado(slackUserId, dados) {
   try {
     const SUPA_URL = process.env.SUPABASE_URL;
     const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    console.log('setEstado: salvando etapa', dados?.etapa, 'para', slackUserId);
+    // Usa upsert (PUT) para garantir que atualiza se já existe
     const r = await fetch(`${SUPA_URL}/rest/v1/slack_conversas`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': SUPA_KEY,
         'Authorization': `Bearer ${SUPA_KEY}`,
-        'Prefer': 'resolution=merge-duplicates',
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+        'on_conflict': 'slack_user_id',
       },
       body: JSON.stringify({
         slack_user_id: slackUserId,
@@ -1529,7 +1530,10 @@ async function setEstado(slackUserId, dados) {
         updated_at: new Date().toISOString(),
       }),
     });
-    console.log('setEstado: HTTP', r.status);
+    if (!r.ok) {
+      const errText = await r.text();
+      console.warn('setEstado HTTP', r.status, errText.substring(0, 100));
+    }
   } catch(e) { console.warn('setEstado falhou:', e.message); }
 }
 
