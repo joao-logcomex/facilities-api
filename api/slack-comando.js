@@ -661,17 +661,9 @@ async function criarTicketNoFirebase(payload) {
     ...dadosExtras,
   };
 
-  // Supabase é fonte de verdade — salva primeiro
+  // Só Supabase — Firestore sem cota, não toca nele
   await espelharTicketNoSupabase(docData).catch(e => console.warn('espelho supabase falhou:', e.message));
-  // Firestore com timeout de 4s — se cota esgotada, não trava o bot
-  let docId = id;
-  try {
-    const fsPromise = db.collection('tickets').add(docData);
-    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 1500));
-    const docRef = await Promise.race([fsPromise, fsTimeout]);
-    docId = docRef.id;
-  } catch(e) { console.warn('Firestore add falhou/timeout (cota?):', e.message); }
-  return { docId, id, ...docData };
+  return { docId: id, id, ...docData };
 }
 
 // Notifica a pessoa em nome de quem um admin abriu um chamado (delegação)
