@@ -1171,13 +1171,15 @@ module.exports = async function handler(req, res) {
     // ── Botões do fluxo conversacional (Slack DM via IA) ──
     if (actionId === 'fac_confirmar' || actionId === 'fac_editar' || actionId === 'fac_cancelar' ||
         actionId === 'fac_categoria' || actionId.startsWith('fac_')) {
-      // Processa SÍNCRONO (Vercel mata função após res.send)
+      // ACK imediato — Slack exige <3s, criarTicket pode demorar com Firestore
+      res.status(200).send('');
+      // Processa em background
       try {
         await tratarBotaoFluxoConversacional(body, action);
       } catch (err) {
         console.error('Erro botão fluxo:', err);
       }
-      return res.status(200).send('');
+      return;
     }
 
     // Não é brinde nem fac_* — deixa passar pra frente (não retorna aqui!).
