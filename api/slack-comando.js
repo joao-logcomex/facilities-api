@@ -1720,7 +1720,10 @@ async function processarMensagemDM(evt) {
 
     // ⭐ Motivo da avaliação por estrelas — captura a PRÓXIMA mensagem depois
     // que a pessoa clicou numa nota, sem precisar sair do Slack pra avaliar.
-    const estadoAvaliacao = await getEstado(userId);
+    const estadoAvaliacao = await Promise.race([
+      getEstado(userId),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2000))
+    ]).catch(() => null);
     if (estadoAvaliacao?.etapa === 'aguardando_motivo_avaliacao') {
       await log('avaliacao_motivo_recebido');
       const motivo = /^(pular|não|nao|n)$/i.test(texto) ? '' : texto;
@@ -2459,7 +2462,10 @@ async function tratarBotaoFluxoConversacional(body, action) {
   // Botões de categoria (fac_cat_<categoria>)
   if (actionId.startsWith('fac_cat_')) {
     const novaCategoria = actionId.replace('fac_cat_', '');
-    const estado = await getEstado(userId);
+    const estado = await Promise.race([
+      getEstado(userId),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2000))
+    ]).catch(() => null);
     if (!estado) return;
     const dadosAtualizados = { ...estado, categoria: novaCategoria, etapa: 'confirmar' };
     await setEstado(userId, dadosAtualizados);
@@ -2471,7 +2477,10 @@ async function tratarBotaoFluxoConversacional(body, action) {
   if (actionId.startsWith('fac_transp_')) {
     await log('transportadora_clicada');
     const transportadora = action.value || actionId.replace('fac_transp_', '');
-    const estado = await getEstado(userId);
+    const estado = await Promise.race([
+      getEstado(userId),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2000))
+    ]).catch(() => null);
     if (!estado) {
       await enviarMensagem(channel, '😕 Não consegui encontrar sua solicitação. Manda nova mensagem?');
       return;
