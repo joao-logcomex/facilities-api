@@ -1487,45 +1487,28 @@ module.exports.config = {
 
 // Estado da conversação armazenado no Firestore (uma doc por usuário Slack)
 async function getEstado(slackUserId) {
-  // Tenta Supabase primeiro
+  // Só Supabase — Firestore sem cota
   try {
     const SUPA_URL = process.env.SUPABASE_URL;
     const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const r = await fetch(`${SUPA_URL}/rest/v1/slack_conversas?slack_user_id=eq.${encodeURIComponent(slackUserId)}&limit=1`, {
       headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
     });
-    if (r.ok) {
-      const rows = await r.json();
-      if (!rows.length) return null;
-      const dados = rows[0];
-      const atualizadoEm = new Date(dados.updated_at || 0);
-      const duasHorasMs = 2 * 60 * 60 * 1000;
-      if (Date.now() - atualizadoEm.getTime() > duasHorasMs) {
-        await limparEstado(slackUserId);
-        return null;
-      }
-      return typeof dados.dados === 'string' ? JSON.parse(dados.dados) : dados.dados;
-    }
-  } catch(e) { console.warn('getEstado Supabase falhou:', e.message); }
-  // Fallback Firestore com timeout
-  try {
-    const fsPromise = db.collection('slack_conversas').doc(slackUserId).get();
-    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 1500));
-    const doc = await Promise.race([fsPromise, fsTimeout]);
-    if (!doc.exists) return null;
-    const dados = doc.data();
-    const atualizadoEm = dados.updatedAt?.toDate ? dados.updatedAt.toDate() : new Date(dados.updatedAt || 0);
-    const duasHorasMs = 2 * 60 * 60 * 1000;
-    if (Date.now() - atualizadoEm.getTime() > duasHorasMs) {
+    if (!r.ok) return null;
+    const rows = await r.json();
+    if (!rows.length) return null;
+    const dados = rows[0];
+    const atualizadoEm = new Date(dados.updated_at || 0);
+    if (Date.now() - atualizadoEm.getTime() > 2 * 60 * 60 * 1000) {
       await limparEstado(slackUserId);
       return null;
     }
-    return dados;
-  } catch(e) { console.warn('getEstado Firestore falhou/timeout:', e.message); return null; }
+    return typeof dados.dados === 'string' ? JSON.parse(dados.dados) : dados.dados;
+  } catch(e) { console.warn('getEstado falhou:', e.message); return null; }
 }
 
 async function setEstado(slackUserId, dados) {
-  // Tenta Supabase primeiro
+  // Só Supabase — Firestore sem cota
   try {
     const SUPA_URL = process.env.SUPABASE_URL;
     const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -1543,17 +1526,11 @@ async function setEstado(slackUserId, dados) {
         updated_at: new Date().toISOString(),
       }),
     });
-    return;
-  } catch(e) { console.warn('setEstado Supabase falhou:', e.message); }
-  // Fallback Firestore com timeout
-  try {
-    const fsPromise = db.collection('slack_conversas').doc(slackUserId).set({ ...dados, updatedAt: new Date() }, { merge: true });
-    const fsTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 1500));
-    await Promise.race([fsPromise, fsTimeout]);
-  } catch(e) { console.warn('setEstado Firestore falhou/timeout:', e.message); }
+  } catch(e) { console.warn('setEstado falhou:', e.message); }
 }
 
 async function limparEstado(slackUserId) {
+  // Só Supabase — Firestore sem cota
   try {
     const SUPA_URL = process.env.SUPABASE_URL;
     const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -1561,8 +1538,7 @@ async function limparEstado(slackUserId) {
       method: 'DELETE',
       headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
     });
-  } catch(e) { console.warn('limparEstado Supabase falhou:', e.message); }
-  db.collection('slack_conversas').doc(slackUserId).delete().catch(() => {});
+  } catch(e) { console.warn('limparEstado falhou:', e.message); }
 }
 
 // Análise da mensagem via Claude Haiku
