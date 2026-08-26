@@ -111,7 +111,7 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
   <div class="app-inner">
 
     <div class="hero-side">
-      <canvas id="heroCanvas" width="480" height="480"></canvas>
+      <div id="heroCanvas" style="width:480px;height:480px;position:relative;display:flex;align-items:center;justify-content:center"></div>
     </div>
 
     <div class="form-side">
@@ -169,175 +169,119 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
   </div>
 </div>
 
-<!-- ANIMAÇÃO CANVAS -->
+<!-- ANIMAÇÃO SVG LOGO -->
+<style>
+.hero-logo-wrap {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.hero-logo-scene {
+  position: relative;
+  animation: logoFloat 3.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 32px rgba(102,19,208,0.55)) drop-shadow(0 0 64px rgba(102,19,208,0.25));
+}
+@keyframes logoFloat {
+  0%,100% { transform: translateY(0px) rotateX(0deg); }
+  50%      { transform: translateY(-18px) rotateX(4deg); }
+}
+.hero-logo-scene svg {
+  width: 220px; height: 220px;
+  animation: logoRotate 8s linear infinite;
+  transform-style: preserve-3d;
+}
+@keyframes logoRotate {
+  0%   { transform: rotateY(0deg)   scale(1); }
+  25%  { transform: rotateY(90deg)  scale(0.88); }
+  50%  { transform: rotateY(180deg) scale(1); }
+  75%  { transform: rotateY(270deg) scale(0.88); }
+  100% { transform: rotateY(360deg) scale(1); }
+}
+.hero-glow-ring {
+  position: absolute; inset: -30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(102,19,208,0.18) 0%, rgba(102,19,208,0.06) 50%, transparent 70%);
+  animation: glowPulse 2.8s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%,100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.12); }
+}
+.hero-particles { position: absolute; inset: -80px; pointer-events: none; }
+</style>
+
+<div class="hero-logo-wrap">
+  <div class="hero-glow-ring"></div>
+  <canvas class="hero-particles" id="pCanvas"></canvas>
+  <div class="hero-logo-scene">
+    <svg viewBox="0 0 23.25 24.2" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Bloco branco principal (dois L) -->
+      <rect x="0" y="6.78" width="5.46" height="16.52" fill="white"/>
+      <rect x="0" y="17.98" width="17.28" height="5.32" fill="white"/>
+      <rect x="11.82" y="12.66" width="5.46" height="5.32" fill="white"/>
+      <rect x="11.82" y="17.98" width="5.46" height="5.32" fill="white"/>
+      <!-- Bloco laranja -->
+      <rect x="5.46" y="6.78" width="6.36" height="5.88" fill="#FE8F1C"/>
+      <!-- Quadrado separado -->
+      <rect x="18.7" y="19.4" width="4.55" height="4.8" fill="white"/>
+    </svg>
+  </div>
+</div>
+
 <script>
 (function(){
-  const cv = document.getElementById('heroCanvas');
+  const cv = document.getElementById('pCanvas');
+  if (!cv) return;
+  const resize = () => { cv.width = cv.offsetWidth; cv.height = cv.offsetHeight; };
+  resize();
+  window.addEventListener('resize', resize);
   const ctx = cv.getContext('2d');
-  const W = cv.width, H = cv.height, cx = W/2, cy = H/2;
+  const PTOT = 45;
+  const pts = Array.from({length:PTOT}, (_, i) => ({
+    a: (i/PTOT)*Math.PI*2 + Math.random()*.5,
+    r: 0.28 + Math.random()*.12,
+    spd: .004 + Math.random()*.005,
+    ph: Math.random()*Math.PI*2,
+    sz: Math.random()*.4+.2,
+    tilt: (Math.random()-.5)*.9,
+  }));
   let t = 0;
-
-  // Estrelas
-  const stars = Array.from({length:130}, () => ({
-    x:(Math.random()-.5)*W*1.4, y:(Math.random()-.5)*H*1.4,
-    r:Math.random()*.7+.15,
-    col:Math.random()>.7?'160,120,255':'255,255,255',
-    a:Math.random()*.25+.04, ph:Math.random()*Math.PI*2, sp:Math.random()*.002+.001
-  }));
-
-  // Partículas orbitando
-  const ORBS = Array.from({length:35}, (_,i) => ({
-    angle:(i/35)*Math.PI*2,
-    r:115+Math.random()*25,
-    speed:.007+Math.random()*.005,
-    size:Math.random()*.9+.4,
-    col:Math.random()>.5?'150,100,255':'230,220,255'
-  }));
-
-  // Projeção perspectiva
-  function proj(x, y, z) {
-    const fov = 500;
-    const dist = 600;
-    const scale = fov / (fov + z + dist);
-    return { sx: cx + x * scale, sy: cy + y * scale, scale, z };
-  }
-
-  // Rotação em Y
-  function rotY(x, z, a) {
-    return { rx: x*Math.cos(a) - z*Math.sin(a), rz: x*Math.sin(a) + z*Math.cos(a) };
-  }
-
-  // Polígono 3D
-  function poly3D(pts, fill, stroke) {
-    ctx.beginPath();
-    pts.forEach((p,i) => i===0 ? ctx.moveTo(p.sx,p.sy) : ctx.lineTo(p.sx,p.sy));
-    ctx.closePath();
-    ctx.fillStyle = fill; ctx.fill();
-    if(stroke){ ctx.strokeStyle=stroke; ctx.lineWidth=.6; ctx.stroke(); }
-  }
-
-  // Cubo/bloco 3D em perspectiva
-  function drawBlock(bx, by, bw, bh, rotAngle, float, colFront, colSide, colTop) {
-    const d = 32; // profundidade
-    // Vértices locais (centrados)
-    const vLocal = [
-      [bx,      by,      -d/2],
-      [bx+bw,   by,      -d/2],
-      [bx+bw,   by+bh,   -d/2],
-      [bx,      by+bh,   -d/2],
-      [bx,      by,       d/2],
-      [bx+bw,   by,       d/2],
-      [bx+bw,   by+bh,   d/2],
-      [bx,      by+bh,   d/2],
-    ];
-    // Rotaciona e projeta
-    const v = vLocal.map(([vx,vy,vz]) => {
-      const r = rotY(vx, vz, rotAngle);
-      return proj(r.rx, vy + float, r.rz);
-    });
-
-    const sinA = Math.sin(rotAngle);
-    const cosA = Math.cos(rotAngle);
-
-    // Face traseira (se visível)
-    if(cosA < 0) poly3D([v[4],v[5],v[6],v[7]], colFront, 'rgba(255,255,255,.1)');
-
-    // Face lateral esquerda
-    if(sinA < 0) poly3D([v[0],v[4],v[7],v[3]], colSide, 'rgba(255,255,255,.08)');
-    // Face lateral direita
-    if(sinA > 0) poly3D([v[1],v[5],v[6],v[2]], colSide, 'rgba(255,255,255,.08)');
-
-    // Face superior
-    poly3D([v[0],v[1],v[5],v[4]], colTop, 'rgba(255,255,255,.08)');
-
-    // Face frontal (se visível)
-    if(cosA >= 0) poly3D([v[0],v[1],v[2],v[3]], colFront, 'rgba(255,255,255,.1)');
-  }
-
-  function frame(){
-    ctx.clearRect(0,0,W,H);
-    const float = Math.sin(t*.75)*12;
-    const rot = t * .45; // rotação contínua
-
-    // Glow de fundo
-    const bg = ctx.createRadialGradient(cx,cy,0,cx,cy,W*.58);
-    bg.addColorStop(0,'rgba(45,8,93,.5)');
-    bg.addColorStop(.45,'rgba(20,5,50,.15)');
-    bg.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-
-    // Estrelas
-    stars.forEach(s=>{
-      const a=s.a*(.4+Math.sin(t*s.sp*55+s.ph)*.6);
-      ctx.beginPath(); ctx.arc(cx+s.x,cy+s.y,s.r,0,Math.PI*2);
-      ctx.fillStyle=`rgba(${s.col},${a})`; ctx.fill();
-    });
-
-    // Halos orbitais
-    ctx.save(); ctx.translate(cx, cy+float);
-    [95,125].forEach((r,ri)=>{
-      ctx.beginPath(); ctx.setLineDash([2,8]);
-      ctx.arc(0,0,r,0,Math.PI*2);
-      ctx.strokeStyle=ri===0
-        ?`rgba(102,19,208,${.22+Math.sin(t*.4)*.08})`
-        :`rgba(180,150,255,${.12+Math.sin(t*.3+1)*.05})`;
-      ctx.lineWidth=1; ctx.stroke(); ctx.setLineDash([]);
-    });
-    ctx.restore();
-
-    // Partículas orbitando
-    ORBS.forEach(o=>{
-      o.angle+=o.speed;
-      const ox=cx+Math.cos(o.angle)*o.r;
-      const oy=cy+Math.sin(o.angle)*o.r*.38+float;
-      const a=.12+Math.sin(o.angle*2+t)*.08;
-      ctx.beginPath(); ctx.arc(ox,oy,o.size,0,Math.PI*2);
-      ctx.fillStyle=`rgba(${o.col},${a})`; ctx.fill();
-    });
-
-    // ── LOGO 3D — favicon LogComex em blocos 3D ──
-    // Origem centrada em (0,0), coordenadas originais 0-32
-    // Centralizamos subtraindo 16 de x e y, multiplicamos por escala
-    const S = 7.5; // escala: cada pixel do favicon = 7.5px na tela
-
-    // Cores das faces
-    const wF = 'rgba(255,255,255,.97)';   // branco frente
-    const wS = 'rgba(200,200,230,.92)';   // branco lado
-    const wT = 'rgba(245,245,255,.99)';   // branco topo
-    const pF = 'rgba(102,19,208,.95)';    // roxo frente
-    const pS = 'rgba(65,10,160,.9)';      // roxo lado
-    const pT = 'rgba(130,55,220,.95)';    // roxo topo
-
-    // Blocos do favicon (x, y, w, h em coords 0-32, convertidas para centradas)
-    const blocks = [
-      // Bloco vertical esquerdo: M6 6H12.5V19.5H6
-      { x:(6-16)*S,  y:(6-16)*S,  w:6.5*S, h:13.5*S, cf:wF, cs:wS, ct:wT },
-      // Barra horizontal baixo: M6 19.5H19.5V26H6
-      { x:(6-16)*S,  y:(19.5-16)*S, w:13.5*S, h:6.5*S, cf:wF, cs:wS, ct:wT },
-      // Bloco direito meio: M19.5 12.5H26V19.5
-      { x:(19.5-16)*S, y:(12.5-16)*S, w:6.5*S, h:7*S, cf:wF, cs:wS, ct:wT },
-      // Bloco direito baixo: M19.5 19.5H26V26
-      { x:(19.5-16)*S, y:(19.5-16)*S, w:6.5*S, h:6.5*S, cf:wF, cs:wS, ct:wT },
-      // Bloco laranja/roxo: M13 6H19.5V12.5H13
-      { x:(13-16)*S, y:(6-16)*S,  w:6.5*S, h:6.5*S, cf:pF, cs:pS, ct:pT },
-    ];
-
-    // Sombra embaixo
-    ctx.save(); ctx.translate(cx, cy);
-    const shad=ctx.createRadialGradient(0,float+75,0,0,float+75,90);
-    shad.addColorStop(0,'rgba(80,10,180,.3)');
-    shad.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=shad;
-    ctx.beginPath(); ctx.ellipse(0,float+72,90,20,0,0,Math.PI*2); ctx.fill();
-    ctx.restore();
-
-    // Desenha cada bloco
-    blocks.forEach(b => {
-      drawBlock(b.x, b.y, b.w, b.h, rot, float, b.cf, b.cs, b.ct);
-    });
-
-    t+=.016;
+  function frame() {
     requestAnimationFrame(frame);
+    t += .012;
+    const W = cv.width, H = cv.height;
+    const cx = W/2, cy = H/2;
+    const R = Math.min(W,H) * 0.38;
+    ctx.clearRect(0,0,W,H);
+    const px = [], py = [];
+    pts.forEach(p => {
+      p.a += p.spd;
+      const r = R*(p.r + Math.sin(t*.4+p.ph)*.04);
+      const tiltY = Math.sin(p.tilt + t*.2)*.35;
+      const x = cx + Math.cos(p.a)*r;
+      const y = cy + Math.sin(p.a)*r*(0.5+tiltY*.2) + Math.sin(t*.7+p.ph)*8;
+      px.push(x); py.push(y);
+    });
+    // Lines
+    for (let i=0;i<PTOT;i++) for (let j=i+1;j<PTOT;j++) {
+      const d = Math.hypot(px[i]-px[j],py[i]-py[j]);
+      if (d < R*.55) {
+        const a = (1-d/(R*.55))*.32;
+        ctx.beginPath(); ctx.moveTo(px[i],py[i]); ctx.lineTo(px[j],py[j]);
+        ctx.strokeStyle = `rgba(254,143,28,${a.toFixed(2)})`; ctx.lineWidth=.7; ctx.stroke();
+      }
+    }
+    // Dots
+    pts.forEach((_,i) => {
+      const g = ctx.createRadialGradient(px[i],py[i],0,px[i],py[i],5);
+      g.addColorStop(0,'rgba(255,200,80,0.9)');
+      g.addColorStop(0.4,'rgba(254,143,28,0.6)');
+      g.addColorStop(1,'rgba(254,100,10,0)');
+      ctx.beginPath(); ctx.arc(px[i],py[i],5,0,Math.PI*2);
+      ctx.fillStyle=g; ctx.fill();
+      ctx.beginPath(); ctx.arc(px[i],py[i],1.5,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,220,100,0.95)'; ctx.fill();
+    });
   }
   frame();
 })();
