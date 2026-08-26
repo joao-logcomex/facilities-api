@@ -1874,7 +1874,7 @@ async function processarMensagemDM(evt) {
         texto_original: texto,
       });
       // Usa fac_confirmar com dados embutidos no value — não depende do estado
-      const dadosConfirmar = { categoria: analise.categoria, titulo: analise.titulo || texto, descricao: analise.descricao || texto, prioridade: analise.prioridade || 'media' };
+      const dadosConfirmar = { categoria: analise.categoria, titulo: analise.titulo || texto, descricao: analise.descricao || texto, prioridade: analise.prioridade || 'media', pessoa_alvo: estado?.pessoa_alvo || null, aberto_por_admin: estado?.aberto_por_admin || null };
       await enviarMensagem(channel, analise.resposta_usuario || 'Vou abrir o chamado:', [
         { type: 'section', text: { type: 'mrkdwn', text: `${analise.resposta_usuario || 'Resumo do chamado:'}
 
