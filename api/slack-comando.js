@@ -1422,48 +1422,37 @@ function extrairDadosEnvio(texto) {
     if (!evt.text && !arquivoAudio) return res.status(200).send('');
     if (!evt.user || !evt.channel) return res.status(200).send('');
 
-    // ACK IMEDIATO — Slack exige resposta em <3s ou reenvia
-    res.status(200).send('');
-
-    // Dedup via Supabase — evita reprocessamento
+    // Dedup Supabase com timeout curto (800ms)
     if (eventId) {
       try {
         const SUPA_URL = process.env.SUPABASE_URL;
         const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        // Tenta inserir — se já existe (conflict), retorna 409 e ignoramos
-        const r = await fetch(`${SUPA_URL}/rest/v1/slack_eventos_processados`, {
+        const dp = fetch(`${SUPA_URL}/rest/v1/slack_eventos_processados`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPA_KEY,
-            'Authorization': `Bearer ${SUPA_KEY}`,
-            'Prefer': 'return=minimal',
-          },
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'return=minimal' },
           body: JSON.stringify({ event_id: eventId, user_id: evt.user, at: new Date().toISOString() }),
         });
-        if (r.status === 409) return res.status(200).send(''); // duplicado
-        // Se falhou mas não é conflito, continua (não bloqueia por dedup)
-      } catch (e) {
-        console.warn('dedup Supabase falhou:', e.message);
-        // Continua processando — melhor arriscar duplicata do que travar o bot
-      }
+        const dt = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 800));
+        const dr = await Promise.race([dp, dt]);
+        if (dr.status === 409) return res.status(200).send(''); // já processado
+      } catch (e) { console.warn('dedup:', e.message); }
     }
 
-    // Se veio como áudio (sem texto), transcreve antes de seguir. O texto
-    // resultante entra no MESMO fluxo de sempre — nada mais precisa mudar.
+    // ACK — depois do dedup mas antes do processamento pesado
+    res.status(200).send('');
+
+    // Áudio: transcreve antes de processar
     if (!evt.text && arquivoAudio) {
       const textoTranscrito = await transcreverAudioSlack(arquivoAudio.url_private_download || arquivoAudio.url_private, arquivoAudio.mimetype);
       if (!textoTranscrito) {
         await enviarMensagem(evt.channel, '🎤 Não consegui entender esse áudio. Pode tentar de novo ou escrever a mensagem?').catch(() => {});
-        return res.status(200).send('');
+        return;
       }
       evt.text = textoTranscrito;
       await enviarMensagem(evt.channel, `🎤 Ouvi: _"${textoTranscrito}"_`).catch(() => {});
     }
 
-    // Manda ack imediato pro Slack ANTES de processar (evita duplicatas por timeout)
-    res.status(200).send('');
-    // Processa em background
+    // Processa
     try {
       await processarMensagemDM(evt);
     } catch (err) {
