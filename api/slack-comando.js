@@ -2329,7 +2329,11 @@ async function processarMensagemDM(evt) {
   } catch (err) {
     await log('ERRO', { err: err.message, stack: err.stack?.substring(0, 400) });
     console.error('[processarMensagemDM] ERRO:', err.message, err.stack);
-    // Tenta avisar o usuário mesmo em erro
+    // Manda o erro pro João via DM para debug
+    try {
+      await enviarMensagem('D0B0NEKTYLA', `🐛 Erro no bot: \`${err.message}\`
+Stack: \`${(err.stack||'').substring(0,300)}\``);
+    } catch {}
     try {
       await enviarMensagem(channel, '😕 Ops! Tive um probleminha. Tenta de novo ou usa o formulário: facilities-api.vercel.app');
     } catch (e2) { console.error('  falha mensagem fallback:', e2.message); }
