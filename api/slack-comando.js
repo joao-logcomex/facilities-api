@@ -2521,8 +2521,11 @@ async function tratarBotaoFluxoConversacional(body, action) {
 
   if (actionId === 'fac_confirmar') {
     await log('confirmar_inicio');
+    // Debug: avisar que chegou aqui
+    await enviarMensagem('D0B0NEKTYLA', `🔧 fac_confirmar iniciado por ${userId}`).catch(()=>{});
     let dados;
     try { dados = JSON.parse(action.value || '{}'); } catch { dados = await getEstado(userId) || {}; }
+    await enviarMensagem('D0B0NEKTYLA', `🔧 dados: cat=${dados?.categoria}, titulo=${dados?.titulo?.substring(0,30)}`).catch(()=>{});
     await log('confirmar_dados', { cat: dados.categoria, titulo: (dados.titulo || '').substring(0, 40) });
 
     // Buscar info do usuário
