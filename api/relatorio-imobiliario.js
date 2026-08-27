@@ -540,6 +540,139 @@ module.exports = async (req, res) => {
     }
   }
 
+  // ── Encomenda: criação automática via e-mail do condomínio ──
+  if (req.method === 'POST' && req.query && req.query.encomenda === '1') {
+    const authHeader = req.headers.authorization;
+    if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return res.status(401).json({ ok: false, error: 'unauthorized' });
+    }
+    try {
+      const { rastreamento, tipo, embalagem, info, dataEntrada, emailId } = req.body || {};
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      if (emailId) {
+        const dupCheck = await fetch(
+          `${SUPABASE_URL}/rest/v1/tickets?email_id_origem=eq.${encodeURIComponent(emailId)}&limit=1`,
+          { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+        );
+        const dupData = await dupCheck.json();
+        if (dupData && dupData.length > 0) {
+          return res.status(200).json({ ok: true, duplicate: true, id: dupData[0].id });
+        }
+      }
+
+      let novoId;
+      try {
+        const seqRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/next_ticket_id`, {
+          method: 'POST',
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
+          body: '{}',
+        });
+        const seqData = await seqRes.json();
+        novoId = `LOG-${seqData}`;
+      } catch (e) {
+        novoId = `LOG-ENC-${Date.now()}`;
+      }
+
+      const descricao = [
+        '📦 Encomenda recebida no balcão do Condomínio Centro Cívico.',
+        rastreamento ? `Rastreamento: ${rastreamento}` : null,
+        tipo ? `Tipo: ${tipo}` : null,
+        embalagem ? `Embalagem: ${embalagem}` : null,
+        info ? `Transportadora/Info: ${info}` : null,
+        dataEntrada ? `Data de entrada: ${dataEntrada}` : null,
+      ].filter(Boolean).join('\n');
+
+      const agora = new Date().toISOString();
+      const ticket = {
+        id: novoId,
+        titulo: `📦 Encomenda — ${info || rastreamento || 'Balcão'}`,
+        descricao,
+        categoria: 'encomenda',
+        status: 'Aguardando retirada',
+        data_abertura: agora,
+        nome: 'Portaria — Condomínio',
+        user_email: 'facilities@logcomex.com',
+        email_id_origem: emailId || null,
+        rastreamento: rastreamento || null,
+        sem_sla: true,
+      };
+
+      const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/tickets`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify(ticket),
+      });
+      if (!sbRes.ok) {
+        const err = await sbRes.text();
+        throw new Error(`Supabase: ${err}`);
+      }
+
+      db.collection('tickets').doc(novoId).set({
+        ...ticket,
+        data_abertura: admin.firestore.Timestamp.fromDate(new Date(agora)),
+      }).catch(e => console.error('Firestore bg error:', e));
+
+      fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          channel: 'U09MEN4BS0N',
+          text: `📦 *Nova encomenda no balcão!*\n${rastreamento ? `Rastreamento: \`${rastreamento}\`` : ''}\n${info ? `Via: ${info}` : ''}\n${embalagem ? `Embalagem: ${embalagem}` : ''}\nChamado criado: *${novoId}*`,
+        }),
+      }).catch(e => console.error('Slack DM erro:', e));
+
+      return res.status(200).json({ ok: true, id: novoId });
+    } catch (e) {
+      console.error('encomenda erro:', e);
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Encomendas: atualizar status ──
+  if (req.method === 'POST' && req.query && req.query.atualizar_encomenda === '1') {
+    try {
+      const id = req.query.id;
+      const novoStatus = req.query.status;
+      if (!id || !novoStatus) return res.status(400).json({ ok: false, error: 'id e status obrigatórios' });
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/tickets?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ status: novoStatus }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      // Atualizar Firestore em background
+      db.collection('tickets').doc(id).update({ status: novoStatus }).catch(()=>{});
+      return res.status(200).json({ ok: true });
+    } catch(e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Encomendas: listar ──
+  if (req.query && req.query.encomendas_lista === '1') {
+    try {
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const r = await fetch(
+        `${SUPABASE_URL}/rest/v1/tickets?categoria=eq.encomenda&order=data_abertura.desc&limit=200`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+      );
+      const data = await r.json();
+      return res.status(200).json({ ok: true, tickets: data });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
   // ── Cron diário: alerta de SLA (chamados perto de vencer ou já vencidos) ──
   // Chamado pelo Vercel Cron (vercel.json), seg-sex 8h30 Curitiba. Protegido
   // pelo CRON_SECRET que o próprio Vercel injeta como Bearer automaticamente.
