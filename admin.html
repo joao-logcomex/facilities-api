@@ -570,6 +570,10 @@
 
     <!-- ── LOGÍSTICA ── -->
     <div class="nav-section-label">Logística</div>
+    <div class="nav-item" onclick="nav('encomendas',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Encomendas
+    </div>
     <div class="nav-item" onclick="nav('logistica',this)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       Envios
@@ -866,6 +870,60 @@
 
 
   <!-- PÁGINA HISTÓRICO PIPEFY -->
+  <!-- ── PÁGINA: ENCOMENDAS ── -->
+  <div id="page-encomendas" class="page" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h2 style="font-size:1.3rem;font-weight:700;color:#fff;margin:0">📦 Encomendas</h2>
+        <p style="color:rgba(255,255,255,0.45);font-size:0.8rem;margin:.2rem 0 0">Correspondências recebidas no Balcão — Condomínio Centro Cívico</p>
+      </div>
+      <button onclick="carregarEncomendas()" style="background:rgba(102,19,208,0.2);border:1px solid rgba(102,19,208,0.4);color:#a78bfa;padding:.45rem 1rem;border-radius:8px;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.18-3.36"/></svg>
+        Atualizar
+      </button>
+    </div>
+    <div id="enc-kanban" style="display:flex;gap:12px;align-items:flex-start">
+      <div class="enc-col" style="flex:1;min-width:180px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden">
+        <div class="enc-col-header" onclick="toggleEncCol(this)" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(245,158,11,0.08)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+            <span style="font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.8)">Aguardando retirada</span>
+            <span class="enc-count" style="background:rgba(245,158,11,0.2);color:#f59e0b;font-size:0.7rem;font-weight:700;padding:1px 7px;border-radius:20px">0</span>
+          </div>
+          <svg class="enc-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="enc-col-body" data-status="Aguardando retirada" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:60px">
+          <div class="enc-empty" style="color:rgba(255,255,255,0.25);font-size:0.75rem;text-align:center;padding:16px 0">Nenhuma encomenda</div>
+        </div>
+      </div>
+      <div class="enc-col" style="flex:1;min-width:180px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden">
+        <div class="enc-col-header" onclick="toggleEncCol(this)" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(102,19,208,0.08)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>
+            <span style="font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.8)">Verificação</span>
+            <span class="enc-count" style="background:rgba(139,92,246,0.2);color:#8b5cf6;font-size:0.7rem;font-weight:700;padding:1px 7px;border-radius:20px">0</span>
+          </div>
+          <svg class="enc-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="enc-col-body" data-status="Verificação" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:60px">
+          <div class="enc-empty" style="color:rgba(255,255,255,0.25);font-size:0.75rem;text-align:center;padding:16px 0">Nenhuma encomenda</div>
+        </div>
+      </div>
+      <div class="enc-col" style="flex:1;min-width:180px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden">
+        <div class="enc-col-header" onclick="toggleEncCol(this)" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(16,185,129,0.07)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block"></span>
+            <span style="font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.8)">Concluído</span>
+            <span class="enc-count" style="background:rgba(16,185,129,0.2);color:#10b981;font-size:0.7rem;font-weight:700;padding:1px 7px;border-radius:20px">0</span>
+          </div>
+          <svg class="enc-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="enc-col-body" data-status="Concluído" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:60px">
+          <div class="enc-empty" style="color:rgba(255,255,255,0.25);font-size:0.75rem;text-align:center;padding:16px 0">Nenhuma encomenda</div>
+        </div>
+      </div>
+    </div>
+  </div>
     <!-- ═══ ESTOQUE BRINDES ═══ -->
     <div class="page" id="page-estoque">
       <div class="topbar"><div class="page-title">🎁 Estoque de Brindes</div></div>
@@ -2539,6 +2597,7 @@ function nav(page, el) {
   if(page==='logistica'&&typeof renderLogistica==='function') renderLogistica();
   if(page==='controle-saidas'&&typeof renderSaidas==='function') renderSaidas();
   if(page==='historico'&&typeof renderHistorico==='function') renderHistorico();
+  if(page==='encomendas') carregarEncomendas();
   // Atualiza hash sem provocar scroll/jump
   if (window.location.hash !== '#'+page) {
     history.replaceState(null, '', '#'+page);
@@ -5406,6 +5465,74 @@ window.renderHistorico = renderHistorico;
     setTimeout(() => { window.print(); qrFiltroAtivo = prev; renderQRCodes(); }, 600);
   }
   window.imprimirTodosQR = imprimirTodosQR;
+
+  // ── ENCOMENDAS ──
+  async function carregarEncomendas() {
+    try {
+      const r = await fetch('/api/relatorio-imobiliario?encomendas_lista=1');
+      const data = await r.json();
+      if (!data.ok) throw new Error(data.error);
+      renderEncKanban(data.tickets || []);
+    } catch(e) {
+      console.error('Erro ao carregar encomendas:', e);
+    }
+  }
+
+  function renderEncKanban(tickets) {
+    const colunas = ['Aguardando retirada', 'Verificação', 'Concluído'];
+    colunas.forEach(status => {
+      const col = document.querySelector(`.enc-col-body[data-status="${status}"]`);
+      if (!col) return;
+      const items = tickets.filter(t => t.status === status);
+      // Atualizar contador
+      const header = col.previousElementSibling;
+      const badge = header ? header.querySelector('.enc-count') : null;
+      if (badge) badge.textContent = items.length;
+      // Renderizar cards
+      if (items.length === 0) {
+        col.innerHTML = '<div class="enc-empty" style="color:rgba(255,255,255,0.25);font-size:0.75rem;text-align:center;padding:16px 0">Nenhuma encomenda</div>';
+        return;
+      }
+      col.innerHTML = items.map(t => {
+        const data = t.data_abertura ? new Date(t.data_abertura).toLocaleDateString('pt-BR') : '';
+        const rastr = t.rastreamento || '';
+        const titulo = (t.titulo || '').replace('📦 Encomenda — ', '');
+        const proximoStatus = status === 'Aguardando retirada' ? 'Verificação' : status === 'Verificação' ? 'Concluído' : null;
+        const btnMover = proximoStatus ? `<button onclick="moverEncomenda('${t.id}','${proximoStatus}')" style="margin-top:8px;width:100%;background:rgba(102,19,208,0.2);border:1px solid rgba(102,19,208,0.35);color:#a78bfa;padding:5px 8px;border-radius:6px;font-size:0.72rem;cursor:pointer;font-family:inherit">
+          ${proximoStatus === 'Verificação' ? '🔍 Mover para Verificação' : '✅ Concluir'}
+        </button>` : '';
+        return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:10px 12px">
+          <div style="font-size:0.78rem;font-weight:600;color:#fff;margin-bottom:4px">📦 ${titulo}</div>
+          ${rastr ? `<div style="font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:2px">🔎 ${rastr}</div>` : ''}
+          <div style="font-size:0.7rem;color:rgba(255,255,255,0.3)">${data} · #${t.id}</div>
+          ${btnMover}
+        </div>`;
+      }).join('');
+    });
+  }
+
+  async function moverEncomenda(id, novoStatus) {
+    try {
+      const token = await window._auth.currentUser.getIdToken(true);
+      // Atualiza via endpoint próprio para não expor chave no frontend
+      await fetch(`/api/relatorio-imobiliario?atualizar_encomenda=1&id=${encodeURIComponent(id)}&status=${encodeURIComponent(novoStatus)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      carregarEncomendas();
+    } catch(e) { console.error('Erro ao mover encomenda:', e); }
+  }
+
+  function toggleEncCol(header) {
+    const body = header.nextElementSibling;
+    const chevron = header.querySelector('.enc-chevron');
+    const collapsed = body.style.display === 'none';
+    body.style.display = collapsed ? 'flex' : 'none';
+    if (chevron) chevron.style.transform = collapsed ? '' : 'rotate(-90deg)';
+  }
+  window.carregarEncomendas = carregarEncomendas;
+  window.moverEncomenda = moverEncomenda;
+  window.toggleEncCol = toggleEncCol;
 </script>
 </body>
 </html>
