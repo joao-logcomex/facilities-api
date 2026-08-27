@@ -169,206 +169,22 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
   </div>
 </div>
 
-<!-- ANIMAÇÃO 3D CSS LOGO -->
+<!-- LOGO -->
 <style>
 .hero-logo-wrap {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
-  position: relative;
-  perspective: 900px;
-}
-
-/* Anel de glow de fundo */
-.hero-glow-ring {
-  position: absolute;
-  width: 340px; height: 340px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(102,19,208,0.22) 0%, rgba(102,19,208,0.08) 45%, transparent 70%);
-  animation: glowPulse 3s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes glowPulse {
-  0%,100% { transform: scale(1);   opacity: 0.7; }
-  50%      { transform: scale(1.15); opacity: 1; }
-}
-
-/* Canvas de partículas */
-.hero-particles { position: absolute; inset: -80px; pointer-events: none; }
-
-/* Cena 3D — levita + inclina suavemente */
-.logo3d-scene {
-  position: relative;
-  transform-style: preserve-3d;
-  animation: float3d 4s ease-in-out infinite;
-  filter: drop-shadow(0 24px 40px rgba(0,0,0,0.55));
-}
-@keyframes float3d {
-  0%,100% { transform: rotateX(12deg) rotateY(-18deg) translateY(0px);   }
-  25%     { transform: rotateX(10deg) rotateY(0deg)   translateY(-16px);  }
-  50%     { transform: rotateX(14deg) rotateY(18deg)  translateY(-24px);  }
-  75%     { transform: rotateX(10deg) rotateY(8deg)   translateY(-12px);  }
-}
-
-/* Bloco 3D base */
-.b3 {
-  position: absolute;
-  transform-style: preserve-3d;
-}
-/* Face frontal */
-.b3 .f  { position: absolute; inset: 0; }
-/* Face traseira */
-.b3 .bk { position: absolute; inset: 0; }
-
-/* Wrapper de todos os blocos */
-.logo3d-blocks {
-  position: relative;
-  width: 232px; height: 242px;
-  transform-style: preserve-3d;
-}
-
-/* ── ESCALA: viewBox 23.25×24.2 → 232×242px (×10) ── */
-
-/* Bloco L esquerdo vertical: x0 y6.78 w5.46 h16.52 */
-#bLv { left:0px; top:67.8px; width:54.6px; height:165.2px; }
-/* Bloco L barra inferior: x0 y17.98 w17.28 h5.32 */
-#bLh { left:0px; top:179.8px; width:172.8px; height:53.2px; }
-/* Bloco L direito topo: x11.82 y12.66 w5.46 h5.32 */
-#bRt { left:118.2px; top:126.6px; width:54.6px; height:53.2px; }
-/* Bloco laranja: x5.46 y6.78 w6.36 h5.88 */
-#bOr { left:54.6px; top:67.8px; width:63.6px; height:58.8px; }
-/* Quadrado separado: x18.7 y19.4 w4.55 h4.8 */
-#bSq { left:187px; top:194px; width:45.5px; height:48px; }
-
-/* Profundidade dos blocos (espessura 3D) */
-:root { --d: 18px; }
-
-/* Cores de face */
-.b3.white .f  { background: #ffffff; }
-.b3.white .r  { background: #c8c8c8; }
-.b3.white .bt { background: #b0b0b0; }
-
-.b3.orange .f  { background: #FE8F1C; }
-.b3.orange .r  { background: #c86a0a; }
-.b3.orange .bt { background: #b55e08; }
-
-/* Brilho sutil na face frontal */
-.b3 .f::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 55%);
-  pointer-events: none;
 }
 </style>
-
 <div class="hero-logo-wrap">
-  <div class="hero-glow-ring"></div>
-  <canvas class="hero-particles" id="pCanvas"></canvas>
-
-  <div class="logo3d-scene">
-    <div class="logo3d-blocks">
-
-      <!-- Bloco L esquerdo vertical (branco) -->
-      <div class="b3 white" id="bLv">
-        <div class="f"  style="transform:translateZ(9px)"></div>
-        <div class="r"  style="position:absolute;top:0;right:-9px;width:18px;height:100%;background:#c8c8c8;transform:rotateY(90deg);transform-origin:left center;"></div>
-        <div class="bt" style="position:absolute;bottom:-9px;left:0;width:100%;height:18px;background:#b0b0b0;transform:rotateX(-90deg);transform-origin:center top;"></div>
-        <div class="bk" style="position:absolute;inset:0;background:#e8e8e8;transform:translateZ(-9px)"></div>
-      </div>
-
-      <!-- Bloco L barra horizontal (branco) -->
-      <div class="b3 white" id="bLh">
-        <div class="f"  style="transform:translateZ(9px)"></div>
-        <div class="r"  style="position:absolute;top:0;right:-9px;width:18px;height:100%;background:#c8c8c8;transform:rotateY(90deg);transform-origin:left center;"></div>
-        <div class="bt" style="position:absolute;bottom:-9px;left:0;width:100%;height:18px;background:#b0b0b0;transform:rotateX(-90deg);transform-origin:center top;"></div>
-        <div class="bk" style="position:absolute;inset:0;background:#e8e8e8;transform:translateZ(-9px)"></div>
-      </div>
-
-      <!-- Bloco L direito topo (branco) -->
-      <div class="b3 white" id="bRt">
-        <div class="f"  style="transform:translateZ(9px)"></div>
-        <div class="r"  style="position:absolute;top:0;right:-9px;width:18px;height:100%;background:#c8c8c8;transform:rotateY(90deg);transform-origin:left center;"></div>
-        <div class="bt" style="position:absolute;bottom:-9px;left:0;width:100%;height:18px;background:#b0b0b0;transform:rotateX(-90deg);transform-origin:center top;"></div>
-        <div class="bk" style="position:absolute;inset:0;background:#e8e8e8;transform:translateZ(-9px)"></div>
-      </div>
-
-      <!-- Bloco laranja -->
-      <div class="b3 orange" id="bOr">
-        <div class="f"  style="transform:translateZ(9px)"></div>
-        <div class="r"  style="position:absolute;top:0;right:-9px;width:18px;height:100%;background:#c86a0a;transform:rotateY(90deg);transform-origin:left center;"></div>
-        <div class="bt" style="position:absolute;bottom:-9px;left:0;width:100%;height:18px;background:#b55e08;transform:rotateX(-90deg);transform-origin:center top;"></div>
-        <div class="bk" style="position:absolute;inset:0;background:#e07010;transform:translateZ(-9px)"></div>
-      </div>
-
-      <!-- Quadrado separado (branco) -->
-      <div class="b3 white" id="bSq">
-        <div class="f"  style="transform:translateZ(9px)"></div>
-        <div class="r"  style="position:absolute;top:0;right:-9px;width:18px;height:100%;background:#c8c8c8;transform:rotateY(90deg);transform-origin:left center;"></div>
-        <div class="bt" style="position:absolute;bottom:-9px;left:0;width:100%;height:18px;background:#b0b0b0;transform:rotateX(-90deg);transform-origin:center top;"></div>
-        <div class="bk" style="position:absolute;inset:0;background:#e8e8e8;transform:translateZ(-9px)"></div>
-      </div>
-
-    </div>
-  </div>
+  <svg width="180" height="180" viewBox="0 0 23.25 24.2" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="6.78" width="5.46" height="16.52" fill="white"/>
+    <rect x="0" y="17.98" width="17.28" height="5.32" fill="white"/>
+    <rect x="11.82" y="12.66" width="5.46" height="10.64" fill="white"/>
+    <rect x="5.46" y="6.78" width="6.36" height="5.88" fill="#FE8F1C"/>
+    <rect x="18.7" y="19.4" width="4.55" height="4.8" fill="white"/>
+  </svg>
 </div>
-
-<script>
-(function(){
-  const cv = document.getElementById('pCanvas');
-  if (!cv) return;
-  const resize = () => { cv.width = cv.offsetWidth; cv.height = cv.offsetHeight; };
-  resize();
-  window.addEventListener('resize', resize);
-  const ctx = cv.getContext('2d');
-  const PTOT = 45;
-  const pts = Array.from({length:PTOT}, (_, i) => ({
-    a: (i/PTOT)*Math.PI*2 + Math.random()*.5,
-    r: 0.28 + Math.random()*.12,
-    spd: .004 + Math.random()*.005,
-    ph: Math.random()*Math.PI*2,
-    sz: Math.random()*.4+.2,
-    tilt: (Math.random()-.5)*.9,
-  }));
-  let t = 0;
-  function frame() {
-    requestAnimationFrame(frame);
-    t += .012;
-    const W = cv.width, H = cv.height;
-    const cx = W/2, cy = H/2;
-    const R = Math.min(W,H) * 0.38;
-    ctx.clearRect(0,0,W,H);
-    const px = [], py = [];
-    pts.forEach(p => {
-      p.a += p.spd;
-      const r = R*(p.r + Math.sin(t*.4+p.ph)*.04);
-      const tiltY = Math.sin(p.tilt + t*.2)*.35;
-      const x = cx + Math.cos(p.a)*r;
-      const y = cy + Math.sin(p.a)*r*(0.5+tiltY*.2) + Math.sin(t*.7+p.ph)*8;
-      px.push(x); py.push(y);
-    });
-    // Lines
-    for (let i=0;i<PTOT;i++) for (let j=i+1;j<PTOT;j++) {
-      const d = Math.hypot(px[i]-px[j],py[i]-py[j]);
-      if (d < R*.55) {
-        const a = (1-d/(R*.55))*.32;
-        ctx.beginPath(); ctx.moveTo(px[i],py[i]); ctx.lineTo(px[j],py[j]);
-        ctx.strokeStyle = `rgba(254,143,28,${a.toFixed(2)})`; ctx.lineWidth=.7; ctx.stroke();
-      }
-    }
-    // Dots
-    pts.forEach((_,i) => {
-      const g = ctx.createRadialGradient(px[i],py[i],0,px[i],py[i],5);
-      g.addColorStop(0,'rgba(255,200,80,0.9)');
-      g.addColorStop(0.4,'rgba(254,143,28,0.6)');
-      g.addColorStop(1,'rgba(254,100,10,0)');
-      ctx.beginPath(); ctx.arc(px[i],py[i],5,0,Math.PI*2);
-      ctx.fillStyle=g; ctx.fill();
-      ctx.beginPath(); ctx.arc(px[i],py[i],1.5,0,Math.PI*2);
-      ctx.fillStyle='rgba(255,220,100,0.95)'; ctx.fill();
-    });
-  }
-  frame();
-})();
-</script>
 
 <!-- LÓGICA -->
 <script>
