@@ -230,13 +230,13 @@
   .sla-bar-track { flex: 1; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
   .sla-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
   .sla-bar-count { width: 24px; text-align: right; color: var(--ink2); font-weight: 600; }
-  .kanban-board { display: grid; grid-template-columns: repeat(7, minmax(280px, 1fr)); gap: 12px; overflow-x: auto; overflow-y: hidden; padding-bottom: 0.5rem; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+  .kanban-board { display: grid; grid-template-columns: repeat(8, minmax(260px, 1fr)); gap: 12px; overflow-x: auto; overflow-y: hidden; padding-bottom: 0.5rem; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
   .kanban-board::-webkit-scrollbar { height: 14px; }
   .kanban-board::-webkit-scrollbar-track { background: var(--surface2); border-radius: 100px; margin: 0 4px; }
   .kanban-board::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 100px; border: 2px solid var(--surface2); }
   .kanban-board::-webkit-scrollbar-thumb:hover { background: #5B11BA; }
-  @media (max-width: 1400px) { .kanban-board { grid-template-columns: repeat(7, 280px); } }
-  @media (max-width: 1000px) { .kanban-board { grid-template-columns: repeat(7, 280px); } }
+  @media (max-width: 1400px) { .kanban-board { grid-template-columns: repeat(8, 260px); } }
+  @media (max-width: 1000px) { .kanban-board { grid-template-columns: repeat(8, 260px); } }
   .kanban-col { background: var(--surface2); border-radius: var(--radius); overflow: hidden; min-height: 400px; min-width: 0; }
   .kanban-col-top { padding: 0.7rem 1rem; display: flex; align-items: center; justify-content: space-between; }
   .kanban-col-body { padding: 0.75rem; }
@@ -570,10 +570,6 @@
 
     <!-- ── LOGÍSTICA ── -->
     <div class="nav-section-label">Logística</div>
-    <div class="nav-item" onclick="nav('encomendas',this)">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-      Encomendas
-    </div>
     <div class="nav-item" onclick="nav('logistica',this)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       Envios
@@ -755,6 +751,7 @@
       <div class="kanban-col" id="col-andamento"><div class="kanban-col-top" style="background:#FF6B2B"><span style="font-size:0.82rem;font-weight:700;color:#fff;">⚙️ Em andamento</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-andamento">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-andamento"></div></div></div>
       <div class="kanban-col" id="col-pronto-retirada"><div class="kanban-col-top" style="background:#eab308"><span style="font-size:0.82rem;font-weight:700;color:#fff;">🎁 Pronto p/ retirada</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-pronto-retirada">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-pronto-retirada"></div></div></div>
       <div class="kanban-col" id="col-pedido-compra"><div class="kanban-col-top" style="background:#0891b2"><span style="font-size:0.82rem;font-weight:700;color:#fff;">🛒 Pedido de compra</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-pedido-compra">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-pedido-compra"></div></div></div>
+      <div class="kanban-col" id="col-encomendas"><div class="kanban-col-top" style="background:#b45309"><span style="font-size:0.82rem;font-weight:700;color:#fff;">📦 Encomendas</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-encomendas">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-encomendas"></div></div></div>
       <div class="kanban-col" id="col-concluido"><div class="kanban-col-top" style="background:#12b76a"><span style="font-size:0.82rem;font-weight:700;color:#fff;">✅ Concluído</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-concluido">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-concluido"></div></div></div>
       <div class="kanban-col" id="col-cancelado"><div class="kanban-col-top" style="background:#94a3b8"><span style="font-size:0.82rem;font-weight:700;color:#fff;">🚫 Cancelado</span><span style="background:rgba(255,255,255,0.25);color:#fff;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:100px;" id="cnt-cancelado">0</span></div><div class="kanban-col-body"><div class="kanban-cards" id="cards-cancelado"></div></div></div>
     </div>
@@ -1576,6 +1573,18 @@ const isAdminOrViewer = (email) => {
       allTickets = newDocs;
       window.allTickets = allTickets;
       updateMetrics(); renderTable(); renderKanban(); updateBadge(); if(typeof initPeriodo==='function'){initPeriodo();}else{updateCharts();}
+      // Mesclar encomendas do Supabase na coluna do Kanban
+      fetch('/api/relatorio-imobiliario?encomendas_lista=1')
+        .then(r=>r.json()).then(data=>{
+          if(data.ok && data.tickets && data.tickets.length){
+            const enc = data.tickets.filter(t=>t.status==='Aguardando retirada'||t.status==='Verificação');
+            if(enc.length){
+              allTickets=[...newDocs,...enc];
+              window.allTickets=allTickets;
+              renderKanban();
+            }
+          }
+        }).catch(()=>{});
       if(document.getElementById('page-logistica')?.classList.contains('active') && typeof renderLogistica==='function') renderLogistica();
       // Sem isso, quem cai direto nessa tela (ex: viewers como Leandro/Milena,
       // que são redirecionados pra cá automaticamente) via um "0" em tudo —
@@ -1935,9 +1944,11 @@ function updateBadge() {
       'Pedido de compra': 'pedido-compra',
       'Concluído': 'concluido',
       'Cancelado': 'cancelado',
+      'Aguardando retirada': 'encomendas',
+      'Verificação': 'encomendas',
     };
 
-    const cols = ['solicitacoes','aprovacao-cs','andamento','pronto-retirada','pedido-compra','concluido','cancelado'];
+    const cols = ['solicitacoes','aprovacao-cs','andamento','pronto-retirada','pedido-compra','encomendas','concluido','cancelado'];
     const buckets = {};
     cols.forEach(c => buckets[c] = []);
 
@@ -2597,7 +2608,6 @@ function nav(page, el) {
   if(page==='logistica'&&typeof renderLogistica==='function') renderLogistica();
   if(page==='controle-saidas'&&typeof renderSaidas==='function') renderSaidas();
   if(page==='historico'&&typeof renderHistorico==='function') renderHistorico();
-  if(page==='encomendas') carregarEncomendas();
   // Atualiza hash sem provocar scroll/jump
   if (window.location.hash !== '#'+page) {
     history.replaceState(null, '', '#'+page);
