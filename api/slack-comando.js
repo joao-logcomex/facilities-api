@@ -644,6 +644,77 @@ async function criarTicketNoFirebase(payload) {
   return { docId: id, id, ...docData };
 }
 
+// Extrai dados estruturados de envio a partir do texto livre — usado pelo
+// fluxo simples da IA, que hoje só gera descrição em texto corrido e perde
+// a chance de preencher os campos que o admin usa (Transportadora, Dados do
+// Envio). Sempre "best effort": só preenche o que conseguir reconhecer com
+// confiança, nunca inventa nada.
+function extrairDadosEnvio(texto) {
+  const t = texto || '';
+  const resultado = { transportadora: null, endereco_envio: null, tipo_entrega: null, destinatario: null, temCpf: false };
+
+  // Transportadora — mencionada explicitamente tem sempre prioridade
+  if (/\bdhl\b/i.test(t)) { resultado.transportadora = 'DHL'; resultado.tipo_entrega = 'Envio via DHL'; }
+  else if (/\bsedex\b|\bcorreios?\b/i.test(t)) { resultado.transportadora = 'Correio'; resultado.tipo_entrega = 'Envio pelos Correios'; }
+  else if (/\buber\s*flash\b|\buber\b/i.test(t)) { resultado.transportadora = 'Uber Flash'; resultado.tipo_entrega = 'Envio via Uber Flash'; }
+  else if (/\bmotoboy\b/i.test(t)) { resultado.transportadora = 'Motoboy'; resultado.tipo_entrega = 'Envio via Motoboy'; }
+
+  // Destinatário: "para Fulano de Tal" (até vírgula/ponto/"Endereço")
+  const matchDest = t.match(/\bpara\s+([A-ZÀ-Úa-zà-ú][A-ZÀ-Úa-zà-ú\s]{2,60}?)(?=[.,]|\s+[Ee]nder|\s*$)/);
+  if (matchDest) resultado.destinatario = matchDest[1].trim();
+
+  // CEP
+  const matchCep = t.match(/\b(\d{5}-?\d{3})\b/);
+  const cep = matchCep ? matchCep[1] : null;
+
+  // CPF (obrigatório pra envios via DHL) — aceita com ou sem pontuação
+  const matchCpf = t.match(/\bcpf\s*:?\s*(\d{3}\.?\d{3}\.?\d{3}-?\d{2})\b/i) || t.match(/\b(\d{3}\.\d{3}\.\d{3}-\d{2})\b/);
+  const cpf = matchCpf ? matchCpf[1] : null;
+  resultado.temCpf = !!cpf;
+
+  // Telefone (formato BR, com ou sem +55/DDD entre parênteses)
+  const matchTel = t.match(/(\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}-?\d{4}\b/);
+  const telefone = matchTel ? matchTel[0].trim() : null;
+
+  // Cidade/UF (formato "Curitiba/PR" ou "Curitiba - PR")
+  const matchCidadeUf = t.match(/\b([A-ZÀ-Ú][a-zà-ú]+(?:\s[A-ZÀ-Ú][a-zà-ú]+)*)\s*[\/\-]\s*([A-Z]{2})\b/);
+  const cidade = matchCidadeUf ? matchCidadeUf[1] : null;
+
+  // Fallback: se ninguém mencionou a transportadora, decide pela cidade —
+  // Curitiba é onde fica a sede, entrega local sai via Uber Flash; fora
+  // de Curitiba vai pelos Correios por padrão (DHL só quando pedido).
+  if (!resultado.transportadora && cidade) {
+    if (/curitiba/i.test(cidade)) {
+      resultado.transportadora = 'Uber Flash';
+      resultado.tipo_entrega = 'Envio via Uber Flash';
+    } else {
+      resultado.transportadora = 'Correio';
+      resultado.tipo_entrega = 'Envio pelos Correios';
+    }
+  }
+
+  // Rua + número (formato "Rua Fulano, 123" ou "Av. Fulano 123")
+  const matchRua = t.match(/\b(Rua|Av\.?|Avenida|Alameda|Travessa|Rod\.?|Rodovia)\s+([^,]+?,?\s*\d+[A-Za-z0-9\s\/°ºapt.]*)/i);
+
+  if (cep || matchCidadeUf || matchRua) {
+    const partesCpfTel = [];
+    if (cpf) partesCpfTel.push(`CPF: ${cpf}`);
+    if (telefone) partesCpfTel.push(`Tel: ${telefone}`);
+    resultado.endereco_envio = {
+      nome: resultado.destinatario || '',
+      cpf_tel: partesCpfTel.join(' | '),
+      cep: cep || '',
+      rua: matchRua ? `${matchRua[1]} ${matchRua[2]}`.replace(/\s*,\s*$/, '') : '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidade: cidade || '',
+      estado: matchCidadeUf ? matchCidadeUf[2] : '',
+    };
+  }
+  return resultado;
+}
+
 // Notifica a pessoa em nome de quem um admin abriu um chamado (delegação)
 async function dmNotificarDelegacao(pessoaAlvo, abertoPorAdmin, ticket) {
   try {
@@ -1222,76 +1293,6 @@ module.exports = async function handler(req, res) {
     const userId2 = body.user?.id || body.message?.bot_id;
     const channel2 = body.channel?.id;
 
-// Extrai dados estruturados de envio a partir do texto livre — usado pelo
-// fluxo simples da IA, que hoje só gera descrição em texto corrido e perde
-// a chance de preencher os campos que o admin usa (Transportadora, Dados do
-// Envio). Sempre "best effort": só preenche o que conseguir reconhecer com
-// confiança, nunca inventa nada.
-function extrairDadosEnvio(texto) {
-  const t = texto || '';
-  const resultado = { transportadora: null, endereco_envio: null, tipo_entrega: null, destinatario: null, temCpf: false };
-
-  // Transportadora — mencionada explicitamente tem sempre prioridade
-  if (/\bdhl\b/i.test(t)) { resultado.transportadora = 'DHL'; resultado.tipo_entrega = 'Envio via DHL'; }
-  else if (/\bsedex\b|\bcorreios?\b/i.test(t)) { resultado.transportadora = 'Correio'; resultado.tipo_entrega = 'Envio pelos Correios'; }
-  else if (/\buber\s*flash\b|\buber\b/i.test(t)) { resultado.transportadora = 'Uber Flash'; resultado.tipo_entrega = 'Envio via Uber Flash'; }
-  else if (/\bmotoboy\b/i.test(t)) { resultado.transportadora = 'Motoboy'; resultado.tipo_entrega = 'Envio via Motoboy'; }
-
-  // Destinatário: "para Fulano de Tal" (até vírgula/ponto/"Endereço")
-  const matchDest = t.match(/\bpara\s+([A-ZÀ-Úa-zà-ú][A-ZÀ-Úa-zà-ú\s]{2,60}?)(?=[.,]|\s+[Ee]nder|\s*$)/);
-  if (matchDest) resultado.destinatario = matchDest[1].trim();
-
-  // CEP
-  const matchCep = t.match(/\b(\d{5}-?\d{3})\b/);
-  const cep = matchCep ? matchCep[1] : null;
-
-  // CPF (obrigatório pra envios via DHL) — aceita com ou sem pontuação
-  const matchCpf = t.match(/\bcpf\s*:?\s*(\d{3}\.?\d{3}\.?\d{3}-?\d{2})\b/i) || t.match(/\b(\d{3}\.\d{3}\.\d{3}-\d{2})\b/);
-  const cpf = matchCpf ? matchCpf[1] : null;
-  resultado.temCpf = !!cpf;
-
-  // Telefone (formato BR, com ou sem +55/DDD entre parênteses)
-  const matchTel = t.match(/(\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}-?\d{4}\b/);
-  const telefone = matchTel ? matchTel[0].trim() : null;
-
-  // Cidade/UF (formato "Curitiba/PR" ou "Curitiba - PR")
-  const matchCidadeUf = t.match(/\b([A-ZÀ-Ú][a-zà-ú]+(?:\s[A-ZÀ-Ú][a-zà-ú]+)*)\s*[\/\-]\s*([A-Z]{2})\b/);
-  const cidade = matchCidadeUf ? matchCidadeUf[1] : null;
-
-  // Fallback: se ninguém mencionou a transportadora, decide pela cidade —
-  // Curitiba é onde fica a sede, entrega local sai via Uber Flash; fora
-  // de Curitiba vai pelos Correios por padrão (DHL só quando pedido).
-  if (!resultado.transportadora && cidade) {
-    if (/curitiba/i.test(cidade)) {
-      resultado.transportadora = 'Uber Flash';
-      resultado.tipo_entrega = 'Envio via Uber Flash';
-    } else {
-      resultado.transportadora = 'Correio';
-      resultado.tipo_entrega = 'Envio pelos Correios';
-    }
-  }
-
-  // Rua + número (formato "Rua Fulano, 123" ou "Av. Fulano 123")
-  const matchRua = t.match(/\b(Rua|Av\.?|Avenida|Alameda|Travessa|Rod\.?|Rodovia)\s+([^,]+?,?\s*\d+[A-Za-z0-9\s\/°ºapt.]*)/i);
-
-  if (cep || matchCidadeUf || matchRua) {
-    const partesCpfTel = [];
-    if (cpf) partesCpfTel.push(`CPF: ${cpf}`);
-    if (telefone) partesCpfTel.push(`Tel: ${telefone}`);
-    resultado.endereco_envio = {
-      nome: resultado.destinatario || '',
-      cpf_tel: partesCpfTel.join(' | '),
-      cep: cep || '',
-      rua: matchRua ? `${matchRua[1]} ${matchRua[2]}`.replace(/\s*,\s*$/, '') : '',
-      numero: '',
-      complemento: '',
-      bairro: '',
-      cidade: cidade || '',
-      estado: matchCidadeUf ? matchCidadeUf[2] : '',
-    };
-  }
-  return resultado;
-}
 
     if (actionId === 'confirmar_chamado') {
       try {
@@ -2080,7 +2081,8 @@ async function processarMensagemDM(evt) {
     // - Comercial e outros → só Mini Agenda, Caneta, Garrafa Preta, Sacola Preta + SEM aprovação
     if (cat === 'brindes' && !dados.brindes_solicitados) {
       // Determina se é CS ou não (define o que pode pedir)
-      const ehCS = isCentroCustoCS(slackUser?.centroCusto);
+      const infoBrinde = await getUserInfo(userId);
+      const ehCS = isCentroCustoCS(infoBrinde?.centroCusto);
       dados.ehCS = ehCS;
 
       // Função: detecta se o texto é uma lista válida COM NÚMEROS
@@ -2112,7 +2114,7 @@ async function processarMensagemDM(evt) {
         return;
       } else {
         // Primeiro contato: mostra lista (filtrada por CS/Comercial) + sempre pede números
-        await log('brindes_pergunta_lista', { ehCS, cc: slackUser?.centroCusto });
+        await log('brindes_pergunta_lista', { ehCS, cc: infoBrinde?.centroCusto });
         await setEstado(userId, { etapa: 'aguardando_brindes_texto', ...dados });
 
         let fields, contexto;
