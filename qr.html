@@ -24,7 +24,19 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
 
 /* APP */
 #app{min-height:100vh;padding-top:56px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 22% 55%,rgba(45,8,93,.65) 0%,transparent 55%),radial-gradient(ellipse at 78% 40%,rgba(102,19,208,.12) 0%,transparent 50%),#0B0D19}
-.app-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:2rem;gap:2.5rem}
+.app-inner{display:flex;flex-direction:row;align-items:center;justify-content:center;width:100%;max-width:1180px;padding:2rem;gap:4rem}
+
+/* ===== LOGO 3D ===== */
+.logo-side{flex:0 0 auto;display:flex;align-items:center;justify-content:center;perspective:1100px;perspective-origin:50% 45%}
+.stage{width:clamp(240px,26vw,380px);aspect-ratio:1;position:relative;transform-style:preserve-3d;animation:l3dFloat 7s ease-in-out infinite}
+@keyframes l3dFloat{0%,100%{transform:translateY(-10px)}50%{transform:translateY(10px)}}
+.stage::before{content:'';position:absolute;inset:-18%;border-radius:50%;background:radial-gradient(circle,rgba(142,68,237,.34) 0%,rgba(102,19,208,.14) 42%,transparent 68%);filter:blur(28px);transform:translateZ(-90px);animation:l3dPulse 5s ease-in-out infinite}
+@keyframes l3dPulse{0%,100%{opacity:.65;transform:translateZ(-90px) scale(.92)}50%{opacity:1;transform:translateZ(-90px) scale(1.06)}}
+.floor{position:absolute;left:8%;right:8%;bottom:-12%;height:26px;background:radial-gradient(ellipse,rgba(102,19,208,.5) 0%,transparent 70%);filter:blur(12px);transform:translateZ(-60px)}
+.logo3d{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;animation:l3dOrbit 9s linear infinite}
+.logo3d svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.layer{position:absolute;inset:0;transform-style:preserve-3d;backface-visibility:visible}
+@keyframes l3dOrbit{from{transform:rotateX(-12deg) rotateY(0deg)}to{transform:rotateX(-12deg) rotateY(360deg)}}
 
 /* CANVAS */
 
@@ -67,11 +79,22 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
 .btn-n{background:transparent;color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.08);padding:9px 22px;border-radius:var(--rs);font-family:'Poppins',sans-serif;font-size:.83rem;cursor:pointer;transition:all .2s}
 .btn-n:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.6)}
 
-@media(max-width:860px){
+@media(max-width:900px){
   .app-inner{flex-direction:column;padding:1.25rem;gap:1.5rem}
-  .form-side{max-width:100%;width:100%}
+  .form-side{max-width:100%;width:100%;text-align:center}
+  .form-side .eyebrow{margin-left:auto;margin-right:auto}
+  .stage{width:min(200px,50vw)}
   .row2{grid-template-columns:1fr}
   .hero-title{font-size:2rem}
+}
+@media(max-width:520px){
+  .stage{width:150px;animation:none}
+  .logo3d{animation:none;transform:rotateY(-20deg) rotateX(8deg)}
+  .stage::before{animation:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .stage,.stage::before,.logo3d{animation:none!important}
+  .logo3d{transform:rotateY(-20deg) rotateX(8deg)}
 }
 </style>
 </head>
@@ -107,8 +130,15 @@ html,body{width:100%;min-height:100%;background:#0B0D19;font-family:'Poppins',sa
   <div class="app-inner">
 
 
-    <div class="form-side" style="text-align:center">
-      <div class="eyebrow" style="margin-left:auto;margin-right:auto"><span>●</span> CHAMADO RÁPIDO</div>
+    <div class="logo-side">
+      <div class="stage">
+        <div class="floor"></div>
+        <div class="logo3d" id="logo3d"></div>
+      </div>
+    </div>
+
+    <div class="form-side">
+      <div class="eyebrow"><span>●</span> CHAMADO RÁPIDO</div>
       <h1 class="hero-title">O que você<br>precisa?</h1>
       <p class="hero-sub">Reporte um problema de <strong>manutenção</strong> ou <strong>suprimentos</strong> neste local. O time de Facilities resolve pra você.</p>
 
@@ -248,6 +278,36 @@ function novoChamado(){
   document.getElementById('successCard').style.display='none';
 }
 window.novoChamado=novoChamado;
+</script>
+
+<script>
+/* Logo 3D — extrusao por camadas em CSS 3D (sem dependencia externa).
+   Paths sao o simbolo oficial LogComex, extraidos do SVG do header. */
+(function(){
+  var el = document.getElementById('logo3d');
+  if(!el) return;
+  var VB='0 0.9 22.35 22.3',
+      P_SQUARE='M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z',
+      P_L='M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z',
+      P_BLOCK='M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z';
+  function svg(fl,fb,extra){
+    return '<svg viewBox="'+VB+'" xmlns="http://www.w3.org/2000/svg">'+(extra||'')
+      +'<path d="'+P_L+'" fill="'+fl+'"/>'
+      +'<path d="'+P_SQUARE+'" fill="'+fl+'"/>'
+      +'<path d="'+P_BLOCK+'" fill="'+fb+'"/></svg>';
+  }
+  var n=21, step=1.6, html='';
+  for(var i=n;i>=1;i--){
+    var t=i/n, lum=0.30+(1-t)*0.28;
+    var side='rgb('+Math.round(120*lum)+','+Math.round(40*lum)+','+Math.round(215*lum)+')';
+    var sideB='rgb('+Math.round(70*lum)+','+Math.round(20*lum)+','+Math.round(140*lum)+')';
+    html+='<div class="layer" style="transform:translateZ('+(-i*step)+'px)">'+svg(side,sideB)+'</div>';
+  }
+  html+='<div class="layer" style="transform:translateZ(1px)">'+svg('url(#l3dW)','url(#l3dP)',
+    '<defs><linearGradient id="l3dW" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#E2D0FA"/></linearGradient>'
+    +'<linearGradient id="l3dP" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8E44ED"/><stop offset="100%" stop-color="#5B11BA"/></linearGradient></defs>')+'</div>';
+  el.innerHTML=html;
+})();
 </script>
 </body>
 </html>
