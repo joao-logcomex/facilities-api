@@ -1196,52 +1196,6 @@
     if (isAdmin) {
       wrap.innerHTML = '<a href="admin.html" class="header-btn admin-btn">Painel Admin →</a>';
     }
-    // Carregar stats dinâmicos do hero
-    loadLxStats();
-  }
-
-  // Stats do bloco "Territory" (chamados 2026, SLA, tempo médio)
-  async function loadLxStats() {
-    try {
-      const inicio2026 = new Date('2026-01-01');
-      // Tickets de 2026
-      const q1 = query(collection(db, 'tickets'), where('data_abertura', '>=', inicio2026));
-      const snap = await getDocs(q1);
-      const all = snap.docs.map(d => d.data());
-      const total = all.length;
-
-      // SLA
-      let dentro = 0, fora = 0;
-      all.forEach(t => {
-        if (t.dentroSLA === true) dentro++;
-        else if (t.dentroSLA === false) fora++;
-      });
-      const totalSLA = dentro + fora;
-      const slaPct = totalSLA > 0 ? Math.round((dentro / totalSLA) * 100) : 0;
-
-      // Tempo médio (em dias)
-      const concluidos = all.filter(t => t.status === 'Concluído' && t.data_conclusao && t.data_abertura);
-      let tempoMedio = 0;
-      if (concluidos.length > 0) {
-        const somaDias = concluidos.reduce((acc, t) => {
-          const ab = t.data_abertura?.toDate ? t.data_abertura.toDate() : new Date(t.data_abertura);
-          const cc = t.data_conclusao?.toDate ? t.data_conclusao.toDate() : new Date(t.data_conclusao);
-          const diff = (cc - ab) / (1000 * 60 * 60 * 24); // dias
-          return acc + (isNaN(diff) ? 0 : Math.max(diff, 0));
-        }, 0);
-        tempoMedio = Math.round(somaDias / concluidos.length);
-      }
-
-      document.getElementById('lx-stat-tickets').textContent = total;
-      document.getElementById('lx-stat-sla').textContent = slaPct + '%';
-      document.getElementById('lx-stat-tempo').textContent = tempoMedio + 'd';
-    } catch (e) {
-      console.warn('Erro carregando stats:', e);
-      // Fallback: valores estáticos plausíveis
-      document.getElementById('lx-stat-tickets').textContent = '—';
-      document.getElementById('lx-stat-sla').textContent = '99%';
-      document.getElementById('lx-stat-tempo').textContent = '3d';
-    }
   }
 
   window.doLoginGoogle = async () => {
@@ -2260,40 +2214,28 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   try {
-    const { getFirestore, collection, getDocs, query, where, Timestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    // Lê do endpoint que consulta o Supabase (cache de borda 4min).
+    // Antes varria a coleção 'tickets' inteira no Firestore, que está sem cota.
+    const r = await fetch('/api/relatorio-imobiliario?tv=facilities&ano=2026');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    if (!d || d.ok !== true) throw new Error(d && d.error ? d.error : 'resposta inválida');
 
-    // Aguardar Firebase estar pronto (max 8s)
-    let db;
-    for (let i = 0; i < 80; i++) {
-      if (window.db) { db = window.db; break; }
-      await new Promise(r => setTimeout(r, 100));
-    }
-    if (!db) return;
+    const total = Number(d.total);
+    const sla = d.sla_pct === null || d.sla_pct === undefined ? null : Number(d.sla_pct);
+    if (!Number.isFinite(total)) throw new Error('total ausente');
 
-    const inicio2026 = Timestamp.fromDate(new Date('2026-01-01'));
-    const snap = await getDocs(query(
-      collection(db, 'tickets'),
-      where('data_abertura', '>=', inicio2026)
-    ));
-
-    // Todos os tickets de 2026 — sistema + Pipefy (já sincronizados no Firebase)
-    const tickets = snap.docs.map(d => d.data());
-    const total = tickets.length;
-
-    // SLA 2026 — campo dentroSLA salvo em cada ticket
-    const comSLA = tickets.filter(t => t.dentroSLA === true || t.dentroSLA === false);
-    const dentroDeSLA = comSLA.filter(t => t.dentroSLA === true).length;
-    const sla = comSLA.length > 0 ? Math.round(dentroDeSLA / comSLA.length * 100) : 0;
-
-    // Animar contadores
     animarContador(document.getElementById('ls-chamados'), total, '');
-    animarContador(document.getElementById('ls-sla'), sla, '%');
-    // 'Tempo médio' removido: era valor fixo, não calculado
+    if (sla === null || !Number.isFinite(sla)) {
+      const el = document.getElementById('ls-sla');
+      if (el) el.closest('.lgv-kpi').style.visibility = 'hidden';
+    } else {
+      animarContador(document.getElementById('ls-sla'), sla, '%');
+    }
 
   } catch(e) {
-    console.log('Stats login erro:', e);
-    // Fallback com valores aproximados
-    // Sem número inventado: se a leitura falhar, esconde o bloco de KPIs
+    console.error('[login] KPIs:', e);
+    // Sem número inventado: se a leitura falhar, esconde o bloco
     const box = document.getElementById('lgv-kpis');
     if (box) box.style.visibility = 'hidden';
   }
