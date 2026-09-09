@@ -41,22 +41,24 @@ const EXTENSAO_POR_MIME = {
 };
 
 async function transcreverAudioSlack(url, mimetype) {
-  const debugLog = async (etapa, extra = {}) => {
-    try { await db.collection('slack_debug_logs').add({ at: new Date(), etapa: `audio_${etapa}`, ...extra }); } catch {}
+  const debugLog = (etapa, extra = {}) => {
+    const falhou = /falhou|excecao|sem_/.test(etapa);
+    const detalhe = Object.keys(extra).length ? JSON.stringify(extra).substring(0, 400) : '';
+    (falhou ? console.error : console.log)(`[audio] ${etapa}`, detalhe);
   };
-  if (!url) { await debugLog('sem_url'); return null; }
-  if (!GROQ_API_KEY) { await debugLog('sem_groq_key'); return null; }
+  if (!url) { debugLog('sem_url'); return null; }
+  if (!GROQ_API_KEY) { debugLog('sem_groq_key'); return null; }
   try {
-    await debugLog('iniciando', { url_prefix: url.substring(0, 60), mimetype: mimetype || '(nenhum)' });
+    debugLog('iniciando', { url_prefix: url.substring(0, 60), mimetype: mimetype || '(nenhum)' });
     const audioResp = await fetch(url, { headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` } });
     if (!audioResp.ok) {
       const corpo = await audioResp.text().catch(() => '');
-      await debugLog('download_falhou', { status: audioResp.status, corpo: corpo.substring(0, 300) });
+      debugLog('download_falhou', { status: audioResp.status, corpo: corpo.substring(0, 300) });
       return null;
     }
     const audioBuffer = await audioResp.arrayBuffer();
     const primeirosBytes = Buffer.from(audioBuffer.slice(0, 32));
-    await debugLog('download_ok', {
+    debugLog('download_ok', {
       tamanho_bytes: audioBuffer.byteLength,
       content_type_resposta: audioResp.headers.get('content-type') || '(nenhum)',
       primeiros_bytes_hex: primeirosBytes.toString('hex'),
@@ -80,14 +82,14 @@ async function transcreverAudioSlack(url, mimetype) {
     });
     if (!r.ok) {
       const corpo = await r.text().catch(() => '');
-      await debugLog('groq_falhou', { status: r.status, corpo: corpo.substring(0, 500), extensao_usada: extensao });
+      debugLog('groq_falhou', { status: r.status, corpo: corpo.substring(0, 500), extensao_usada: extensao });
       return null;
     }
     const data = await r.json();
-    await debugLog('sucesso', { texto: (data.text || '').substring(0, 200) });
+    debugLog('sucesso', { texto: (data.text || '').substring(0, 200) });
     return (data.text || '').trim() || null;
   } catch (e) {
-    await debugLog('excecao', { mensagem: e.message });
+    debugLog('excecao', { mensagem: e.message });
     return null;
   }
 }
@@ -1631,23 +1633,20 @@ async function processarMensagemDM(evt) {
   const texto = (evt.text || '').trim();
   const textoLower = texto.toLowerCase();
 
-  const log = async (etapa, extra = {}) => {
+  const log = (etapa, extra = {}) => {
     const importante = /erro/i.test(etapa);
     if (!importante && process.env.SLACK_DEBUG_VERBOSE !== 'true') return;
-    try {
-      await db.collection('slack_debug_logs').add({
-        at: new Date(), user: userId, texto: texto.substring(0, 80), etapa, ...extra,
-      });
-    } catch {}
+    const detalhe = JSON.stringify({ user: userId, texto: texto.substring(0, 80), ...extra }).substring(0, 500);
+    (importante ? console.error : console.log)(`[dm] ${etapa}`, detalhe);
   };
 
-  await log('inicio');
+  log('inicio');
   console.log('[processarMensagemDM] início | user:', userId, '| channel:', channel, '| texto:', texto.substring(0, 50));
 
   try {
     // Comandos especiais
     if (/^(cancelar|cancel|sair|reset)$/i.test(texto)) {
-      await log('cancelar');
+      log('cancelar');
       await limparEstado(userId);
       await enviarMensagem(channel, '✅ Conversa reiniciada. Pode mandar uma nova solicitação quando quiser! 👋');
       return;
@@ -1657,7 +1656,7 @@ async function processarMensagemDM(evt) {
     // que a pessoa clicou numa nota, sem precisar sair do Slack pra avaliar.
     const estadoAvaliacao = await getEstado(userId);
     if (estadoAvaliacao?.etapa === 'aguardando_motivo_avaliacao') {
-      await log('avaliacao_motivo_recebido');
+      log('avaliacao_motivo_recebido');
       const motivo = /^(pular|não|nao|n)$/i.test(texto) ? '' : texto;
       try {
         const solicitante = await getUserInfo(userId);
@@ -1687,7 +1686,7 @@ async function processarMensagemDM(evt) {
       ? texto.match(/abrir\s+(?:um\s+)?chamado\s+(?:no\s+nome\s+d[aeo]|em\s+nome\s+d[aeo])\s+(?:a\s+|o\s+)?(.+)/i)
       : null;
     if (matchDelegacao) {
-      await log('delegacao_tentativa', { alvo: matchDelegacao[1].substring(0, 40) });
+      log('delegacao_tentativa', { alvo: matchDelegacao[1].substring(0, 40) });
       const solicitante = await getUserInfo(userId);
       const nomeOuEmailAlvo = matchDelegacao[1].trim().replace(/[.!?]+$/, '').split(/[,;]|\s+(?:ela|ele|que|pediu|precisa)\s+/i)[0].trim().replace(/[.!?,;]+$/, '').trim();
       let pessoa = null;
@@ -1751,7 +1750,7 @@ async function processarMensagemDM(evt) {
 
     // Se é primeira vez E é saudação pura → mostrar boas-vindas com botões
     if (primeiraVez && eSaudacaoPura) {
-      await log('boas_vindas_primeira_vez');
+      log('boas_vindas_primeira_vez');
       await enviarMensagem(channel, 'Olá! Sou o assistente de Facilities da LogComex 👋', [
         { type: 'section', text: { type: 'mrkdwn', text: '*Olá! Sou o assistente de Facilities da LogComex* 👋\n\nPode falar comigo naturalmente — me diz o que você precisa e eu cuido do resto!\n\nOu escolha uma categoria pra começar:' } },
         { type: 'actions', elements: [
@@ -1769,7 +1768,7 @@ async function processarMensagemDM(evt) {
     }
 
     if (eSaudacaoPura) {
-      await log('saudacao_direta');
+      log('saudacao_direta');
       console.log('[processarMensagemDM] detectada saudação direta');
       await enviarMensagem(channel, '👋 Olá! Sou o assistente do time de Facilities.', [
         { type: 'header', text: { type: 'plain_text', text: '👋 Olá!', emoji: true } },
@@ -1778,7 +1777,7 @@ async function processarMensagemDM(evt) {
         { type: 'divider' },
         { type: 'context', elements: [{ type: 'mrkdwn', text: '💡 Você também pode usar o formulário: <https://facilities-api.vercel.app|facilities-api.vercel.app>' }] }
       ]);
-      await log('saudacao_enviada');
+      log('saudacao_enviada');
       console.log('[processarMensagemDM] saudação enviada ✅');
       return;
     }
@@ -1787,14 +1786,14 @@ async function processarMensagemDM(evt) {
     let estado = null;
     try {
       estado = await getEstado(userId);
-      await log('estado_lido', { tem_estado: !!estado, etapa: estado?.etapa });
+      log('estado_lido', { tem_estado: !!estado, etapa: estado?.etapa });
     } catch (e) {
-      await log('estado_erro', { err: e.message });
+      log('estado_erro', { err: e.message });
     }
 
     // Analisar a mensagem com IA (com timeout de 5s)
     console.log('[processarMensagemDM] chamando IA...');
-    await log('antes_IA');
+    log('antes_IA');
     const analise = await Promise.race([
       analisarMensagem(texto, estado),
       new Promise((resolve) => setTimeout(() => {
@@ -1802,12 +1801,12 @@ async function processarMensagemDM(evt) {
         resolve(analisarPorPalavrasChave(texto));
       }, 5000))
     ]);
-    await log('depois_IA', { categoria: analise?.categoria, titulo: (analise?.titulo || '').substring(0, 40), suficiente: analise?.tem_info_suficiente });
+    log('depois_IA', { categoria: analise?.categoria, titulo: (analise?.titulo || '').substring(0, 40), suficiente: analise?.tem_info_suficiente });
     console.log('[processarMensagemDM] análise:', JSON.stringify(analise).substring(0, 200));
 
     // Caso 1: IA tem resposta conversacional e ainda não está pronto pra abrir
     if (analise.resposta_usuario && !analise.pronto_para_abrir) {
-      await log('conversa_natural');
+      log('conversa_natural');
       try {
         const historicoAtual = estado?.historico_chat || [];
       const novoHistorico = [
@@ -1870,7 +1869,7 @@ async function processarMensagemDM(evt) {
 
     // Caso 3: pronto_para_abrir → mostrar confirmação antes de criar
     if (analise.pronto_para_abrir) {
-      await log('aguardando_confirmacao');
+      log('aguardando_confirmacao');
       const CATLABELS_BOT = {suprimentos:'📎 Suprimentos',manutencao:'🔧 Manutenção',reforma:'🏗️ Reforma',acessos:'🔑 Acessos',brindes:'🎁 Brindes',logistica:'📦 Logística',outros:'📝 Outros'};
       const PRIOLABELS = {baixa:'🟢 Baixa',media:'🟡 Média',alta:'🔴 Alta'};
       await setEstado(userId, {
@@ -1900,7 +1899,7 @@ async function processarMensagemDM(evt) {
     }
 
     // Caso 3: Tem info suficiente → segue pro sub-fluxo da categoria
-    await log('subfluxo_inicio', { cat: analise.categoria });
+    log('subfluxo_inicio', { cat: analise.categoria });
     const dados = {
       categoria: analise.categoria,
       titulo: analise.titulo,
@@ -2046,7 +2045,7 @@ async function processarMensagemDM(evt) {
         const validacao = validarQualidadeDetalhes(textoParaValidar, cat);
         if (!validacao.valido) {
           // Resposta vaga — re-pergunta com aviso mais claro
-          await log(`${cat}_resposta_vaga`, { motivo: validacao.motivo });
+          log(`${cat}_resposta_vaga`, { motivo: validacao.motivo });
           await setEstado(userId, { etapa: etapaName, ...dados });
           const blocosErro = mensagemPedidoVago(cat, validacao.motivo);
           if (blocosErro) {
@@ -2065,7 +2064,7 @@ async function processarMensagemDM(evt) {
         return false; // segue para próximo passo / resumo
       }
       // Primeira pergunta: faz a pergunta normalmente
-      await log(`${cat}_pergunta_detalhes`);
+      log(`${cat}_pergunta_detalhes`);
       await setEstado(userId, { etapa: etapaName, ...dados });
       await enviarMensagem(channel, header, [
         { type: 'header', text: { type: 'plain_text', text: header, emoji: true } },
@@ -2104,7 +2103,7 @@ async function processarMensagemDM(evt) {
         dados.brindes_solicitados = texto;
       } else if (estado?.etapa === 'aguardando_brindes_texto') {
         // Está aguardando mas o texto não tem números — re-pergunta pedindo números
-        await log('brindes_pedir_quantidade');
+        log('brindes_pedir_quantidade');
         await setEstado(userId, { etapa: 'aguardando_brindes_texto', ...dados });
         await enviarMensagem(channel, '⚠️ Preciso de quantidades exatas', [
           { type: 'header', text: { type: 'plain_text', text: '⚠️ Quantos de cada?', emoji: true } },
@@ -2114,7 +2113,7 @@ async function processarMensagemDM(evt) {
         return;
       } else {
         // Primeiro contato: mostra lista (filtrada por CS/Comercial) + sempre pede números
-        await log('brindes_pergunta_lista', { ehCS, cc: infoBrinde?.centroCusto });
+        log('brindes_pergunta_lista', { ehCS, cc: infoBrinde?.centroCusto });
         await setEstado(userId, { etapa: 'aguardando_brindes_texto', ...dados });
 
         let fields, contexto;
@@ -2252,12 +2251,12 @@ async function processarMensagemDM(evt) {
     try {
       await setEstado(userId, { etapa: 'confirmar', ...dados });
     } catch (e) { console.warn('setEstado fail:', e.message); }
-    await log('enviando_resumo');
+    log('enviando_resumo');
     await enviarResumoParaConfirmacao(channel, userId, dados);
-    await log('resumo_enviado');
+    log('resumo_enviado');
 
   } catch (err) {
-    await log('ERRO', { err: err.message, stack: err.stack?.substring(0, 400) });
+    log('ERRO', { err: err.message, stack: err.stack?.substring(0, 400) });
     console.error('[processarMensagemDM] ERRO:', err.message, err.stack);
     // Tenta avisar o usuário mesmo em erro
     try {
@@ -2343,20 +2342,17 @@ async function tratarBotaoFluxoConversacional(body, action) {
   const channel = body.channel?.id || body.container?.channel_id;
   const actionId = action.action_id;
 
-  const log = async (etapa, extra = {}) => {
+  const log = (etapa, extra = {}) => {
     const importante = /erro/i.test(etapa);
     if (!importante && process.env.SLACK_DEBUG_VERBOSE !== 'true') return;
-    try {
-      await db.collection('slack_debug_logs').add({
-        at: new Date(), user: userId, etapa: `btn_${etapa}`, action_id: actionId, ...extra,
-      });
-    } catch {}
+    const detalhe = JSON.stringify({ user: userId, action_id: actionId, ...extra }).substring(0, 500);
+    (importante ? console.error : console.log)(`[btn] ${etapa}`, detalhe);
   };
 
-  await log('inicio');
+  log('inicio');
 
   if (actionId === 'fac_cancelar') {
-    await log('cancelar');
+    log('cancelar');
     await limparEstado(userId);
     await atualizarMensagem(channel, body.message?.ts, '❌ Chamado cancelado.', [
       { type: 'section', text: { type: 'mrkdwn', text: `❌ *Chamado cancelado.*\nSe precisar abrir outro, é só me mandar mensagem.` } }
@@ -2402,7 +2398,7 @@ async function tratarBotaoFluxoConversacional(body, action) {
 
   // Botões de transportadora (fac_transp_<transp>) — sub-fluxo logística
   if (actionId.startsWith('fac_transp_')) {
-    await log('transportadora_clicada');
+    log('transportadora_clicada');
     const transportadora = action.value || actionId.replace('fac_transp_', '');
     const estado = await getEstado(userId);
     if (!estado) {
@@ -2425,14 +2421,14 @@ async function tratarBotaoFluxoConversacional(body, action) {
   }
 
   if (actionId === 'fac_confirmar') {
-    await log('confirmar_inicio');
+    log('confirmar_inicio');
     let dados;
     try { dados = JSON.parse(action.value || '{}'); } catch { dados = await getEstado(userId) || {}; }
-    await log('confirmar_dados', { cat: dados.categoria, titulo: (dados.titulo || '').substring(0, 40) });
+    log('confirmar_dados', { cat: dados.categoria, titulo: (dados.titulo || '').substring(0, 40) });
 
     // Buscar info do usuário
     const remetente = await getUserInfo(userId);
-    await log('confirmar_user', { email: remetente?.email, nome: remetente?.nome });
+    log('confirmar_user', { email: remetente?.email, nome: remetente?.nome });
     // Se é delegação (admin abrindo em nome de outra pessoa), o "dono" do
     // chamado é a pessoa_alvo salva no estado, não quem está confirmando.
     const slackUser = dados.pessoa_alvo || remetente;
@@ -2496,7 +2492,7 @@ async function tratarBotaoFluxoConversacional(body, action) {
         dadosExtras,
         abertoPorAdmin: dados.pessoa_alvo ? dados.aberto_por_admin : null,
       });
-      await log('confirmar_ticket_criado', { id: ticket.id });
+      log('confirmar_ticket_criado', { id: ticket.id });
       if (dados.pessoa_alvo) await dmNotificarDelegacao(dados.pessoa_alvo, dados.aberto_por_admin, ticket);
 
       // ── BAIXA AUTOMÁTICA DE ESTOQUE (brindes pelo bot) ──
@@ -2509,16 +2505,16 @@ async function tratarBotaoFluxoConversacional(body, action) {
             body: JSON.stringify({ texto: dados.brindes_solicitados }),
           });
           const resBaixa = await r.json();
-          await log('baixa_estoque', { baixas: resBaixa.baixas?.length || 0, alertas: resBaixa.alertas?.length || 0 });
+          log('baixa_estoque', { baixas: resBaixa.baixas?.length || 0, alertas: resBaixa.alertas?.length || 0 });
         } catch (e) {
           console.error('Erro ao baixar estoque:', e.message);
-          await log('baixa_estoque_erro', { error: e.message });
+          log('baixa_estoque_erro', { error: e.message });
         }
       }
 
       await limparEstado(userId);
       await notificarAdmin(ticket);
-      await log('confirmar_admin_notif');
+      log('confirmar_admin_notif');
 
       // Determina texto extra baseado em CS/Comercial pra brindes
       let avisoFluxo = '';
@@ -2547,9 +2543,9 @@ async function tratarBotaoFluxoConversacional(body, action) {
         { type: 'section', fields: camposFinal },
         { type: 'context', elements: [{ type: 'mrkdwn', text: '🏢 *Facilities LogComex* • Você receberá atualizações de cada fase aqui mesmo.' }] }
       ]);
-      await log('confirmar_msg_atualizada');
+      log('confirmar_msg_atualizada');
     } catch (err) {
-      await log('confirmar_ERRO', { err: err.message, stack: err.stack?.substring(0, 300) });
+      log('confirmar_ERRO', { err: err.message, stack: err.stack?.substring(0, 300) });
       console.error('Erro ao confirmar chamado:', err);
       await enviarMensagem(channel, '⚠️ Ops, tive um problema pra registrar seu chamado. Tente de novo ou use o formulário web.');
     }
