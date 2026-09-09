@@ -409,7 +409,7 @@
 
 /* ── lado esquerdo: cena ── */
 #login-screen .lgv-scene{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;
-  padding:clamp(1.6rem,3vw,2.6rem);
+  padding:clamp(1.6rem,3vw,2.6rem);padding-bottom:clamp(3rem,9vh,5.5rem);
   background:radial-gradient(ellipse 80% 60% at 30% 20%,rgba(114,21,233,.28) 0%,transparent 60%),
     linear-gradient(175deg,#12081f 0%,#1c0a3d 38%,#2D085D 72%,#3d0b70 100%)}
 #login-screen .lgv-glow{position:absolute;top:-12%;left:8%;width:52%;aspect-ratio:1;border-radius:50%;
@@ -453,11 +453,12 @@
 #login-screen .lgv-top{position:relative;z-index:5;display:flex;align-items:center;gap:12px}
 #login-screen .lgv-top .sep{width:1px;height:16px;background:rgba(226,208,250,.22)}
 #login-screen .lgv-top .lbl{font-size:.74rem;color:var(--lgv-txt3);font-weight:500}
-#login-screen .lgv-mid{position:relative;z-index:5;max-width:19ch}
+#login-screen .lgv-mid{position:relative;z-index:5;max-width:none}
 #login-screen .lgv-mid h1{font-family:'Funnel Display','Poppins',sans-serif;font-weight:800;
-  font-size:clamp(2rem,3.6vw,3.15rem);line-height:1.03;letter-spacing:-.04em;margin:0;color:#fff}
-#login-screen .lgv-mid p{margin:1.1rem 0 0;font-size:.95rem;line-height:1.62;color:var(--lgv-txt2);max-width:38ch}
-#login-screen .lgv-bot{position:relative;z-index:5;display:flex;gap:clamp(1.8rem,4vw,3.4rem)}
+  font-size:clamp(1.8rem,3vw,2.9rem);line-height:1.06;letter-spacing:-.04em;margin:0;color:#fff;
+  max-width:min(640px,92%);text-wrap:balance}
+#login-screen .lgv-mid p{margin:1.1rem 0 0;font-size:.93rem;line-height:1.6;color:var(--lgv-txt2);max-width:min(430px,92%)}
+#login-screen .lgv-bot{position:relative;z-index:5;display:flex;gap:clamp(1.8rem,4vw,3.4rem);min-height:44px}
 #login-screen .lgv-kpi .n{font-family:'Funnel Display','Poppins',sans-serif;font-size:clamp(1.6rem,2.4vw,2rem);
   font-weight:700;letter-spacing:-.04em;line-height:1;color:#fff}
 #login-screen .lgv-kpi .l{margin-top:5px;font-size:.7rem;color:var(--lgv-txt3);font-weight:500}
@@ -498,6 +499,15 @@
 #login-screen .lgv-ver{margin:1.6rem 0 0;font-size:.7rem;color:rgba(226,208,250,.22)}
 
 /* ── responsivo ── */
+@media(max-height:820px){
+  #login-screen .lgv-mid h1{font-size:clamp(1.6rem,2.4vw,2.3rem);max-width:min(560px,92%)}
+  #login-screen .lgv-mid p{font-size:.86rem;margin-top:.8rem}
+  #login-screen .lgv-heave{width:clamp(190px,20vw,260px)}
+  #login-screen .lgv-ocean{height:29%}
+  #login-screen .lgv-shipwrap{bottom:9.86%}
+  #login-screen .lgv-shimmer{bottom:9.9%}
+  #login-screen .lgv-plane{width:130px}
+}
 @media(max-width:940px){
   #login-screen{overflow:auto}
   #login-screen .lgv-split{grid-template-columns:1fr;height:auto;min-height:100%}
@@ -2285,7 +2295,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Fallback com valores aproximados
     // Sem número inventado: se a leitura falhar, esconde o bloco de KPIs
     const box = document.getElementById('lgv-kpis');
-    if (box) box.style.display = 'none';
+    if (box) box.style.visibility = 'hidden';
   }
 })();
 </script>
