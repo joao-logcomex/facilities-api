@@ -393,147 +393,279 @@
 
 </style>
 
-<style>
-@media (max-width: 768px) {
-  #login-screen > div:first-child { display: none !important; }
-  #login-screen > div:last-child { min-height: 100vh; background: linear-gradient(135deg, #0B0D19 0%, #2D085D 100%) !important; }
-  #login-screen > div:last-child h2 { color: #fff !important; }
-  #login-screen > div:last-child p { color: rgba(226,208,250,0.6) !important; }
-}
-</style>
-
-<style>
-@media(max-width:768px){
-  #login-screen > div > div:first-child{display:none!important;}
-  #login-screen > div{background:linear-gradient(135deg,#0B0D19 0%,#2D085D 100%)!important;}
-  #login-screen h2{color:#fff!important;}
-  #login-screen p{color:rgba(226,208,250,0.6)!important;}
-  #login-screen button{background:#6613D0!important;}
-}
-</style>
-<style>
-@media(max-width:768px){
-  #login-screen .lx-left{display:none!important;}
-  #login-screen > div > div:first-child{display:none!important;}
-  #login-screen{background:linear-gradient(135deg,#0B0D19 0%,#2D085D 100%)!important;}
-  #login-screen h2{color:#fff!important;}
-  #login-screen > div > div:last-child{background:transparent!important;}
-  #login-screen p{color:rgba(226,208,250,0.65)!important;}
-}
-</style>
 </head>
 <body>
 
 <div class="loading-screen" id="loading-screen"><div class="loading-spinner"></div></div>
 
 <!-- LOGIN -->
-<div class="auth-screen" id="login-screen" style="display:none;position:fixed;inset:0;z-index:9999;font-family:'Poppins',sans-serif;">
-  <div style="display:flex;width:100%;height:100vh;">
+<!-- ══════════ TELA DE LOGIN ══════════ -->
+<style>
+#login-screen{--lgv-lav:#E2D0FA;--lgv-txt2:rgba(226,208,250,.64);--lgv-txt3:rgba(226,208,250,.4);
+  display:none;position:fixed;inset:0;z-index:9999;font-family:'Poppins',sans-serif;color:#fff;background:#0B0D19;overflow:hidden}
+#login-screen *{box-sizing:border-box}
+#login-screen .lgv-split{display:grid;grid-template-columns:1.15fr .85fr;width:100%;height:100%}
+#login-screen :focus-visible{outline:2px solid #8E44ED;outline-offset:3px;border-radius:8px}
 
-    <!-- ── LADO ESQUERDO ── -->
-    <div style="flex:0 0 52%;height:100vh;background:linear-gradient(160deg,#0B0D19 0%,#2D085D 55%,#1a0040 100%);position:relative;overflow:hidden;display:flex;flex-direction:column;padding:36px 48px 40px;box-sizing:border-box;">
-      <!-- Glows -->
-      <div style="position:absolute;top:-80px;right:-80px;width:360px;height:360px;background:rgba(102,19,208,0.18);border-radius:50%;filter:blur(90px);pointer-events:none;"></div>
-      <div style="position:absolute;bottom:-60px;left:-40px;width:280px;height:280px;background:rgba(45,8,93,0.5);border-radius:50%;filter:blur(70px);pointer-events:none;"></div>
-      <!-- Sparkles -->
-      <div style="position:absolute;top:110px;right:80px;opacity:.75;"><svg width="26" height="26" viewBox="0 0 28 28" fill="none"><path d="M14 0.5C14.4 5.8 17.2 10.8 22.5 14C17.2 17.2 14.4 22.2 14 27.5C13.6 22.2 10.8 17.2 5.5 14C10.8 10.8 13.6 5.8 14 0.5Z" fill="#FE8F1C"/></svg></div>
-      <div style="position:absolute;bottom:260px;right:155px;opacity:.35;"><svg width="13" height="13" viewBox="0 0 28 28" fill="none"><path d="M14 0.5C14.4 5.8 17.2 10.8 22.5 14C17.2 17.2 14.4 22.2 14 27.5C13.6 22.2 10.8 17.2 5.5 14C10.8 10.8 13.6 5.8 14 0.5Z" fill="rgba(226,208,250,0.5)"/></svg></div>
-      <div style="position:absolute;top:300px;right:210px;opacity:.2;"><svg width="13" height="13" viewBox="0 0 28 28" fill="none"><path d="M14 0.5C14.4 5.8 17.2 10.8 22.5 14C17.2 17.2 14.4 22.2 14 27.5C13.6 22.2 10.8 17.2 5.5 14C10.8 10.8 13.6 5.8 14 0.5Z" fill="rgba(226,208,250,0.5)"/></svg></div>
-      <!-- Header logo -->
-      <div style="display:flex;align-items:center;gap:14px;position:relative;z-index:1;">
-        <svg width="120" height="18" viewBox="0 0 197 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M170.124 20.0846H167.091V23.1403H170.124V20.0846Z" fill="white"></path>
-<path d="M191.659 23.1386V7.58946H194.71V21.0058C194.71 22.1838 193.755 23.1386 192.577 23.1386H191.659Z" fill="white"></path>
-<path d="M193.263 0.0573844C193.429 1.63067 194.663 2.87879 196.224 3.04137C196.3 3.05094 196.3 3.16571 196.224 3.17049C194.663 3.33786 193.424 4.58119 193.263 6.15448C193.254 6.23099 193.14 6.23099 193.135 6.15448C192.969 4.58119 191.735 3.33308 190.174 3.17049C190.098 3.16093 190.098 3.04616 190.174 3.04137C191.735 2.874 192.974 1.63067 193.135 0.0573844C193.144 -0.0191281 193.258 -0.0191281 193.263 0.0573844Z" fill="white"></path>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M178.862 7.26371C179.672 7.26371 180.412 7.3822 181.083 7.61913C181.755 7.85607 182.337 8.19166 182.831 8.62605C183.313 9.01527 183.708 9.46542 184.015 9.97641V7.58953H187.096V23.1386H184.015V20.7574C184.006 20.7711 183.996 20.785 183.986 20.7988C183.63 21.2924 183.167 21.7368 182.594 22.1317C182.041 22.5266 181.419 22.8425 180.728 23.0794C180.057 23.3163 179.346 23.4348 178.596 23.4348C177.312 23.4348 176.137 23.0794 175.071 22.3686C174.025 21.6578 173.185 20.6902 172.554 19.466C171.922 18.2419 171.606 16.8598 171.606 15.3197C171.606 13.7598 171.922 12.3776 172.554 11.1732C173.205 9.94899 174.074 8.9913 175.16 8.30023C176.266 7.60917 177.5 7.26372 178.862 7.26371ZM179.395 10.0773C178.487 10.0773 177.677 10.3044 176.967 10.7586C176.275 11.2127 175.723 11.8346 175.308 12.6244C174.913 13.4142 174.716 14.3127 174.716 15.3197C174.716 16.3464 174.913 17.2646 175.308 18.0741C175.723 18.8639 176.276 19.4859 176.967 19.94C177.677 20.3941 178.487 20.6212 179.395 20.6212C180.323 20.6212 181.143 20.3941 181.854 19.94C182.564 19.4858 183.117 18.8639 183.512 18.0741C183.927 17.2646 184.134 16.3464 184.134 15.3197C184.134 14.3127 183.927 13.4142 183.512 12.6244C183.117 11.8347 182.564 11.2127 181.854 10.7586C181.143 10.3044 180.323 10.0773 179.395 10.0773Z" fill="white"></path>
-<path d="M86.4294 18.6307C86.2683 18.8051 86.0983 18.9677 85.9061 19.1185C85.0768 19.7719 84.0671 20.1015 82.9097 20.1015C81.5378 20.1015 80.3922 19.6551 79.5052 18.7696C78.6168 17.8886 78.1674 16.7488 78.1674 15.3829C78.1674 14.017 78.6182 12.8817 79.5052 11.9962C80.3951 11.1107 81.5349 10.6643 82.9097 10.6643C84.0671 10.6643 85.0768 10.9954 85.9061 11.6473C86.0997 11.7981 86.2668 11.9667 86.4279 12.1411L88.3526 9.65908C88.2876 9.59847 88.2211 9.53639 88.1545 9.47578C86.7221 8.2503 84.9585 7.62499 82.9082 7.62499C80.642 7.62499 78.7469 8.36856 77.273 9.83204C75.78 11.2778 75.0231 13.1434 75.0231 15.3814C75.0231 17.6195 75.7785 19.4851 77.2716 20.9309C78.7454 22.3958 80.6405 23.1379 82.9067 23.1379C84.9541 23.1379 86.7206 22.517 88.1531 21.2871C88.2211 21.2265 88.2861 21.1644 88.3482 21.1038L86.4264 18.6233H86.4309V18.6277L86.4294 18.6307Z" fill="white"></path>
-<path d="M97.9214 7.63091C95.6553 7.63091 93.7586 8.37448 92.2863 9.83796C90.7932 11.2837 90.0379 13.1493 90.0379 15.3874C90.0379 17.6255 90.7932 19.491 92.2863 20.9368C93.7601 22.4017 95.6553 23.1438 97.9214 23.1438C100.188 23.1438 102.083 22.3988 103.557 20.9368C105.05 19.491 105.805 17.6255 105.805 15.3874C105.805 13.1493 105.05 11.2837 103.557 9.83796C102.086 8.373 100.188 7.63091 97.9214 7.63091ZM101.326 18.7726C100.436 19.6581 99.2962 20.1045 97.9214 20.1045C96.5467 20.1045 95.4069 19.6581 94.517 18.7726C93.6271 17.8915 93.1806 16.7518 93.1806 15.3859C93.1806 14.02 93.6315 12.8847 94.517 11.9992C95.4054 11.1137 96.5467 10.6673 97.9214 10.6673C99.2962 10.6673 100.436 11.1137 101.326 11.9992C102.214 12.8847 102.662 14.0214 102.662 15.3859C102.662 16.7503 102.213 17.8886 101.326 18.7726Z" fill="white"></path>
-<path d="M47.7122 7.63091C45.446 7.63091 43.5509 8.37448 42.077 9.83796C40.584 11.2837 39.8286 13.1493 39.8286 15.3874C39.8286 17.6255 40.584 19.491 42.077 20.9368C43.5509 22.4017 45.446 23.1438 47.7122 23.1438C49.9784 23.1438 51.8735 22.3988 53.3473 20.9368C54.8404 19.491 55.5972 17.6255 55.5972 15.3874C55.5972 13.1493 54.8418 11.2837 53.3488 9.83796C51.875 8.373 49.9798 7.63091 47.7137 7.63091H47.7122ZM51.1151 18.7726C50.2267 19.6581 49.0855 20.1045 47.7107 20.1045C46.3359 20.1045 45.1962 19.6581 44.3063 18.7726C43.4178 17.8915 42.9684 16.7518 42.9684 15.3859C42.9684 14.02 43.4193 12.8847 44.3063 11.9992C45.1947 11.1137 46.3359 10.6673 47.7107 10.6673C49.0855 10.6673 50.2252 11.1137 51.1151 11.9992C52.0051 12.8847 52.453 14.0214 52.453 15.3859C52.453 16.7503 52.0021 17.8886 51.1151 18.7726Z" fill="white"></path>
-<path d="M115.931 7.63091H111.822V10.8033H108.63V23.1438H111.823V10.8077H115.946C117.412 10.8077 118.601 11.9888 118.601 13.4479V23.1423H121.794V13.4612C121.794 10.2415 119.17 7.63091 115.933 7.63091H115.93H115.931Z" fill="white"></path>
-<path d="M125.207 7.63091H121.151V10.8077H125.221C126.687 10.8077 127.873 11.9888 127.873 13.4479V23.1423H131.066V13.4612C131.066 10.2415 128.442 7.63091 125.204 7.63091H125.207Z" fill="white"></path>
-<path d="M160.941 7.63091L156.734 13.0606L152.523 7.63091H148.936L154.956 15.3859L148.936 23.1423H152.523L156.734 17.7112L160.941 23.1423H164.528L158.511 15.3859L164.528 7.63091H160.941Z" fill="white"></path>
-<path d="M34.6369 17.3919V0.96096H31.4808V17.3786C31.4808 20.5613 34.0752 23.1423 37.2727 23.1423H38.0798V20.0025H37.2549C35.8047 20.0025 34.6325 18.8347 34.6325 17.3948H34.6369V17.3904V17.3919Z" fill="white"></path>
-<path d="M137.271 18.2833L137.304 18.338H137.307C137.764 19.0638 138.401 19.6285 139.212 20.0306C140.048 20.443 141.007 20.647 142.093 20.647C142.864 20.647 143.576 20.5273 144.233 20.2834C144.89 20.0468 145.593 19.6226 146.338 19.0165L147.776 20.922C147.321 21.3403 146.766 21.7084 146.111 22.0262C145.451 22.3574 144.741 22.6235 143.983 22.8245C143.244 23.0078 142.518 23.098 141.799 23.098C140.223 23.098 138.826 22.7861 137.605 22.1652C136.404 21.5251 135.456 20.6559 134.758 19.5605C134.081 18.4651 133.743 17.2041 133.743 15.7776C133.743 14.6408 133.938 13.6075 134.324 12.6747C134.712 11.7419 135.245 10.9378 135.923 10.2607C136.618 9.56594 137.441 9.03672 138.392 8.67011C139.362 8.28724 140.408 8.09359 141.535 8.09359C142.524 8.09359 143.443 8.27541 144.295 8.64202H144.296C145.151 8.9909 145.885 9.47429 146.503 10.0952C147.142 10.7175 147.624 11.4552 147.953 12.3126V12.3155C148.301 13.1552 148.465 14.0761 148.446 15.0843L148.417 16.23H136.615L136.63 16.3541C136.716 17.0696 136.93 17.7127 137.27 18.2847L137.271 18.2833ZM145.513 14.1086V13.9963L145.508 13.8411V13.8322C145.448 13.2084 145.227 12.6511 144.847 12.1588C144.469 11.668 143.989 11.2837 143.412 11.0013C142.834 10.719 142.206 10.5786 141.53 10.5786C140.464 10.5786 139.563 10.7737 138.825 11.1684C138.089 11.5453 137.53 12.11 137.15 12.8625C136.977 13.1966 136.844 13.5676 136.751 13.9726L136.72 14.1086H145.513Z" fill="white"></path>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M69.286 7.65455H72.4406V15.1168C72.4435 15.2129 72.445 15.309 72.445 15.4066C72.445 15.5041 72.4435 15.6017 72.4406 15.6978V22.8807C72.4406 27.5106 69.8137 30 64.6324 30C62.3411 30 60.31 29.3318 58.505 27.8846C58.539 27.8979 60.446 25.3789 60.446 25.3789C60.446 25.3789 62.3278 26.8587 64.696 26.8587C67.5993 26.8587 69.286 25.4602 69.286 23.1305V21.6508C68.0531 22.4919 66.5837 22.9147 64.897 22.9147C62.7107 22.9147 60.8939 22.2036 59.4792 20.7978C58.0645 19.3949 57.349 17.5826 57.349 15.408C57.349 13.2335 58.0645 11.4241 59.4792 10.0183C60.8924 8.61246 62.7107 7.90142 64.897 7.90142C66.5852 7.90142 68.0531 8.32568 69.286 9.16681V7.65455ZM69.286 14.6142C69.1441 13.6814 68.7449 12.8832 68.0901 12.2313C67.2563 11.4019 66.1846 10.9806 64.897 10.9806C63.6094 10.9806 62.5362 11.4019 61.704 12.2313C60.8732 13.0606 60.4504 14.1279 60.4504 15.408C60.4504 16.6882 60.8717 17.757 61.704 18.5848C62.5377 19.4141 63.6109 19.8354 64.897 19.8354C66.1831 19.8354 67.2563 19.4141 68.0901 18.5848C68.7435 17.9329 69.1441 17.1332 69.286 16.2004V14.6142Z" fill="white"></path>
-<path d="M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z" fill="white"></path>
-<path d="M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z" fill="white"></path>
-<path d="M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z" fill="white"></path>
-</svg>
-        <div style="width:1px;height:16px;background:rgba(226,208,250,0.2);"></div>
-        <span style="font-size:0.63rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(226,208,250,0.45);">Gestão de Chamados · Interno</span>
+/* ── lado esquerdo: cena ── */
+#login-screen .lgv-scene{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;
+  padding:clamp(1.6rem,3vw,2.6rem);
+  background:radial-gradient(ellipse 80% 60% at 30% 20%,rgba(114,21,233,.28) 0%,transparent 60%),
+    linear-gradient(175deg,#12081f 0%,#1c0a3d 38%,#2D085D 72%,#3d0b70 100%)}
+#login-screen .lgv-glow{position:absolute;top:-12%;left:8%;width:52%;aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle,rgba(142,68,237,.34) 0%,transparent 66%);filter:blur(50px);
+  animation:lgvBreathe 12s ease-in-out infinite;pointer-events:none}
+@keyframes lgvBreathe{0%,100%{opacity:.7;transform:scale(.95)}50%{opacity:1;transform:scale(1.08)}}
+
+#login-screen .lgv-sky{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#login-screen .lgv-plane{position:absolute;top:14%;width:170px;fill:none;stroke:var(--lgv-lav);stroke-width:1.5;
+  stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke;opacity:.3;
+  animation:lgvCross 46s linear infinite}
+@keyframes lgvCross{0%{transform:translateX(-30vw) translateY(0)}50%{transform:translateX(45vw) translateY(-26px)}100%{transform:translateX(125vw) translateY(6px)}}
+
+/* oceano: 33% da cena · crista em y=132/200 -> linha d'água a 11.22% */
+#login-screen .lgv-ocean{position:absolute;left:0;right:0;bottom:0;height:33%;pointer-events:none}
+#login-screen .lgv-ocean.back{z-index:1}
+#login-screen .lgv-ocean.front{z-index:3}
+#login-screen .lgv-wave{position:absolute;left:0;bottom:0;width:200%;height:100%}
+#login-screen .lgv-wave svg{width:50%;height:100%;display:block;float:left}
+/* 19s por ciclo / 3 marolas = 6.333s por marola */
+#login-screen .lgv-w1{animation:lgvRoll 19s linear infinite;opacity:.9}
+#login-screen .lgv-w2{animation:lgvRoll 27s linear infinite;opacity:.52;bottom:-4%}
+#login-screen .lgv-w3{animation:lgvRoll 38s linear infinite;opacity:.34;bottom:-9%}
+@keyframes lgvRoll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+#login-screen .lgv-shimmer{position:absolute;left:0;right:0;bottom:11.2%;height:2px;z-index:3;pointer-events:none;opacity:.7;
+  background:linear-gradient(90deg,transparent 0%,rgba(226,208,250,.18) 20%,transparent 44%,rgba(226,208,250,.11) 68%,transparent 100%);
+  background-size:55% 100%;animation:lgvShimmer 19s linear infinite}
+@keyframes lgvShimmer{from{background-position:0 0}to{background-position:-110% 0}}
+
+#login-screen .lgv-shipwrap{position:absolute;bottom:11.22%;left:0;width:100%;pointer-events:none;z-index:2;
+  animation:lgvSail 62s linear infinite}
+@keyframes lgvSail{from{transform:translateX(-38%)}to{transform:translateX(112%)}}
+/* translateY em % refere-se à altura do próprio navio: casco (13.8%) + 2% submerso */
+#login-screen .lgv-heave{display:block;width:clamp(230px,26vw,340px);animation:lgvHeave 6.333s ease-in-out infinite}
+@keyframes lgvHeave{0%,100%{transform:translateY(calc(16% + 5px))}50%{transform:translateY(calc(16% - 5px))}}
+#login-screen .lgv-ship{display:block;width:100%;fill:none;stroke:var(--lgv-lav);stroke-width:1.5;
+  stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke;opacity:.62;
+  transform-origin:50% 86%;animation:lgvPitch 6.333s ease-in-out infinite;animation-delay:-1.583s}
+@keyframes lgvPitch{0%,100%{transform:rotate(-1.8deg)}50%{transform:rotate(1.8deg)}}
+
+#login-screen .lgv-top{position:relative;z-index:5;display:flex;align-items:center;gap:12px}
+#login-screen .lgv-top .sep{width:1px;height:16px;background:rgba(226,208,250,.22)}
+#login-screen .lgv-top .lbl{font-size:.74rem;color:var(--lgv-txt3);font-weight:500}
+#login-screen .lgv-mid{position:relative;z-index:5;max-width:19ch}
+#login-screen .lgv-mid h1{font-family:'Funnel Display','Poppins',sans-serif;font-weight:800;
+  font-size:clamp(2rem,3.6vw,3.15rem);line-height:1.03;letter-spacing:-.04em;margin:0;color:#fff}
+#login-screen .lgv-mid p{margin:1.1rem 0 0;font-size:.95rem;line-height:1.62;color:var(--lgv-txt2);max-width:38ch}
+#login-screen .lgv-bot{position:relative;z-index:5;display:flex;gap:clamp(1.8rem,4vw,3.4rem)}
+#login-screen .lgv-kpi .n{font-family:'Funnel Display','Poppins',sans-serif;font-size:clamp(1.6rem,2.4vw,2rem);
+  font-weight:700;letter-spacing:-.04em;line-height:1;color:#fff}
+#login-screen .lgv-kpi .l{margin-top:5px;font-size:.7rem;color:var(--lgv-txt3);font-weight:500}
+
+/* ── lado direito: login ── */
+#login-screen .lgv-pane{display:flex;align-items:center;justify-content:center;padding:2rem clamp(1.5rem,3vw,3rem);
+  background:radial-gradient(ellipse 70% 50% at 60% 12%,rgba(102,19,208,.14) 0%,transparent 62%),#0d0a1a;
+  border-left:1px solid rgba(226,208,250,.07)}
+#login-screen .lgv-box{width:100%;max-width:340px;text-align:center}
+#login-screen .lgv-stage{width:112px;aspect-ratio:1;margin:0 auto 1.5rem;position:relative;perspective:600px;perspective-origin:50% 45%}
+#login-screen .lgv-stage-in{position:absolute;inset:0;transform-style:preserve-3d}
+#login-screen .lgv-stage-in::before{content:'';position:absolute;inset:-28%;border-radius:50%;
+  background:radial-gradient(circle,rgba(142,68,237,.3) 0%,transparent 64%);filter:blur(22px);transform:translateZ(-70px)}
+#login-screen .lgv-logo3d{position:absolute;inset:0;transform-style:preserve-3d;animation:lgvOrbit 9s linear infinite}
+#login-screen .lgv-logo3d svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#login-screen .lgv-layer{position:absolute;inset:0;transform-style:preserve-3d}
+@keyframes lgvOrbit{from{transform:rotateX(-12deg) rotateY(0)}to{transform:rotateX(-12deg) rotateY(360deg)}}
+#login-screen .lgv-box h2{font-family:'Funnel Display','Poppins',sans-serif;font-size:1.6rem;font-weight:700;
+  letter-spacing:-.03em;margin:0;color:#fff}
+#login-screen .lgv-box .lgv-sub{margin:.5rem 0 0;font-size:.87rem;color:var(--lgv-txt2);line-height:1.55}
+#login-screen .lgv-gbtn{margin-top:1.6rem;width:100%;padding:14px 20px;border:none;border-radius:12px;cursor:pointer;
+  background:linear-gradient(135deg,#6613D0,#7215E9);font-family:'Poppins',sans-serif;font-size:.92rem;font-weight:600;color:#fff;
+  display:flex;align-items:center;justify-content:center;gap:11px;box-shadow:0 6px 24px rgba(102,19,208,.42);transition:transform .18s,box-shadow .18s}
+#login-screen .lgv-gbtn:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(102,19,208,.55)}
+#login-screen .lgv-gi{width:20px;height:20px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+#login-screen .lgv-restrict{margin:.85rem 0 0;font-size:.76rem;color:var(--lgv-txt3)}
+#login-screen .lgv-restrict strong{color:var(--lgv-lav);font-weight:600}
+#login-screen #login-error{margin-top:.9rem;padding:10px 14px;border-radius:10px;font-size:.79rem;text-align:center;
+  background:rgba(240,81,125,.1);border:1px solid rgba(240,81,125,.3);color:#FF9DB6}
+#login-screen .lgv-rule{margin:1.9rem 0 1.1rem;display:flex;align-items:center;gap:.8rem}
+#login-screen .lgv-rule::before,#login-screen .lgv-rule::after{content:'';flex:1;height:1px;background:rgba(226,208,250,.12)}
+#login-screen .lgv-rule span{font-size:.7rem;color:var(--lgv-txt3);font-weight:500}
+#login-screen .lgv-help{font-size:.8rem;color:var(--lgv-txt2);margin:0 0 .7rem}
+#login-screen .lgv-people{display:flex;flex-direction:column;gap:.3rem}
+#login-screen .lgv-person{display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.5rem;border-radius:9px;
+  font-size:.83rem;color:var(--lgv-lav);text-decoration:none;transition:.18s;font-weight:500}
+#login-screen .lgv-person:hover{background:rgba(142,68,237,.14);color:#fff}
+#login-screen .lgv-ver{margin:1.6rem 0 0;font-size:.7rem;color:rgba(226,208,250,.22)}
+
+/* ── responsivo ── */
+@media(max-width:940px){
+  #login-screen{overflow:auto}
+  #login-screen .lgv-split{grid-template-columns:1fr;height:auto;min-height:100%}
+  #login-screen .lgv-scene{min-height:62vh;gap:2.5rem}
+  #login-screen .lgv-mid{max-width:none}
+  #login-screen .lgv-pane{padding:3rem 1.5rem;border-left:none;border-top:1px solid rgba(226,208,250,.07)}
+  #login-screen .lgv-heave{width:210px}
+}
+@media(max-width:560px){
+  #login-screen .lgv-scene{min-height:56vh;padding:1.4rem}
+  #login-screen .lgv-bot{gap:1.6rem}
+  #login-screen .lgv-plane{width:110px}
+  #login-screen .lgv-heave{width:165px}
+}
+@media(prefers-reduced-motion:reduce){
+  #login-screen *{animation:none!important;transition:none!important}
+  #login-screen .lgv-logo3d{transform:rotateY(-20deg) rotateX(8deg)}
+  #login-screen .lgv-shipwrap{transform:translateX(24%)}
+  #login-screen .lgv-heave{transform:translateY(16%)}
+}
+</style>
+
+<div class="auth-screen" id="login-screen">
+  <div class="lgv-split">
+
+    <!-- ═══ CENA ═══ -->
+    <div class="lgv-scene">
+      <div class="lgv-glow"></div>
+
+      <div class="lgv-sky" aria-hidden="true">
+        <svg class="lgv-plane" viewBox="0 0 220 108">
+          <path d="M116 40 L96 14 L110 13 L140 36" opacity=".45"/>
+          <path d="M28 52 C28 43 40 37 60 36 L150 32 C172 31 190 36 202 45 C206 48 206 52 202 54 L92 62 C56 64 30 60 28 52 Z"/>
+          <path d="M186 38 C193 40 199 43 203 47 L187 48 Z"/>
+          <path d="M62 45 h7 M77 44 h7 M92 43 h7 M107 42 h7 M122 41 h7 M137 40 h7"/>
+          <path d="M32 46 L14 8 L30 7 L58 42"/>
+          <path d="M20 20 L41 18"/>
+          <path d="M30 56 L12 70 L30 71 L50 59"/>
+          <path d="M118 58 L92 92 L113 94 L152 62 Z"/>
+          <path d="M110 70 C102 70 98 74 98 78 C98 82 102 85 110 85 L128 82 C134 81 137 78 137 75 C137 72 134 70 128 69 Z"/>
+          <path d="M98 77 h39"/>
+          <path d="M124 34 C118 34 115 31 115 28 C115 25 118 23 124 23 L138 25 C143 26 145 28 145 30 C145 32 143 34 138 34 Z" opacity=".45"/>
+        </svg>
       </div>
-      <!-- Headline -->
-      <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center;padding:32px 0;">
-        <h1 style="font-family:'Funnel Display','Poppins',sans-serif;font-size:clamp(1.9rem,3vw,3rem);font-weight:700;color:#fff;line-height:1.1;letter-spacing:-0.03em;margin:0 0 20px;max-width:440px;">
-          Acompanhamos cada<br>
-          <span style="color:#E2D0FA;">suprimento, brinde e</span><br>
-          <span style="color:#E2D0FA;">chamado</span> que passa<br>
-          pela Logcomex.
-        </h1>
-        <p style="font-size:0.85rem;color:rgba(226,208,250,0.5);line-height:1.65;max-width:360px;font-weight:400;margin:0;">
-          Plataforma interna de gestão de chamados, suprimentos, brindes e logística — para a operação inteira ficar visível em um só lugar.
-        </p>
+
+      <div class="lgv-ocean back" aria-hidden="true">
+        <div class="lgv-wave lgv-w3">
+          <svg viewBox="0 0 600 200" preserveAspectRatio="none"><path d="M0 158 q30 -10 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 V200 H0 Z" fill="rgba(114,21,233,.36)"/></svg>
+          <svg viewBox="0 0 600 200" preserveAspectRatio="none"><path d="M0 158 q30 -10 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 V200 H0 Z" fill="rgba(114,21,233,.36)"/></svg>
+        </div>
+        <div class="lgv-wave lgv-w2">
+          <svg viewBox="0 0 600 200" preserveAspectRatio="none"><path d="M0 146 q37.5 -13 75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 V200 H0 Z" fill="rgba(45,8,93,.74)"/></svg>
+          <svg viewBox="0 0 600 200" preserveAspectRatio="none"><path d="M0 146 q37.5 -13 75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 V200 H0 Z" fill="rgba(45,8,93,.74)"/></svg>
+        </div>
       </div>
-      <!-- Stats rodapé -->
-      <div style="display:flex;gap:36px;position:relative;z-index:1;">
-        <div>
-          <div id="ls-chamados" style="font-family:'Funnel Display','Poppins',sans-serif;font-size:1.9rem;font-weight:700;color:#fff;letter-spacing:-0.04em;line-height:1;">—</div>
-          <div style="font-size:0.6rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(226,208,250,0.38);margin-top:4px;">Chamados em 2026</div>
+
+      <div class="lgv-shipwrap" aria-hidden="true">
+        <div class="lgv-heave">
+          <svg class="lgv-ship" viewBox="0 0 300 130">
+            <path d="M14 82 L258 82 L286 92 L272 112 L46 112 C30 112 20 100 14 82 Z"/>
+            <path d="M14 82 L272 82"/>
+            <path d="M22 82 V52 H70 V82"/>
+            <path d="M22 64 H70 M30 52 V42 H50 V52"/>
+            <path d="M28 58 h8 M42 58 h8 M56 58 h8"/>
+            <path d="M36 42 V26 H52 V42"/>
+            <path d="M84 82 V58 H130 V82 M84 70 H130 M99 58 V82 M114 58 V82"/>
+            <path d="M138 82 V50 H184 V82 M138 66 H184 M153 50 V82 M168 50 V82"/>
+            <path d="M192 82 V58 H238 V82 M192 70 H238 M207 58 V82 M222 58 V82"/>
+            <path d="M146 50 V38 H176 V50 M161 38 V50"/>
+            <path d="M252 82 V60 M244 62 h16"/>
+            <path d="M8 104 q-16 4 -30 1" opacity=".3"/>
+            <path d="M12 112 q-22 5 -42 2" opacity=".2"/>
+          </svg>
         </div>
-        <div>
-          <div id="ls-sla" style="font-family:'Funnel Display','Poppins',sans-serif;font-size:1.9rem;font-weight:700;color:#fff;letter-spacing:-0.04em;line-height:1;">—</div>
-          <div style="font-size:0.6rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(226,208,250,0.38);margin-top:4px;">SLA em 2026</div>
+      </div>
+
+      <div class="lgv-ocean front" aria-hidden="true">
+        <div class="lgv-wave lgv-w1">
+          <svg viewBox="0 0 600 200" preserveAspectRatio="none">
+            <defs><linearGradient id="lgvSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1c0838"/><stop offset="100%" stop-color="#0B0D19"/></linearGradient></defs>
+            <path d="M0 132 q50 -15 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 V200 H0 Z" fill="url(#lgvSea)"/>
+            <path d="M0 132 q50 -15 100 0 t100 0 t100 0 t100 0 t100 0 t100 0" fill="none" stroke="rgba(226,208,250,.24)" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <svg viewBox="0 0 600 200" preserveAspectRatio="none">
+            <path d="M0 132 q50 -15 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 V200 H0 Z" fill="url(#lgvSea)"/>
+            <path d="M0 132 q50 -15 100 0 t100 0 t100 0 t100 0 t100 0 t100 0" fill="none" stroke="rgba(226,208,250,.24)" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+          </svg>
         </div>
-        <div>
-          <div id="ls-tempo" style="font-family:'Funnel Display','Poppins',sans-serif;font-size:1.9rem;font-weight:700;color:#fff;letter-spacing:-0.04em;line-height:1;">3d</div>
-          <div style="font-size:0.6rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(226,208,250,0.38);margin-top:4px;">Tempo médio de atend.</div>
-        </div>
+      </div>
+      <div class="lgv-shimmer" aria-hidden="true"></div>
+
+      <div class="lgv-top">
+        <svg width="140" height="21" viewBox="0 0 197 30" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="logcomex.ai" id="lgv-wordmark"></svg>
+        <span class="sep"></span>
+        <span class="lbl">Gestão de chamados</span>
+      </div>
+
+      <div class="lgv-mid">
+        <h1>Acompanhamos cada chamado que passa pela Logcomex.</h1>
+        <p>Suprimentos, brindes, manutenção e logística — a operação inteira visível em um só lugar.</p>
+      </div>
+
+      <div class="lgv-bot" id="lgv-kpis">
+        <div class="lgv-kpi"><div class="n" id="ls-chamados">—</div><div class="l">Chamados em 2026</div></div>
+        <div class="lgv-kpi"><div class="n" id="ls-sla">—</div><div class="l">SLA cumprido em 2026</div></div>
       </div>
     </div>
 
-    <!-- ── LADO DIREITO ── -->
-    <div style="flex:1;height:100vh;background:#F5F6FC;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 40px;box-sizing:border-box;">
-      <div style="width:100%;max-width:340px;">
-        <h2 style="font-family:'Funnel Display','Poppins',sans-serif;font-size:1.75rem;font-weight:600;color:#0B0D19;letter-spacing:-0.03em;margin:0 0 8px;">Acesse sua conta</h2>
-        <p style="font-size:0.875rem;color:#5F616A;margin:0 0 28px;line-height:1.55;">Entre com seu e-mail corporativo Logcomex para continuar.</p>
-        <button onclick="doLoginGoogle()" style="width:100%;padding:13px 20px;background:#6613D0;border:none;border-radius:10px;font-family:'Poppins',sans-serif;font-size:0.9rem;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(102,19,208,0.28);transition:all 0.2s;letter-spacing:-0.01em;"
-          onmouseover="this.style.background='#5B11BA';this.style.transform='translateY(-1px)'"
-          onmouseout="this.style.background='#6613D0';this.style.transform=''">
-          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    <!-- ═══ LOGIN ═══ -->
+    <div class="lgv-pane">
+      <div class="lgv-box">
+        <div class="lgv-stage"><div class="lgv-stage-in"><div class="lgv-logo3d" id="lgv-logo3d"></div></div></div>
+        <h2>Acesse sua conta</h2>
+        <p class="lgv-sub">Entre com seu e-mail corporativo para continuar.</p>
+
+        <button class="lgv-gbtn" onclick="doLoginGoogle()">
+          <span class="lgv-gi">
+            <svg width="13" height="13" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          </span>
           Entrar com Google
         </button>
-        <div id="login-error" style="display:none;margin-top:10px;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:0.8rem;color:#dc2626;text-align:center;"></div>
-        <p style="margin:12px 0 0;font-size:0.75rem;color:#C0C1C9;text-align:center;">Acesso restrito a colaboradores <strong style="color:#5F616A;">@logcomex.com</strong></p>
-        <div style="margin:24px 0;display:flex;align-items:center;gap:12px;">
-          <div style="flex:1;height:1px;background:#E0E1EB;"></div>
-          <span style="font-size:0.67rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#C0C1C9;">Suporte</span>
-          <div style="flex:1;height:1px;background:#E0E1EB;"></div>
+        <p class="lgv-restrict">Acesso restrito a <strong>@logcomex.com</strong></p>
+        <div id="login-error" style="display:none;"></div>
+
+        <div class="lgv-rule"><span>Precisa de ajuda?</span></div>
+        <p class="lgv-help">Fale com o time de Facilities no Slack:</p>
+        <div class="lgv-people">
+          <a class="lgv-person" href="slack://user?team=T019X3PFNR4&amp;id=U09MEN4BS0N">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" fill="#E2D0FA"/></svg>
+            João Faria
+          </a>
+          <a class="lgv-person" href="slack://user?team=T019X3PFNR4&amp;id=U033LS5KK4P">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" fill="#E2D0FA"/></svg>
+            Henrique Silva
+          </a>
+          <a class="lgv-person" href="slack://user?team=T019X3PFNR4&amp;id=U05MZ6X5YUV">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" fill="#E2D0FA"/></svg>
+            Christian Bertolino
+          </a>
         </div>
-        <div style="text-align:center;">
-          <p style="font-size:0.78rem;color:#C0C1C9;margin:0 0 12px;">Precisa de ajuda? Fale com o time de Facilities:</p>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <a href="slack://user?team=T019X3PFNR4&id=U09MEN4BS0N"
-              style="font-size:0.78rem;color:#6613D0;text-decoration:none;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;transition:color .15s;"
-              onmouseover="this.style.color='#5B11BA'" onmouseout="this.style.color='#6613D0'">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" fill="#6613D0"/></svg> João Faria
-            </a>
-            <a href="slack://user?team=T019X3PFNR4&id=U033LS5KK4P"
-              style="font-size:0.78rem;color:#6613D0;text-decoration:none;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;transition:color .15s;"
-              onmouseover="this.style.color='#5B11BA'" onmouseout="this.style.color='#6613D0'">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" fill="#6613D0"/></svg> Henrique Silva
-            </a>
-            <a href="slack://user?team=T019X3PFNR4&id=U05MZ6X5YUV"
-              style="font-size:0.78rem;color:#6613D0;text-decoration:none;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;transition:color .15s;"
-              onmouseover="this.style.color='#5B11BA'" onmouseout="this.style.color='#6613D0'">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" fill="#6613D0"/></svg> Christian Bertolino
-            </a>
-          </div>
-        </div>
-        <p style="margin:28px 0 0;font-size:0.67rem;color:#C0C1C9;text-align:center;">v1.0 · Facilities Logcomex · 2026</p>
+        <p class="lgv-ver">Facilities LogComex · 2026</p>
       </div>
     </div>
+
   </div>
 </div>
+
+<script>
+/* wordmark oficial + logo 3D girando (extrusão em camadas, sem dependência) */
+(function(){
+  var wm=document.getElementById('lgv-wordmark');
+  if(wm) wm.innerHTML="<path d=\"M170.124 20.0846H167.091V23.1403H170.124V20.0846Z\" fill=\"white\"></path> <path d=\"M191.659 23.1386V7.58946H194.71V21.0058C194.71 22.1838 193.755 23.1386 192.577 23.1386H191.659Z\" fill=\"white\"></path> <path d=\"M193.263 0.0573844C193.429 1.63067 194.663 2.87879 196.224 3.04137C196.3 3.05094 196.3 3.16571 196.224 3.17049C194.663 3.33786 193.424 4.58119 193.263 6.15448C193.254 6.23099 193.14 6.23099 193.135 6.15448C192.969 4.58119 191.735 3.33308 190.174 3.17049C190.098 3.16093 190.098 3.04616 190.174 3.04137C191.735 2.874 192.974 1.63067 193.135 0.0573844C193.144 -0.0191281 193.258 -0.0191281 193.263 0.0573844Z\" fill=\"white\"></path> <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M178.862 7.26371C179.672 7.26371 180.412 7.3822 181.083 7.61913C181.755 7.85607 182.337 8.19166 182.831 8.62605C183.313 9.01527 183.708 9.46542 184.015 9.97641V7.58953H187.096V23.1386H184.015V20.7574C184.006 20.7711 183.996 20.785 183.986 20.7988C183.63 21.2924 183.167 21.7368 182.594 22.1317C182.041 22.5266 181.419 22.8425 180.728 23.0794C180.057 23.3163 179.346 23.4348 178.596 23.4348C177.312 23.4348 176.137 23.0794 175.071 22.3686C174.025 21.6578 173.185 20.6902 172.554 19.466C171.922 18.2419 171.606 16.8598 171.606 15.3197C171.606 13.7598 171.922 12.3776 172.554 11.1732C173.205 9.94899 174.074 8.9913 175.16 8.30023C176.266 7.60917 177.5 7.26372 178.862 7.26371ZM179.395 10.0773C178.487 10.0773 177.677 10.3044 176.967 10.7586C176.275 11.2127 175.723 11.8346 175.308 12.6244C174.913 13.4142 174.716 14.3127 174.716 15.3197C174.716 16.3464 174.913 17.2646 175.308 18.0741C175.723 18.8639 176.276 19.4859 176.967 19.94C177.677 20.3941 178.487 20.6212 179.395 20.6212C180.323 20.6212 181.143 20.3941 181.854 19.94C182.564 19.4858 183.117 18.8639 183.512 18.0741C183.927 17.2646 184.134 16.3464 184.134 15.3197C184.134 14.3127 183.927 13.4142 183.512 12.6244C183.117 11.8347 182.564 11.2127 181.854 10.7586C181.143 10.3044 180.323 10.0773 179.395 10.0773Z\" fill=\"white\"></path> <path d=\"M86.4294 18.6307C86.2683 18.8051 86.0983 18.9677 85.9061 19.1185C85.0768 19.7719 84.0671 20.1015 82.9097 20.1015C81.5378 20.1015 80.3922 19.6551 79.5052 18.7696C78.6168 17.8886 78.1674 16.7488 78.1674 15.3829C78.1674 14.017 78.6182 12.8817 79.5052 11.9962C80.3951 11.1107 81.5349 10.6643 82.9097 10.6643C84.0671 10.6643 85.0768 10.9954 85.9061 11.6473C86.0997 11.7981 86.2668 11.9667 86.4279 12.1411L88.3526 9.65908C88.2876 9.59847 88.2211 9.53639 88.1545 9.47578C86.7221 8.2503 84.9585 7.62499 82.9082 7.62499C80.642 7.62499 78.7469 8.36856 77.273 9.83204C75.78 11.2778 75.0231 13.1434 75.0231 15.3814C75.0231 17.6195 75.7785 19.4851 77.2716 20.9309C78.7454 22.3958 80.6405 23.1379 82.9067 23.1379C84.9541 23.1379 86.7206 22.517 88.1531 21.2871C88.2211 21.2265 88.2861 21.1644 88.3482 21.1038L86.4264 18.6233H86.4309V18.6277L86.4294 18.6307Z\" fill=\"white\"></path> <path d=\"M97.9214 7.63091C95.6553 7.63091 93.7586 8.37448 92.2863 9.83796C90.7932 11.2837 90.0379 13.1493 90.0379 15.3874C90.0379 17.6255 90.7932 19.491 92.2863 20.9368C93.7601 22.4017 95.6553 23.1438 97.9214 23.1438C100.188 23.1438 102.083 22.3988 103.557 20.9368C105.05 19.491 105.805 17.6255 105.805 15.3874C105.805 13.1493 105.05 11.2837 103.557 9.83796C102.086 8.373 100.188 7.63091 97.9214 7.63091ZM101.326 18.7726C100.436 19.6581 99.2962 20.1045 97.9214 20.1045C96.5467 20.1045 95.4069 19.6581 94.517 18.7726C93.6271 17.8915 93.1806 16.7518 93.1806 15.3859C93.1806 14.02 93.6315 12.8847 94.517 11.9992C95.4054 11.1137 96.5467 10.6673 97.9214 10.6673C99.2962 10.6673 100.436 11.1137 101.326 11.9992C102.214 12.8847 102.662 14.0214 102.662 15.3859C102.662 16.7503 102.213 17.8886 101.326 18.7726Z\" fill=\"white\"></path> <path d=\"M47.7122 7.63091C45.446 7.63091 43.5509 8.37448 42.077 9.83796C40.584 11.2837 39.8286 13.1493 39.8286 15.3874C39.8286 17.6255 40.584 19.491 42.077 20.9368C43.5509 22.4017 45.446 23.1438 47.7122 23.1438C49.9784 23.1438 51.8735 22.3988 53.3473 20.9368C54.8404 19.491 55.5972 17.6255 55.5972 15.3874C55.5972 13.1493 54.8418 11.2837 53.3488 9.83796C51.875 8.373 49.9798 7.63091 47.7137 7.63091H47.7122ZM51.1151 18.7726C50.2267 19.6581 49.0855 20.1045 47.7107 20.1045C46.3359 20.1045 45.1962 19.6581 44.3063 18.7726C43.4178 17.8915 42.9684 16.7518 42.9684 15.3859C42.9684 14.02 43.4193 12.8847 44.3063 11.9992C45.1947 11.1137 46.3359 10.6673 47.7107 10.6673C49.0855 10.6673 50.2252 11.1137 51.1151 11.9992C52.0051 12.8847 52.453 14.0214 52.453 15.3859C52.453 16.7503 52.0021 17.8886 51.1151 18.7726Z\" fill=\"white\"></path> <path d=\"M115.931 7.63091H111.822V10.8033H108.63V23.1438H111.823V10.8077H115.946C117.412 10.8077 118.601 11.9888 118.601 13.4479V23.1423H121.794V13.4612C121.794 10.2415 119.17 7.63091 115.933 7.63091H115.93H115.931Z\" fill=\"white\"></path> <path d=\"M125.207 7.63091H121.151V10.8077H125.221C126.687 10.8077 127.873 11.9888 127.873 13.4479V23.1423H131.066V13.4612C131.066 10.2415 128.442 7.63091 125.204 7.63091H125.207Z\" fill=\"white\"></path> <path d=\"M160.941 7.63091L156.734 13.0606L152.523 7.63091H148.936L154.956 15.3859L148.936 23.1423H152.523L156.734 17.7112L160.941 23.1423H164.528L158.511 15.3859L164.528 7.63091H160.941Z\" fill=\"white\"></path> <path d=\"M34.6369 17.3919V0.96096H31.4808V17.3786C31.4808 20.5613 34.0752 23.1423 37.2727 23.1423H38.0798V20.0025H37.2549C35.8047 20.0025 34.6325 18.8347 34.6325 17.3948H34.6369V17.3904V17.3919Z\" fill=\"white\"></path> <path d=\"M137.271 18.2833L137.304 18.338H137.307C137.764 19.0638 138.401 19.6285 139.212 20.0306C140.048 20.443 141.007 20.647 142.093 20.647C142.864 20.647 143.576 20.5273 144.233 20.2834C144.89 20.0468 145.593 19.6226 146.338 19.0165L147.776 20.922C147.321 21.3403 146.766 21.7084 146.111 22.0262C145.451 22.3574 144.741 22.6235 143.983 22.8245C143.244 23.0078 142.518 23.098 141.799 23.098C140.223 23.098 138.826 22.7861 137.605 22.1652C136.404 21.5251 135.456 20.6559 134.758 19.5605C134.081 18.4651 133.743 17.2041 133.743 15.7776C133.743 14.6408 133.938 13.6075 134.324 12.6747C134.712 11.7419 135.245 10.9378 135.923 10.2607C136.618 9.56594 137.441 9.03672 138.392 8.67011C139.362 8.28724 140.408 8.09359 141.535 8.09359C142.524 8.09359 143.443 8.27541 144.295 8.64202H144.296C145.151 8.9909 145.885 9.47429 146.503 10.0952C147.142 10.7175 147.624 11.4552 147.953 12.3126V12.3155C148.301 13.1552 148.465 14.0761 148.446 15.0843L148.417 16.23H136.615L136.63 16.3541C136.716 17.0696 136.93 17.7127 137.27 18.2847L137.271 18.2833ZM145.513 14.1086V13.9963L145.508 13.8411V13.8322C145.448 13.2084 145.227 12.6511 144.847 12.1588C144.469 11.668 143.989 11.2837 143.412 11.0013C142.834 10.719 142.206 10.5786 141.53 10.5786C140.464 10.5786 139.563 10.7737 138.825 11.1684C138.089 11.5453 137.53 12.11 137.15 12.8625C136.977 13.1966 136.844 13.5676 136.751 13.9726L136.72 14.1086H145.513Z\" fill=\"white\"></path> <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M69.286 7.65455H72.4406V15.1168C72.4435 15.2129 72.445 15.309 72.445 15.4066C72.445 15.5041 72.4435 15.6017 72.4406 15.6978V22.8807C72.4406 27.5106 69.8137 30 64.6324 30C62.3411 30 60.31 29.3318 58.505 27.8846C58.539 27.8979 60.446 25.3789 60.446 25.3789C60.446 25.3789 62.3278 26.8587 64.696 26.8587C67.5993 26.8587 69.286 25.4602 69.286 23.1305V21.6508C68.0531 22.4919 66.5837 22.9147 64.897 22.9147C62.7107 22.9147 60.8939 22.2036 59.4792 20.7978C58.0645 19.3949 57.349 17.5826 57.349 15.408C57.349 13.2335 58.0645 11.4241 59.4792 10.0183C60.8924 8.61246 62.7107 7.90142 64.897 7.90142C66.5852 7.90142 68.0531 8.32568 69.286 9.16681V7.65455ZM69.286 14.6142C69.1441 13.6814 68.7449 12.8832 68.0901 12.2313C67.2563 11.4019 66.1846 10.9806 64.897 10.9806C63.6094 10.9806 62.5362 11.4019 61.704 12.2313C60.8732 13.0606 60.4504 14.1279 60.4504 15.408C60.4504 16.6882 60.8717 17.757 61.704 18.5848C62.5377 19.4141 63.6109 19.8354 64.897 19.8354C66.1831 19.8354 67.2563 19.4141 68.0901 18.5848C68.7435 17.9329 69.1441 17.1332 69.286 16.2004V14.6142Z\" fill=\"white\"></path> <path d=\"M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z\" fill=\"white\"></path> <path d=\"M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z\" fill=\"white\"></path> <path d=\"M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z\" fill=\"white\"></path>";
+  var el=document.getElementById('lgv-logo3d');
+  if(!el) return;
+  var VB='0 0.9 22.35 22.3',
+  SQ='M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z',
+  L='M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z',
+  B='M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z';
+  function s(a,b,x){return '<svg viewBox="'+VB+'" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'+(x||'')+'<path d="'+L+'" fill="'+a+'"/><path d="'+SQ+'" fill="'+a+'"/><path d="'+B+'" fill="'+b+'"/></svg>';}
+  var n=16,h='';
+  for(var i=n;i>=1;i--){var t=i/n,m=.30+(1-t)*.28;
+    h+='<div class="lgv-layer" style="transform:translateZ('+(-i*1.35)+'px)">'+s('rgb('+Math.round(120*m)+','+Math.round(40*m)+','+Math.round(215*m)+')','rgb('+Math.round(70*m)+','+Math.round(20*m)+','+Math.round(140*m)+')')+'</div>';}
+  h+='<div class="lgv-layer" style="transform:translateZ(1px)">'+s('url(#lgvW)','url(#lgvP)','<defs><linearGradient id="lgvW" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#E2D0FA"/></linearGradient><linearGradient id="lgvP" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8E44ED"/><stop offset="100%" stop-color="#5B11BA"/></linearGradient></defs>')+'</div>';
+  el.innerHTML=h;
+})();
+</script>
+<!-- ══════════ FIM TELA DE LOGIN ══════════ -->
+
 
 
 
@@ -2146,17 +2278,14 @@ window.addEventListener('DOMContentLoaded', () => {
     // Animar contadores
     animarContador(document.getElementById('ls-chamados'), total, '');
     animarContador(document.getElementById('ls-sla'), sla, '%');
-    // Tempo médio fixo em 3d
-    const elT = document.getElementById('ls-tempo');
-    if (elT) elT.textContent = '3d';
+    // 'Tempo médio' removido: era valor fixo, não calculado
 
   } catch(e) {
     console.log('Stats login erro:', e);
     // Fallback com valores aproximados
-    const elC = document.getElementById('ls-chamados');
-    const elS = document.getElementById('ls-sla');
-    if (elC) elC.textContent = '112';
-    if (elS) elS.textContent = '98%';
+    // Sem número inventado: se a leitura falhar, esconde o bloco de KPIs
+    const box = document.getElementById('lgv-kpis');
+    if (box) box.style.display = 'none';
   }
 })();
 </script>
