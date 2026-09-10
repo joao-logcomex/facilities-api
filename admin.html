@@ -3846,19 +3846,26 @@ window.renderHistorico = renderHistorico;
 
   // ── PROJETOS IA (% mostrado na TV / Go Live) ──────────────
   window._projetosIA = [];
-  (async () => {
-    const { collection, onSnapshot, query, orderBy } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    onSnapshot(query(collection(db, 'projetos_ia'), orderBy('ordem', 'asc')), snap => {
-      window._projetosIA = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  // Migrado do Firestore (onSnapshot) para o Supabase via endpoint.
+  // Já vem ordenado por ordem, nome — o fallback do orderBy deixou de
+  // ser necessário porque a coluna tem default 0 e é not null.
+  window.carregarProjetosIA = async function (silencioso) {
+    try {
+      const r = await fetch('/api/relatorio-imobiliario?projetos=1');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      if (!d || d.ok !== true || !Array.isArray(d.projetos)) {
+        throw new Error((d && d.error) || 'resposta inválida');
+      }
+      window._projetosIA = d.projetos.map(p => ({ _id: p.id, ...p }));
       if (document.getElementById('grid-projetos-ia')) renderProjetosIA();
-    }, () => {
-      // fallback sem orderBy caso algum doc antigo nao tenha 'ordem'
-      onSnapshot(collection(db, 'projetos_ia'), snap => {
-        window._projetosIA = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-        if (document.getElementById('grid-projetos-ia')) renderProjetosIA();
-      });
-    });
-  })();
+    } catch (e) {
+      console.error('[admin] projetos:', e.message);
+      if (!silencioso) showToast('Erro ao carregar projetos.');
+    }
+  };
+  window.carregarProjetosIA(true);
+  setInterval(() => window.carregarProjetosIA(true), 60000);
 
   function renderProjetosIA() {
     const grid = document.getElementById('grid-projetos-ia');
@@ -3982,19 +3989,16 @@ window.renderHistorico = renderHistorico;
     if (!data_inicio || !data_fim) { alert('Data de início e data de fim são obrigatórias (é o que desenha a barra no cronograma da TV).'); return; }
     if (percentual !== null && (isNaN(percentual) || percentual < 0 || percentual > 100)) { alert('Progresso precisa ser um número de 0 a 100.'); return; }
     try {
-      const { collection, doc, setDoc, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      const dados = {
+      await apiAdmin('salvar_projeto=1', {
+        id: id || undefined,
         nome, grupo: grupo || null, data_inicio, data_fim,
         tem_operacao_assistida, assistida_inicio, assistida_fim, go_live_data,
-        percentual, status_texto: status_texto || null, ordem, updatedAt: serverTimestamp(),
-      };
-      if (id) {
-        await setDoc(doc(db, 'projetos_ia', id), dados, { merge: true });
-      } else {
-        dados.createdAt = serverTimestamp();
-        await addDoc(collection(db, 'projetos_ia'), dados);
-      }
+        percentual: percentual === null ? 0 : percentual,
+        status_texto: status_texto || null,
+        ordem,
+      });
       fecharModalImob();
+      await window.carregarProjetosIA(true);
     } catch (e) {
       alert('Erro ao salvar: ' + e.message);
     }
@@ -4003,9 +4007,9 @@ window.renderHistorico = renderHistorico;
   window.deletarProjetoIA = async function(id, nome) {
     if (!confirm(`Excluir o projeto "${nome}"? Ele deixa de aparecer na TV.`)) return;
     try {
-      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      await deleteDoc(doc(db, 'projetos_ia', id));
+      await apiAdmin(`excluir_projeto=1&id=${encodeURIComponent(id)}`);
       fecharModalImob();
+      await window.carregarProjetosIA(true);
     } catch (e) {
       alert('Erro ao excluir: ' + e.message);
     }
@@ -4731,16 +4735,47 @@ window.renderHistorico = renderHistorico;
   let estoqueData = [];
   let estoqueEditId = null;
 
-  async function carregarEstoqueAdmin() {
-    const { collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    onSnapshot(collection(db, 'estoque_brindes'), snap => {
-      estoqueData = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  // ── Chamada autenticada ao backend (estoque e projetos vivem no Supabase) ──
+  // Envia o ID token do Firebase; o endpoint valida e confere se o e-mail
+  // está na lista de admins antes de gravar.
+  async function apiAdmin(query, body) {
+    const user = window.auth?.currentUser;
+    if (!user) throw new Error('sessão expirada — recarregue a página');
+    const token = await user.getIdToken();
+    const r = await fetch(`/api/relatorio-imobiliario?${query}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const d = await r.json().catch(() => null);
+    if (!r.ok || !d || d.ok !== true) {
+      throw new Error((d && d.error) || `HTTP ${r.status}`);
+    }
+    return d;
+  }
+
+  // Migrado do Firestore (onSnapshot) para o Supabase via endpoint.
+  // Tempo real não era necessário: o estoque muda por edição manual aqui
+  // mesmo, ou por baixa do bot. Recarrega a cada 60s e após cada salvamento.
+  async function carregarEstoqueAdmin(silencioso) {
+    try {
+      const r = await fetch('/api/relatorio-imobiliario?brindes_estoque=1&todos=1');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      if (!d || d.ok !== true || !Array.isArray(d.itens)) {
+        throw new Error((d && d.error) || 'resposta inválida');
+      }
+      // _id mantido por compatibilidade com o render existente
+      estoqueData = d.itens.map(i => ({ _id: i.id, ...i }));
       renderEstoque();
       atualizarBadgeEstoque();
-      // Notificar Leandro no Slack se houver estoque baixo
       verificarAlertaEstoque(estoqueData);
-    });
+    } catch (e) {
+      console.error('[admin] estoque:', e.message);
+      if (!silencioso) showToast('Erro ao carregar estoque.');
+    }
   }
+  setInterval(() => carregarEstoqueAdmin(true), 60000);
 
   // Controle para não disparar o mesmo alerta duas vezes seguidas
   let _ultimoAlertaEstoque = '';
@@ -4997,21 +5032,21 @@ window.renderHistorico = renderHistorico;
 
   window.salvarEstoque = async () => {
     if (!estoqueEditId) return;
-    const { doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const storage = parseInt(document.getElementById('est-storage').value) || 0;
     const sede = parseInt(document.getElementById('est-sede').value) || 0;
     const minimo = parseInt(document.getElementById('est-minimo').value) || 50;
     try {
-      await updateDoc(doc(db, 'estoque_brindes', estoqueEditId), {
-        estoque_storage: storage,
+      // estoque_total não é enviado: é coluna calculada no Postgres
+      await apiAdmin('salvar_estoque=1', {
+        id: estoqueEditId,
         estoque_sede: sede,
-        estoque_total: storage + sede,
+        estoque_storage: storage,
         minimo_alerta: minimo,
-        updatedAt: new Date()
       });
       fecharEstoqueModal();
       showToast('✅ Estoque atualizado!');
-    } catch(err) { console.error(err); showToast('Erro ao salvar.'); }
+      await carregarEstoqueAdmin(true);
+    } catch(err) { console.error(err); showToast('Erro ao salvar: ' + err.message); }
   };
 
   // Fechar modal ao clicar fora
