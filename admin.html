@@ -3227,19 +3227,32 @@ window.renderHistorico = renderHistorico;
       atualizarDropdownLocalizacoes();
       if (imobData.patrimonio.length) renderPatrimonio();
     });
-    onSnapshot(collection(db, 'estoque_ti'), snap => {
-      window._estoqueTI = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-      renderEstoqueTI();
-    });
-    onSnapshot(collection(db, 'estoque_onboarding'), snap => {
-      window._estoqueOnboarding = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-      renderOnboarding();
-    });
-    onSnapshot(collection(db, 'estoque_saidas'), snap => {
-      window._saidasEstoque = snap.docs.map(d => ({ _id: d.id, ...d.data() }))
-        .sort((a,b) => { const da = a.data?.toDate?a.data.toDate():new Date(a.data||0); const db2 = b.data?.toDate?b.data.toDate():new Date(b.data||0); return db2-da; });
-      if (document.getElementById('page-controle-saidas')?.classList.contains('active')) renderSaidas();
-    });
+    // Migrado do Firestore (3 onSnapshot) para o Supabase num fetch só.
+    // As saídas já vêm ordenadas por data desc do banco.
+    window.carregarEstoques = async function (silencioso) {
+      try {
+        const u = window.auth?.currentUser;
+        if (!u) return;
+        const tk = await u.getIdToken();
+        const r = await fetch('/api/relatorio-imobiliario?estoques=1', {
+          headers: { Authorization: `Bearer ${tk}` },
+        });
+        const d = await r.json().catch(() => null);
+        if (!r.ok || !d || d.ok !== true) throw new Error((d && d.error) || `HTTP ${r.status}`);
+        // _id mantido por compatibilidade com os renders existentes
+        window._estoqueTI = d.ti.map(i => ({ _id: i.id, ...i }));
+        window._estoqueOnboarding = d.onboarding.map(i => ({ _id: i.id, ...i }));
+        window._saidasEstoque = d.saidas.map(i => ({ _id: i.id, ...i }));
+        renderEstoqueTI();
+        renderOnboarding();
+        if (document.getElementById('page-controle-saidas')?.classList.contains('active')) renderSaidas();
+      } catch (e) {
+        console.error('[admin] estoques:', e.message);
+        if (!silencioso) showToast('Erro ao carregar estoques.');
+      }
+    };
+    window.carregarEstoques(true);
+    setInterval(() => window.carregarEstoques(true), 60000);
 
     onSnapshot(collection(db, 'imob_sublocalizacoes'), snap => {
       imobData.sublocalizacoes = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
@@ -3538,17 +3551,18 @@ window.renderHistorico = renderHistorico;
     }
     const btn = document.getElementById('mti-btn-salvar');
     btn.disabled = true; btn.textContent = 'Salvando...';
-    window._updateDoc(window._doc(window.db, 'estoque_ti', id), { quantidade: nova, updatedAt: new Date() })
-      .then(() => {
-        if (_mtiAba === 'saida') {
-          window._addDoc(window._collection(window.db, 'estoque_saidas'), {
-            tipo: 'saida_ti', item: item.nome, quantidade: qtd,
-            observacao: obsEl?.value || '', data: new Date(),
-            criadoPor: window._auth?.currentUser?.email || ''
-          }).catch(()=>{});
-        }
+    // Envia o DELTA: a soma acontece no banco, sem risco de sobrescrever
+    // um ajuste feito ao mesmo tempo por outra pessoa.
+    const _delta = _mtiAba === 'saida' ? -qtd : qtd;
+    apiAdmin('ajustar_estoque=1', {
+      alvo: 'ti', id, delta: _delta, item: item.nome,
+      observacao: obsEl?.value || '', tipo: 'saida_ti',
+    })
+      .then(async (resp) => {
+        const novaQtd = resp?.item?.quantidade ?? nova;
         fecharModalTI();
-        alert((_mtiAba==='entrada'?'Entrada':'Saída') + ' registrada! Novo estoque: ' + nova);
+        await window.carregarEstoques(true);
+        alert((_mtiAba==='entrada'?'Entrada':'Saída') + ' registrada! Novo estoque: ' + novaQtd);
       })
       .catch(e => { alert('Erro: ' + e.message); btn.disabled = false; btn.textContent = _mtiAba==='entrada'?'Confirmar entrada':'Confirmar saída'; });
   };
@@ -3561,16 +3575,13 @@ window.renderHistorico = renderHistorico;
     const n = parseInt(qtd);
     if (isNaN(n) || n === 0) { alert('Valor invalido'); return; }
     const nova = Math.max(0, (item.quantidade||0) + n);
-    window._updateDoc(window._doc(window.db, 'estoque_ti', id), { quantidade: nova, updatedAt: new Date() })
-      .then(() => {
-        if (n < 0) {
-          window._addDoc(window._collection(window.db, 'estoque_saidas'), {
-            tipo: 'saida_ti', item: item.nome, quantidade: Math.abs(n),
-            observacao: 'Ajuste rápido via card', data: new Date(),
-            criadoPor: window._auth?.currentUser?.email || ''
-          }).catch(()=>{});
-        }
-        alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + nova);
+    apiAdmin('ajustar_estoque=1', {
+      alvo: 'ti', id, delta: n, item: item.nome,
+      observacao: 'Ajuste rápido via card', tipo: 'saida_ti',
+    })
+      .then(async (resp) => {
+        await window.carregarEstoques(true);
+        alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + (resp?.item?.quantidade ?? nova));
       })
       .catch(e => alert('Erro: ' + e.message));
   };
@@ -3639,16 +3650,13 @@ window.renderHistorico = renderHistorico;
     const n = parseInt(qtd);
     if (isNaN(n) || n === 0) { alert('Valor invalido'); return; }
     const nova = Math.max(0, (item.quantidade||0) + n);
-    window._updateDoc(window._doc(window.db, 'estoque_onboarding', id), { quantidade: nova, updatedAt: new Date() })
-      .then(() => {
-        if (n < 0) {
-          window._addDoc(window._collection(window.db, 'estoque_saidas'), {
-            tipo: 'saida_onboarding', item: item.nome, quantidade: Math.abs(n),
-            observacao: 'Ajuste rápido via card', data: new Date(),
-            criadoPor: window._auth?.currentUser?.email || ''
-          }).catch(()=>{});
-        }
-        alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + nova);
+    apiAdmin('ajustar_estoque=1', {
+      alvo: 'onboarding', id, delta: n, item: item.nome,
+      observacao: 'Ajuste rápido via card', tipo: 'saida_onboarding',
+    })
+      .then(async (resp) => {
+        await window.carregarEstoques(true);
+        alert((n>0?'Entrada':'Saida') + ' registrada! Novo estoque: ' + (resp?.item?.quantidade ?? nova));
       })
       .catch(e => alert('Erro: ' + e.message));
   };
@@ -3668,10 +3676,25 @@ window.renderHistorico = renderHistorico;
     const semEst = outros.filter(i => (i.quantidade||0) < 1);
     if (semEst.length) { alert('Sem estoque de: ' + semEst.map(i=>i.nome).join(', ')); return; }
     if (!confirm('Entregar kit para ' + colaborador + '?\nCamiseta ' + tam + ' + ' + outros.map(i=>i.nome).join(', '))) return;
-    const updates = [window._updateDoc(window._doc(window.db, 'estoque_onboarding', itemCamisa._id), { quantidade: (itemCamisa.quantidade||0)-1, updatedAt: new Date() })];
-    outros.forEach(i => updates.push(window._updateDoc(window._doc(window.db, 'estoque_onboarding', i._id), { quantidade: (i.quantidade||0)-1, updatedAt: new Date() })));
-    updates.push(window._addDoc(window._collection(db, 'estoque_saidas'), { tipo:'kit_onboarding', colaborador, tamanhoCamiseta:tam, itens:['Camiseta '+tam,...outros.map(i=>i.nome)], data:new Date(), criadoPor:window._auth?.currentUser?.email||'' }));
-    Promise.all(updates).then(() => alert('Kit entregue para ' + colaborador + '!')).catch(e => alert('Erro: ' + e.message));
+    // Antes eram N updateDoc em paralelo com Promise.all, cada um gravando
+    // um valor calculado no navegador. Agora o backend baixa 1 unidade de
+    // cada item por RPC atômica e registra uma única saída do tipo kit.
+    apiAdmin('entregar_kit=1', {
+      ids: [itemCamisa._id, ...outros.map(i => i._id)],
+      colaborador,
+      tamanho_camiseta: tam,
+      itens: ['Camiseta ' + tam, ...outros.map(i => i.nome)],
+    })
+      .then(async (resp) => {
+        await window.carregarEstoques(true);
+        if (resp.baixados !== resp.pedidos) {
+          alert('Kit entregue para ' + colaborador + ', mas ' + (resp.pedidos - resp.baixados) +
+                ' item(ns) falharam na baixa. Confira o estoque.');
+        } else {
+          alert('Kit entregue para ' + colaborador + '!');
+        }
+      })
+      .catch(e => alert('Erro: ' + e.message));
   };
 
   window.abrirModalReporEstoque = function() { alert('Clique em qualquer item para registrar entrada ou saida.'); };
