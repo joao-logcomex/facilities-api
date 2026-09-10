@@ -238,22 +238,22 @@ async function rodarAutoConcluirBrindes() {
       // que foi usado pra dar baixa quando o chamado foi criado.
       const itensTexto = dados.itens_brinde || dados.titulo || '';
       const textoNorm = normalizarNome(itensTexto);
-      const estoqueSnap = await db.collection('estoque_brindes').get();
-      for (const itemDoc of estoqueSnap.docs) {
-        const itemDados = itemDoc.data();
-        const nomeNorm = normalizarNome(itemDados.nome || itemDoc.id);
+      const estoqueItens = await listarEstoqueBrindes();
+      for (const item of estoqueItens) {
+        const nomeNorm = normalizarNome(item.nome || item.id);
         const qtd = detectarQtdNoTexto(textoNorm, nomeNorm);
         if (qtd && qtd > 0) {
-          // Campos reais: estoque_sede / estoque_storage / estoque_total
-          const sedeAtual = typeof itemDados.estoque_sede === 'number' ? itemDados.estoque_sede : 0;
-          const storageAtual = typeof itemDados.estoque_storage === 'number' ? itemDados.estoque_storage : 0;
-          await itemDoc.ref.update({
-            estoque_sede: sedeAtual + qtd,
-            estoque_total: sedeAtual + qtd + storageAtual,
-            updatedAt: new Date(),
-            ultimaAtualizacao: new Date(),
-            ultimaBaixaPor: 'devolucao_automatica',
-          });
+          // Devolução no Supabase, atômica (evita corrida com o bot).
+          // O estoque_total é coluna calculada: não precisa ser somado à mão.
+          try {
+            await supabaseRpc('devolver_estoque_brinde', {
+              p_id: item.id,
+              p_qtd: qtd,
+              p_por: 'devolucao_automatica',
+            });
+          } catch (errDev) {
+            console.error(`Falha ao devolver ${item.id} (+${qtd}):`, errDev.message);
+          }
         }
       }
 
@@ -290,6 +290,32 @@ async function supabasePost(path, body) {
     },
     body: JSON.stringify(body),
   });
+}
+
+// Lista o estoque de brindes no Supabase (substitui a leitura do Firestore)
+async function listarEstoqueBrindes() {
+  if (!SUPABASE_URL_ENV || !SUPABASE_KEY_ENV) throw new Error('Supabase não configurado');
+  const r = await fetch(`${SUPABASE_URL_ENV}/rest/v1/estoque_brindes?select=*&order=nome.asc`, {
+    headers: { apikey: SUPABASE_KEY_ENV, Authorization: `Bearer ${SUPABASE_KEY_ENV}` },
+  });
+  if (!r.ok) throw new Error(`Supabase respondeu ${r.status} em estoque_brindes`);
+  return r.json();
+}
+
+// Chama uma function do Postgres via Supabase RPC
+async function supabaseRpc(fn, args) {
+  if (!SUPABASE_URL_ENV || !SUPABASE_KEY_ENV) throw new Error('Supabase não configurado');
+  const r = await fetch(`${SUPABASE_URL_ENV}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_KEY_ENV,
+      Authorization: `Bearer ${SUPABASE_KEY_ENV}`,
+    },
+    body: JSON.stringify(args),
+  });
+  if (!r.ok) throw new Error(`RPC ${fn} respondeu ${r.status}: ${await r.text()}`);
+  return r.json();
 }
 
 // Gera ID sequencial via Supabase (evita dependência do Firestore)
@@ -677,6 +703,27 @@ module.exports = async (req, res) => {
       const data = await r.json();
       return res.status(200).json({ ok: true, tickets: data });
     } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Estoque de brindes (Supabase) — usado pela home e pelo bot ──
+  // Substitui a leitura direta do Firestore, que está sem cota.
+  if (req.query && req.query.brindes_estoque === '1') {
+    try {
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const somenteAtivos = req.query.todos === '1' ? '' : '&ativo=eq.true';
+      const r = await fetch(
+        `${SUPABASE_URL}/rest/v1/estoque_brindes?select=*${somenteAtivos}&order=nome.asc`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+      );
+      if (!r.ok) throw new Error(`Supabase respondeu ${r.status}`);
+      const itens = await r.json();
+      res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
+      return res.status(200).json({ ok: true, itens, fonte: 'supabase' });
+    } catch (e) {
+      console.error('brindes_estoque erro:', e);
       return res.status(500).json({ ok: false, error: e.message });
     }
   }
