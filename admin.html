@@ -3208,57 +3208,66 @@ window.renderHistorico = renderHistorico;
   let imobTipo = null, imobEditId = null;
 
   // Carregar dados do Firebase
-  async function carregarImob() {
-    const { collection, onSnapshot, doc, updateDoc, addDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    onSnapshot(collection(db, 'imob_patrimonio'), snap => {
-      imobData.patrimonio = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  // ── Estoques de TI / Onboarding / Saídas (Supabase) ──
+  window.carregarEstoques = async function (silencioso) {
+    try {
+      const u = window.auth?.currentUser;
+      if (!u) return;
+      const tk = await u.getIdToken();
+      const r = await fetch('/api/relatorio-imobiliario?estoques=1', {
+        headers: { Authorization: `Bearer ${tk}` },
+      });
+      const d = await r.json().catch(() => null);
+      if (!r.ok || !d || d.ok !== true) throw new Error((d && d.error) || `HTTP ${r.status}`);
+      // _id mantido por compatibilidade com os renders existentes
+      window._estoqueTI = d.ti.map(i => ({ _id: i.id, ...i }));
+      window._estoqueOnboarding = d.onboarding.map(i => ({ _id: i.id, ...i }));
+      window._saidasEstoque = d.saidas.map(i => ({ _id: i.id, ...i }));
+      renderEstoqueTI();
+      renderOnboarding();
+      if (document.getElementById('page-controle-saidas')?.classList.contains('active')) renderSaidas();
+    } catch (e) {
+      console.error('[admin] estoques:', e.message);
+      if (!silencioso) showToast('Erro ao carregar estoques.');
+    }
+  };
+  window.carregarEstoques(true);
+  setInterval(() => window.carregarEstoques(true), 60000);
+
+  // ── Módulo imobiliário (Supabase) ──
+  // Antes eram 4 onSnapshot no Firestore. Agora um fetch traz as 6 tabelas,
+  // já ordenadas pelo banco, e os renders são chamados na sequência.
+  async function carregarImob(silencioso) {
+    try {
+      const u = window.auth?.currentUser;
+      if (!u) return;
+      const tk = await u.getIdToken();
+      const r = await fetch('/api/relatorio-imobiliario?imob=1', {
+        headers: { Authorization: `Bearer ${tk}` },
+      });
+      const d = await r.json().catch(() => null);
+      if (!r.ok || !d || d.ok !== true) throw new Error((d && d.error) || `HTTP ${r.status}`);
+      const mapa = (arr) => (arr || []).map(i => ({ _id: i.id, ...i }));
+      imobData.patrimonio      = mapa(d.patrimonio);
+      imobData.categorias      = mapa(d.categorias);
+      imobData.localizacoes    = mapa(d.localizacoes);
+      imobData.sublocalizacoes = mapa(d.sublocalizacoes);
+      imobData.espacos         = mapa(d.espacos);
+      imobData.contratos       = mapa(d.contratos);
+
       renderImob('patrimonio');
-    });
-    onSnapshot(collection(db, 'imob_categorias'), snap => {
-      imobData.categorias = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
       renderCategorias();
       atualizarDropdownCategorias();
-      // Re-renderiza patrimônio pra atualizar os emojis dos cards
-      if (imobData.patrimonio.length) renderPatrimonio();
-    });
-    onSnapshot(collection(db, 'imob_localizacoes'), snap => {
-      imobData.localizacoes = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
       renderLocalizacoes();
       atualizarDropdownLocalizacoes();
-      if (imobData.patrimonio.length) renderPatrimonio();
-    });
-    // Migrado do Firestore (3 onSnapshot) para o Supabase num fetch só.
-    // As saídas já vêm ordenadas por data desc do banco.
-    window.carregarEstoques = async function (silencioso) {
-      try {
-        const u = window.auth?.currentUser;
-        if (!u) return;
-        const tk = await u.getIdToken();
-        const r = await fetch('/api/relatorio-imobiliario?estoques=1', {
-          headers: { Authorization: `Bearer ${tk}` },
-        });
-        const d = await r.json().catch(() => null);
-        if (!r.ok || !d || d.ok !== true) throw new Error((d && d.error) || `HTTP ${r.status}`);
-        // _id mantido por compatibilidade com os renders existentes
-        window._estoqueTI = d.ti.map(i => ({ _id: i.id, ...i }));
-        window._estoqueOnboarding = d.onboarding.map(i => ({ _id: i.id, ...i }));
-        window._saidasEstoque = d.saidas.map(i => ({ _id: i.id, ...i }));
-        renderEstoqueTI();
-        renderOnboarding();
-        if (document.getElementById('page-controle-saidas')?.classList.contains('active')) renderSaidas();
-      } catch (e) {
-        console.error('[admin] estoques:', e.message);
-        if (!silencioso) showToast('Erro ao carregar estoques.');
-      }
-    };
-    window.carregarEstoques(true);
-    setInterval(() => window.carregarEstoques(true), 60000);
-
-    onSnapshot(collection(db, 'imob_sublocalizacoes'), snap => {
-      imobData.sublocalizacoes = snap.docs.map(d => ({ _id: d.id, ...d.data() })).sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
       if (typeof renderSublocalizacoes === 'function') renderSublocalizacoes();
-    });
+      if (imobData.patrimonio.length) renderPatrimonio();
+    } catch (e) {
+      console.error('[admin] imobiliário:', e.message);
+      if (!silencioso) showToast('Erro ao carregar módulo imobiliário.');
+    }
   }
+  window.carregarImob = carregarImob;
 
   function renderImob(col) {
     if (col === 'patrimonio') renderPatrimonio();
@@ -3860,19 +3869,12 @@ window.renderHistorico = renderHistorico;
     }
 
     try {
-      const { collection, doc, setDoc, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
       const dados = {
         nome,
         emoji,
-        descricao: descricao || null,
-        updatedAt: serverTimestamp(),
-      };
-      if (id) {
-        await setDoc(doc(db, 'imob_categorias', id), dados, { merge: true });
-      } else {
-        dados.createdAt = serverTimestamp();
-        await addDoc(collection(db, 'imob_categorias'), dados);
-      }
+        descricao: descricao || null };
+      await apiAdmin('salvar_imob=1', { tabela: 'categorias', id: id || undefined, dados });
+      await window.carregarImob(true);
       document.getElementById('imob-modal').classList.remove('open');
     } catch (e) {
       alert('Erro ao salvar: ' + e.message);
@@ -3888,8 +3890,8 @@ window.renderHistorico = renderHistorico;
     }
     if (!confirm(msg)) return;
     try {
-      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      await deleteDoc(doc(db, 'imob_categorias', id));
+      await apiAdmin('excluir_imob=1', { tabela: 'categorias', id });
+      await window.carregarImob(true);
       document.getElementById('imob-modal').classList.remove('open');
     } catch (e) {
       alert('Erro ao excluir: ' + e.message);
@@ -4211,14 +4213,9 @@ window.renderHistorico = renderHistorico;
     }
 
     try {
-      const { collection, doc, setDoc, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      const dados = { nome, emoji, descricao: descricao || null, updatedAt: serverTimestamp() };
-      if (id) {
-        await setDoc(doc(db, 'imob_localizacoes', id), dados, { merge: true });
-      } else {
-        dados.createdAt = serverTimestamp();
-        await addDoc(collection(db, 'imob_localizacoes'), dados);
-      }
+      const dados = { nome, emoji, descricao: descricao || null };
+      await apiAdmin('salvar_imob=1', { tabela: 'localizacoes', id: id || undefined, dados });
+      await window.carregarImob(true);
       document.getElementById('imob-modal').classList.remove('open');
     } catch (e) {
       alert('Erro ao salvar: ' + e.message);
@@ -4233,8 +4230,8 @@ window.renderHistorico = renderHistorico;
     }
     if (!confirm(msg)) return;
     try {
-      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      await deleteDoc(doc(db, 'imob_localizacoes', id));
+      await apiAdmin('excluir_imob=1', { tabela: 'localizacoes', id });
+      await window.carregarImob(true);
       document.getElementById('imob-modal').classList.remove('open');
     } catch (e) {
       alert('Erro ao excluir: ' + e.message);
@@ -4422,15 +4419,12 @@ window.renderHistorico = renderHistorico;
         } else {
           // Categoria sugerida não existe ainda, oferecer criar
           if (confirm(`A IA sugeriu a categoria "${data.categoria}" que ainda não existe. Quer criar agora?`)) {
-            const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-            await addDoc(collection(db, 'imob_categorias'), {
-              nome: data.categoria,
-              emoji: data.emoji || '📦',
-              descricao: null,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
+            await apiAdmin('salvar_imob=1', {
+              tabela: 'categorias',
+              dados: { nome: data.categoria, emoji: data.emoji || '📦', descricao: null },
             });
-            // Aguarda o snapshot atualizar
+            await window.carregarImob(true);
+            // Aguarda a lista atualizar
             setTimeout(() => {
               const opt = document.createElement('option');
               opt.value = data.categoria;
@@ -4467,9 +4461,9 @@ window.renderHistorico = renderHistorico;
   };
 
   window.salvarItemImob = async () => {
-    const { collection, doc, addDoc, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const campos = IMOB_FORMS[imobTipo] || [];
-    const dados = { updatedAt: new Date(), criadoPor: auth.currentUser?.email || '' };
+    // criado_por é resolvido no servidor a partir do token
+    const dados = {};
     campos.forEach(c => {
       const el = document.getElementById('imob-f-' + c.id);
       if (el) dados[c.id] = el.value;
@@ -4479,28 +4473,24 @@ window.renderHistorico = renderHistorico;
     } else if (imobTipo === 'patrimonio') {
       dados.localizacao_completa = dados.localizacao || '';
     }
-    const colName = 'imob_' + (imobTipo === 'espaco' ? 'espacos' : imobTipo === 'patrimonio' ? 'patrimonio' : 'contratos');
+    const tabela = imobTipo === 'espaco' ? 'espacos' : imobTipo === 'patrimonio' ? 'patrimonio' : 'contratos';
     try {
-      if (imobEditId) {
-        await updateDoc(doc(db, colName, imobEditId), dados);
-      } else {
-        dados.criadoEm = new Date();
-        await addDoc(collection(db, colName), dados);
-      }
+      await apiAdmin('salvar_imob=1', { tabela, id: imobEditId || undefined, dados });
       fecharModalImob();
       showToast(imobEditId ? '✅ Item atualizado!' : '✅ Item cadastrado!');
-    } catch(err) { console.error(err); showToast('Erro ao salvar.'); }
+      await window.carregarImob(true);
+    } catch(err) { console.error(err); showToast('Erro ao salvar: ' + err.message); }
   };
 
   window.deletarItemImob = async () => {
     if (!confirm('Tem certeza que deseja excluir este item?')) return;
-    const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const colName = 'imob_' + (imobTipo === 'espaco' ? 'espacos' : imobTipo === 'patrimonio' ? 'patrimonio' : 'contratos');
+    const tabela = imobTipo === 'espaco' ? 'espacos' : imobTipo === 'patrimonio' ? 'patrimonio' : 'contratos';
     try {
-      await deleteDoc(doc(db, colName, imobEditId));
+      await apiAdmin('excluir_imob=1', { tabela, id: imobEditId });
       fecharModalImob();
       showToast('Item excluído.');
-    } catch(err) { console.error(err); }
+      await window.carregarImob(true);
+    } catch(err) { console.error(err); showToast('Erro ao excluir: ' + err.message); }
   };
 
   // Fechar modal ao clicar fora
@@ -5464,14 +5454,9 @@ window.renderHistorico = renderHistorico;
     const ja = (imobData.sublocalizacoes || []).find(s => s.nome.toLowerCase() === nome.toLowerCase() && s.parente === parente && s._id !== id);
     if (ja) { alert(`Já existe sublocalização "${nome}" em "${parente}".`); return; }
     try {
-      const { collection, doc, setDoc, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      const dados = { nome, parente, emoji, updatedAt: serverTimestamp() };
-      if (id) {
-        await setDoc(doc(db, 'imob_sublocalizacoes', id), dados, { merge: true });
-      } else {
-        dados.createdAt = serverTimestamp();
-        await addDoc(collection(db, 'imob_sublocalizacoes'), dados);
-      }
+      const dados = { nome, parente, emoji };
+      await apiAdmin('salvar_imob=1', { tabela: 'sublocalizacoes', id: id || undefined, dados });
+      await window.carregarImob(true);
       document.getElementById('imob-modal').classList.remove('open');
     } catch (e) { alert('Erro: ' + e.message); }
   }
@@ -5479,8 +5464,8 @@ window.renderHistorico = renderHistorico;
   async function deletarSublocalizacao(id, nome) {
     if (!confirm(`Excluir "${nome}"?`)) return;
     try {
-      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      await deleteDoc(doc(db, 'imob_sublocalizacoes', id));
+      await apiAdmin('excluir_imob=1', { tabela: 'sublocalizacoes', id });
+      await window.carregarImob(true);
       document.getElementById('imob-modal').classList.remove('open');
     } catch (e) { alert('Erro: ' + e.message); }
   }
