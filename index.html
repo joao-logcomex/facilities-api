@@ -1385,14 +1385,14 @@ input:disabled,select:disabled{opacity:.55}
     const isOpen = screen.style.display === 'block';
     if (isOpen) {
       screen.style.display = 'none';
-      catLabel.style.display = 'flex';
+      if (catLabel) catLabel.style.display = 'flex';
       catGrid.style.display = 'grid';
       formWrapper.style.display = 'block';
       btnMC.textContent = '📋 Ver meus chamados';
       if (unsubMeusChamados) { unsubMeusChamados(); unsubMeusChamados = null; }
     } else {
       screen.style.display = 'block';
-      catLabel.style.display = 'none';
+      if (catLabel) catLabel.style.display = 'none';
       catGrid.style.display = 'none';
       formWrapper.style.display = 'none';
       successScreen.style.display = 'none';
@@ -1635,7 +1635,7 @@ input:disabled,select:disabled{opacity:.55}
       }).catch(() => {});
       document.getElementById('form-wrapper').style.display = 'none';
       document.getElementById('category-grid').style.display = 'none';
-      document.getElementById('cat-label').style.display = 'none';
+      { const _cl = document.getElementById('cat-label'); if (_cl) _cl.style.display = 'none'; }
       // Mensagem especial para brindes
       const successMsg = document.getElementById('success-msg');
       if (successMsg) {
@@ -1966,7 +1966,7 @@ function resetForm(){
   document.getElementById('form-wrapper').style.display = 'block';
   document.getElementById('category-grid').style.display = 'grid';
   document.getElementById('success-screen').style.display = 'none';
-  document.getElementById('cat-label').style.display = 'flex';
+  { const _cl = document.getElementById('cat-label'); if (_cl) _cl.style.display = 'flex'; }
 
   // Resetar cabeçalho
   document.getElementById('hdr-icon').textContent = '📋';
