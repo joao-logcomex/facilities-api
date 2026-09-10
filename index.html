@@ -1763,16 +1763,24 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
     const chamadoRef = document.getElementById('fb-chamado-id').textContent;
 
     try {
-      await addDoc(collection(db, 'feedbacks'), {
-        tipo: tipo ? tipo.value : 'Geral',
-        assunto: document.getElementById('fb-assunto').value,
-        texto,
-        anon,
-        nome: anon ? 'Anônimo' : user.email,
-        userId: anon ? null : user.uid,
-        chamado_ref: chamadoRef || null,  // vínculo com o chamado avaliado
-        data: serverTimestamp()
+      // Migrado do Firestore para o Supabase via endpoint.
+      // Nome e user_id são resolvidos no servidor a partir do token: quando
+      // anônimo, a identidade não sai do navegador.
+      const _tk = await user.getIdToken();
+      const _r = await fetch('/api/relatorio-imobiliario?criar_feedback=1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${_tk}` },
+        body: JSON.stringify({
+          tipo: tipo ? tipo.value : 'Geral',
+          assunto: document.getElementById('fb-assunto').value,
+          texto,
+          anon,
+          chamado_ref: chamadoRef || null,
+          origem: 'formulario',
+        }),
       });
+      const _d = await _r.json().catch(() => null);
+      if (!_r.ok || !_d || _d.ok !== true) throw new Error((_d && _d.error) || `HTTP ${_r.status}`);
       document.getElementById('fb-form').style.display = 'none';
       document.getElementById('fb-header').style.display = 'none';
       document.getElementById('fb-chamado-banner').style.display = 'none';
