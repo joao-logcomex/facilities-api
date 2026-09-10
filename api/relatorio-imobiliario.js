@@ -244,8 +244,16 @@ async function rodarAutoConcluirBrindes() {
         const nomeNorm = normalizarNome(itemDados.nome || itemDoc.id);
         const qtd = detectarQtdNoTexto(textoNorm, nomeNorm);
         if (qtd && qtd > 0) {
-          const sedeAtual = typeof itemDados.sede === 'number' ? itemDados.sede : 0;
-          await itemDoc.ref.update({ sede: sedeAtual + qtd, ultimaAtualizacao: new Date(), ultimaBaixaPor: 'devolucao_automatica' });
+          // Campos reais: estoque_sede / estoque_storage / estoque_total
+          const sedeAtual = typeof itemDados.estoque_sede === 'number' ? itemDados.estoque_sede : 0;
+          const storageAtual = typeof itemDados.estoque_storage === 'number' ? itemDados.estoque_storage : 0;
+          await itemDoc.ref.update({
+            estoque_sede: sedeAtual + qtd,
+            estoque_total: sedeAtual + qtd + storageAtual,
+            updatedAt: new Date(),
+            ultimaAtualizacao: new Date(),
+            ultimaBaixaPor: 'devolucao_automatica',
+          });
         }
       }
 
