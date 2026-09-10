@@ -867,6 +867,39 @@ module.exports = async (req, res) => {
     }
   }
 
+  // ── Contagem de linhas de uma tabela (apoio à migração) ──
+  // Só leitura, e só nas tabelas da lista branca.
+  if (req.query && req.query.contar) {
+    const PERMITIDAS = [
+      'feedbacks', 'estoque_ti', 'estoque_onboarding', 'estoque_saidas',
+      'imob_patrimonio', 'imob_categorias', 'imob_localizacoes', 'imob_sublocalizacoes',
+      'estoque_brindes', 'projetos_ia', 'tickets', 'colaboradores',
+    ];
+    const tabela = String(req.query.contar);
+    if (!PERMITIDAS.includes(tabela)) {
+      return res.status(400).json({ ok: false, error: 'tabela não permitida' });
+    }
+    try {
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${tabela}?select=*`, {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          Prefer: 'count=exact',
+          Range: '0-0',
+        },
+      });
+      if (!r.ok) throw new Error(`Supabase respondeu ${r.status}`);
+      const cr = r.headers.get('content-range');
+      const total = cr && cr.includes('/') ? parseInt(cr.split('/')[1]) : NaN;
+      if (Number.isNaN(total)) throw new Error(`content-range inválido: ${cr}`);
+      return res.status(200).json({ ok: true, tabela, total });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
   // ── Cron diário: alerta de SLA (chamados perto de vencer ou já vencidos) ──
   // Chamado pelo Vercel Cron (vercel.json), seg-sex 8h30 Curitiba. Protegido
   // pelo CRON_SECRET que o próprio Vercel injeta como Bearer automaticamente.
