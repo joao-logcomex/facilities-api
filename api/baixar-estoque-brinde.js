@@ -15,6 +15,30 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
+// ── Supabase: estoque_brindes migrou do Firestore ──
+const SB_URL = process.env.SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+async function listarEstoque() {
+  const r = await fetch(`${SB_URL}/rest/v1/estoque_brindes?select=*&ativo=eq.true&order=nome.asc`, {
+    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+  });
+  if (!r.ok) throw new Error(`Supabase respondeu ${r.status} em estoque_brindes`);
+  return r.json();
+}
+
+// Baixa atômica no Postgres: nunca fica negativo e não corre risco de
+// sobrescrever a baixa da aprovação do gestor no mesmo instante.
+async function baixarNoSupabase(id, qtd, por) {
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/baixar_estoque_brinde`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+    body: JSON.stringify({ p_id: id, p_qtd: qtd, p_por: por }),
+  });
+  if (!r.ok) throw new Error(`RPC baixar_estoque_brinde ${r.status}: ${await r.text()}`);
+  return r.json();
+}
+
 // Normaliza texto: minúsculo, sem acentos, singular básico
 function norm(s) {
   return (s || '')
@@ -74,42 +98,40 @@ module.exports = async (req, res) => {
     if (!texto) return res.status(400).json({ ok: false, error: 'texto obrigatorio' });
 
     const textoNorm = norm(texto);
-    const estoqueSnap = await db.collection('estoque_brindes').get();
-    if (estoqueSnap.empty) {
+    const estoque = await listarEstoque();
+    if (!estoque.length) {
       return res.status(200).json({ ok: true, baixas: [], naoEncontrados: [], aviso: 'Estoque vazio' });
     }
 
     const baixas = [];
     const alertas = [];
 
-    for (const docSnap of estoqueSnap.docs) {
-      const dados = docSnap.data();
-      const nome = dados.nome || docSnap.id;
+    for (const dados of estoque) {
+      const nome = dados.nome || dados.id;
       const nomeNorm = norm(nome);
 
       const qtdPedida = detectarPedido(textoNorm, nomeNorm);
       if (!qtdPedida || qtdPedida <= 0) continue;
 
-      // Os campos reais no Firestore sao estoque_sede / minimo_alerta.
-      // Antes lia dados.sede e dados.minimo, que nao existem: caia em 0 e
-      // gravava num campo fantasma que nenhuma tela le.
       const sedeAntes = typeof dados.estoque_sede === 'number' ? dados.estoque_sede : 0;
-      const sedeDepois = sedeAntes - qtdPedida;
-      const storage = typeof dados.estoque_storage === 'number' ? dados.estoque_storage : 0;
       const minimo = typeof dados.minimo_alerta === 'number' ? dados.minimo_alerta : 0;
 
-      let alerta = null;
-      if (sedeDepois < 0) alerta = 'estoque_negativo';
-      else if (sedeDepois <= minimo) alerta = 'abaixo_minimo';
+      // Pedido maior que o disponível: avisa, mas baixa o que tem.
+      // O Postgres trava em 0 (greatest), então nunca fica negativo.
+      const alertaPedido = qtdPedida > sedeAntes ? 'pedido_maior_que_estoque' : null;
 
-      // Atualiza no Firebase
-      await docSnap.ref.update({
-        estoque_sede: sedeDepois,
-        estoque_total: sedeDepois + storage,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        ultimaAtualizacao: admin.firestore.FieldValue.serverTimestamp(),
-        ultimaBaixaPor: 'bot_slack',
-      });
+      let linha;
+      try {
+        linha = await baixarNoSupabase(dados.id, qtdPedida, 'bot_slack');
+      } catch (errBaixa) {
+        console.error(`Falha ao baixar ${dados.id} (-${qtdPedida}):`, errBaixa.message);
+        continue;
+      }
+      const sedeDepois = linha && typeof linha.estoque_sede === 'number'
+        ? linha.estoque_sede
+        : Math.max(0, sedeAntes - qtdPedida);
+
+      const alerta = alertaPedido || (sedeDepois <= minimo ? 'abaixo_minimo' : null);
 
       baixas.push({
         nome,
