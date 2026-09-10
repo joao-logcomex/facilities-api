@@ -738,6 +738,7 @@ module.exports = async (req, res) => {
   // ── Encomendas: atualizar status ──
   if (req.method === 'POST' && req.query && req.query.atualizar_encomenda === '1') {
     try {
+      await exigirAdmin(req);
       const id = req.query.id;
       const novoStatus = req.query.status;
       if (!id || !novoStatus) return res.status(400).json({ ok: false, error: 'id e status obrigatórios' });
@@ -753,7 +754,8 @@ module.exports = async (req, res) => {
       db.collection('tickets').doc(id).update({ status: novoStatus }).catch(()=>{});
       return res.status(200).json({ ok: true });
     } catch(e) {
-      return res.status(500).json({ ok: false, error: e.message });
+      // e.status vem do exigirAdmin: 401 sem token, 403 sem permissão
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
     }
   }
 
