@@ -16,6 +16,36 @@ function initFirebase() {
   return getFirestore();
 }
 
+// ── Supabase: estoque_brindes migrou do Firestore ──
+const SB_URL = process.env.SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SB_HEAD = () => ({
+  'Content-Type': 'application/json',
+  apikey: SB_KEY,
+  Authorization: `Bearer ${SB_KEY}`,
+});
+
+// Busca por nome (case-insensitive) direto no Postgres: uma linha, em vez
+// de baixar a coleção inteira pra achar um item.
+async function acharBrindePorNome(nome) {
+  const url = `${SB_URL}/rest/v1/estoque_brindes?select=*&nome=ilike.${encodeURIComponent(nome)}&limit=1`;
+  const r = await fetch(url, { headers: SB_HEAD() });
+  if (!r.ok) throw new Error(`Supabase respondeu ${r.status} em estoque_brindes`);
+  const rows = await r.json();
+  return rows[0] || null;
+}
+
+// Baixa atômica: o Postgres trava em 0 e evita corrida com o bot do Slack.
+async function baixarBrinde(id, qtd, por) {
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/baixar_estoque_brinde`, {
+    method: 'POST',
+    headers: SB_HEAD(),
+    body: JSON.stringify({ p_id: id, p_qtd: qtd, p_por: por }),
+  });
+  if (!r.ok) throw new Error(`RPC baixar_estoque_brinde ${r.status}: ${await r.text()}`);
+  return r.json();
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -107,26 +137,17 @@ export default async function handler(req, res) {
           const qty = matchQty ? parseInt(matchQty[1]) : 1;
           const nomeItem = itemStr.replace(/\s*x\d+$/, '').replace(/\s*\(\d+\)$/, '').trim();
 
-          // Buscar o item no estoque
-          const estoqueSnap = await db.collection('estoque_brindes').get();
-          const estoqueDoc = estoqueSnap.docs.find(d => 
-            d.data().nome?.toLowerCase() === nomeItem.toLowerCase()
-          );
+          // Buscar o item no estoque (Supabase)
+          const item = await acharBrindePorNome(nomeItem);
 
-          if (estoqueDoc) {
-            const dados = estoqueDoc.data();
-            // Campos reais: estoque_sede / estoque_storage / estoque_total
-            const sedeAtual = typeof dados.estoque_sede === 'number' ? dados.estoque_sede : 0;
-            const storage = typeof dados.estoque_storage === 'number' ? dados.estoque_storage : 0;
-            const novaSede = Math.max(0, sedeAtual - qty);
-            await db.collection('estoque_brindes').doc(estoqueDoc.id).update({
-              estoque_sede: novaSede,
-              estoque_total: novaSede + storage,
-              updatedAt: new Date(),
-              ultimaAtualizacao: new Date(),
-              ultimaBaixaPor: 'aprovacao_gestor',
-            });
-            console.log(`Estoque ${nomeItem}: -${qty} unidades → estoque_sede: ${novaSede}`);
+          if (item) {
+            const linha = await baixarBrinde(item.id, qty, 'aprovacao_gestor');
+            const novaSede = linha && typeof linha.estoque_sede === 'number'
+              ? linha.estoque_sede
+              : Math.max(0, (item.estoque_sede || 0) - qty);
+            console.log(`Estoque ${nomeItem}: -${qty} → estoque_sede: ${novaSede}`);
+          } else {
+            console.warn(`Brinde nao encontrado no estoque: "${nomeItem}"`);
           }
         }
       } catch(estoqueErr) {
