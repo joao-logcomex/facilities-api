@@ -90,9 +90,13 @@ module.exports = async (req, res) => {
       const qtdPedida = detectarPedido(textoNorm, nomeNorm);
       if (!qtdPedida || qtdPedida <= 0) continue;
 
-      const sedeAntes = typeof dados.sede === 'number' ? dados.sede : 0;
+      // Os campos reais no Firestore sao estoque_sede / minimo_alerta.
+      // Antes lia dados.sede e dados.minimo, que nao existem: caia em 0 e
+      // gravava num campo fantasma que nenhuma tela le.
+      const sedeAntes = typeof dados.estoque_sede === 'number' ? dados.estoque_sede : 0;
       const sedeDepois = sedeAntes - qtdPedida;
-      const minimo = typeof dados.minimo === 'number' ? dados.minimo : 0;
+      const storage = typeof dados.estoque_storage === 'number' ? dados.estoque_storage : 0;
+      const minimo = typeof dados.minimo_alerta === 'number' ? dados.minimo_alerta : 0;
 
       let alerta = null;
       if (sedeDepois < 0) alerta = 'estoque_negativo';
@@ -100,7 +104,9 @@ module.exports = async (req, res) => {
 
       // Atualiza no Firebase
       await docSnap.ref.update({
-        sede: sedeDepois,
+        estoque_sede: sedeDepois,
+        estoque_total: sedeDepois + storage,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         ultimaAtualizacao: admin.firestore.FieldValue.serverTimestamp(),
         ultimaBaixaPor: 'bot_slack',
       });
