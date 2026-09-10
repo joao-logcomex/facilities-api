@@ -292,6 +292,53 @@ async function supabasePost(path, body) {
   });
 }
 
+// ── Autenticação das rotas de escrita do admin ──
+// Valida o ID token do Firebase e confere se o e-mail é de um admin.
+// A lista espelha a ADMINS do admin.html.
+const ADMINS_EMAILS = [
+  'joao.faria@logcomex.com',
+  'christian.bertolino@logcomex.com',
+  'henrique.silva@logcomex.com',
+  'adriano.martins@logcomex.com',
+  'daniel.alle@logcomex.com',
+];
+
+async function exigirAdmin(req) {
+  const h = req.headers.authorization || '';
+  const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+  if (!token) {
+    const e = new Error('token ausente'); e.status = 401; throw e;
+  }
+  let decoded;
+  try {
+    decoded = await admin.auth().verifyIdToken(token);
+  } catch {
+    const e = new Error('token inválido'); e.status = 401; throw e;
+  }
+  const email = (decoded.email || '').toLowerCase();
+  if (!ADMINS_EMAILS.includes(email)) {
+    const e = new Error('sem permissão'); e.status = 403; throw e;
+  }
+  return email;
+}
+
+// Escrita genérica no Supabase (PATCH/POST em uma tabela)
+async function supabaseWrite(method, path, body, prefer) {
+  const r = await fetch(`${SUPABASE_URL_ENV}/rest/v1/${path}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_KEY_ENV,
+      Authorization: `Bearer ${SUPABASE_KEY_ENV}`,
+      Prefer: prefer || 'return=representation',
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(`Supabase ${method} ${path} → ${r.status}: ${await r.text()}`);
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : null;
+}
+
 // Lista o estoque de brindes no Supabase (substitui a leitura do Firestore)
 async function listarEstoqueBrindes() {
   if (!SUPABASE_URL_ENV || !SUPABASE_KEY_ENV) throw new Error('Supabase não configurado');
@@ -744,6 +791,79 @@ module.exports = async (req, res) => {
     } catch (e) {
       console.error('projetos erro:', e);
       return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Admin: salvar estoque de um brinde (Supabase) ──
+  if (req.method === 'POST' && req.query && req.query.salvar_estoque === '1') {
+    try {
+      await exigirAdmin(req);
+      const b = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+      if (!b.id) return res.status(400).json({ ok: false, error: 'id obrigatório' });
+      const n = (v, d) => (Number.isFinite(Number(v)) ? Math.max(0, Math.round(Number(v))) : d);
+      const patch = {
+        estoque_sede: n(b.estoque_sede, 0),
+        estoque_storage: n(b.estoque_storage, 0),
+        minimo_alerta: n(b.minimo_alerta, 50),
+        ultima_baixa_por: 'admin',
+      };
+      const rows = await supabaseWrite(
+        'PATCH',
+        `estoque_brindes?id=eq.${encodeURIComponent(b.id)}`,
+        patch
+      );
+      return res.status(200).json({ ok: true, item: rows && rows[0] });
+    } catch (e) {
+      console.error('salvar_estoque erro:', e);
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Admin: salvar (criar ou atualizar) um projeto ──
+  if (req.method === 'POST' && req.query && req.query.salvar_projeto === '1') {
+    try {
+      await exigirAdmin(req);
+      const b = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+      if (!b.nome) return res.status(400).json({ ok: false, error: 'nome obrigatório' });
+      const d = (v) => (v && /^\d{4}-\d{2}-\d{2}/.test(v) ? String(v).slice(0, 10) : null);
+      const linha = {
+        nome: String(b.nome),
+        grupo: b.grupo || null,
+        data_inicio: d(b.data_inicio),
+        data_fim: d(b.data_fim),
+        tem_operacao_assistida: b.tem_operacao_assistida === true,
+        assistida_inicio: d(b.assistida_inicio),
+        assistida_fim: d(b.assistida_fim),
+        go_live_data: d(b.go_live_data),
+        percentual: Math.min(100, Math.max(0, Math.round(Number(b.percentual) || 0))),
+        status_texto: b.status_texto || null,
+        ordem: Math.round(Number(b.ordem) || 0),
+      };
+      let rows;
+      if (b.id) {
+        linha.id = String(b.id);
+        rows = await supabaseWrite('POST', 'projetos_ia', linha, 'resolution=merge-duplicates,return=representation');
+      } else {
+        rows = await supabaseWrite('POST', 'projetos_ia', linha);
+      }
+      return res.status(200).json({ ok: true, projeto: rows && rows[0] });
+    } catch (e) {
+      console.error('salvar_projeto erro:', e);
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Admin: excluir um projeto ──
+  if (req.method === 'POST' && req.query && req.query.excluir_projeto === '1') {
+    try {
+      await exigirAdmin(req);
+      const id = req.query.id;
+      if (!id) return res.status(400).json({ ok: false, error: 'id obrigatório' });
+      await supabaseWrite('DELETE', `projetos_ia?id=eq.${encodeURIComponent(id)}`, undefined, 'return=minimal');
+      return res.status(200).json({ ok: true });
+    } catch (e) {
+      console.error('excluir_projeto erro:', e);
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
     }
   }
 
