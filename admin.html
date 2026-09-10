@@ -1603,12 +1603,29 @@ const isAdminOrViewer = (email) => {
     // Pedir permissão de notificação do browser
     if (Notification.permission === 'default') Notification.requestPermission();
 
-    const fq = query(collection(db, 'feedbacks'), orderBy('data', 'desc'));
-    onSnapshot(fq, (snap) => {
-      allFeedbacks = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
-      renderFeedbacks();
-      document.getElementById('badge-fb').textContent = allFeedbacks.length;
-    });
+    // Migrado do Firestore (onSnapshot) para o Supabase via endpoint.
+    window.carregarFeedbacks = async function (silencioso) {
+      try {
+        const u = window.auth?.currentUser;
+        if (!u) return;
+        const tk = await u.getIdToken();
+        const r = await fetch('/api/relatorio-imobiliario?feedbacks=1', {
+          headers: { Authorization: `Bearer ${tk}` },
+        });
+        const d = await r.json().catch(() => null);
+        if (!r.ok || !d || d.ok !== true) throw new Error((d && d.error) || `HTTP ${r.status}`);
+        // _docId mantido por compatibilidade com o render existente
+        allFeedbacks = d.feedbacks.map(f => ({ _docId: f.id, ...f }));
+        renderFeedbacks();
+        const bfb = document.getElementById('badge-fb');
+        if (bfb) bfb.textContent = allFeedbacks.length;
+      } catch (e) {
+        console.error('[admin] feedbacks:', e.message);
+        if (!silencioso) showToast('Erro ao carregar feedbacks.');
+      }
+    };
+    window.carregarFeedbacks(true);
+    setInterval(() => window.carregarFeedbacks(true), 60000);
 
     window.doLogout = () => signOut(auth).then(() => window.location.href = 'index.html');
 
@@ -1788,7 +1805,11 @@ const isAdminOrViewer = (email) => {
 
     window.excluirFeedback = async (docId) => {
       if (!confirm('Tem certeza que deseja excluir este feedback?\n\nEsta ação não pode ser desfeita.')) return;
-      try { await deleteDoc(doc(db, 'feedbacks', docId)); showToast('Feedback excluído!'); }
+      try {
+        await apiAdmin(`excluir_feedback=1&id=${encodeURIComponent(docId)}`);
+        showToast('Feedback excluído!');
+        await window.carregarFeedbacks(true);
+      }
       catch(e) { showToast('Erro ao excluir feedback.'); }
     };
   });
