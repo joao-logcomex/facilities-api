@@ -728,6 +728,25 @@ module.exports = async (req, res) => {
     }
   }
 
+  // ── Projetos (Gantt do admin e da TV) — Supabase ──
+  if (req.query && req.query.projetos === '1') {
+    try {
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const r = await fetch(
+        `${SUPABASE_URL}/rest/v1/projetos_ia?select=*&order=ordem.asc,nome.asc`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+      );
+      if (!r.ok) throw new Error(`Supabase respondeu ${r.status}`);
+      const projetos = await r.json();
+      res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
+      return res.status(200).json({ ok: true, projetos, fonte: 'supabase' });
+    } catch (e) {
+      console.error('projetos erro:', e);
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
   // ── Cron diário: alerta de SLA (chamados perto de vencer ou já vencidos) ──
   // Chamado pelo Vercel Cron (vercel.json), seg-sex 8h30 Curitiba. Protegido
   // pelo CRON_SECRET que o próprio Vercel injeta como Bearer automaticamente.
