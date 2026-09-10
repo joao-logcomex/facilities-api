@@ -399,6 +399,103 @@
 <div class="loading-screen" id="loading-screen"><div class="loading-spinner"></div></div>
 
 <!-- LOGIN -->
+<style id="home-v2">
+/* ══════════════════════════════════════════════════════════════
+   HOME v2 — tema escuro por redefinição de variáveis.
+   A maior parte dos componentes já usa var(--surface/--ink/--border),
+   então trocar as variáveis propaga o tema sem reescrever cada regra.
+   Escopo: não afeta #login-screen (que tem cores próprias).
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --surface:rgba(255,255,255,.045);
+  --surface2:#0B0D19;
+  --surface3:rgba(255,255,255,.085);
+  --ink:#ffffff;
+  --ink2:rgba(226,208,250,.62);
+  --ink3:rgba(226,208,250,.40);
+  --border:rgba(226,208,250,.13);
+  --purple-light:rgba(142,68,237,.16);
+  --success:#5FD9A0;
+  --error:#FF8FAC;
+  --lav:#E2D0FA;
+}
+body{
+  background:
+    radial-gradient(ellipse 70% 55% at 18% 30%,rgba(91,17,186,.34) 0%,transparent 62%),
+    radial-gradient(ellipse 60% 50% at 88% 12%,rgba(102,19,208,.16) 0%,transparent 58%),
+    radial-gradient(ellipse 90% 60% at 50% 104%,rgba(45,8,93,.6) 0%,transparent 70%),
+    #0B0D19;
+  background-attachment:fixed;
+}
+
+/* hero: sem faixa recortada, integra com o fundo */
+.hero{background:transparent!important;padding:3.2rem 2rem 1.6rem!important;overflow:visible}
+.hero h1{font-family:'Funnel Display','Poppins',sans-serif;font-weight:800;
+  font-size:clamp(1.9rem,3.4vw,2.9rem);line-height:1.05;letter-spacing:-.035em;color:#fff;
+  max-width:min(620px,92%);margin:0 auto;text-wrap:balance}
+.hero h1 em{font-style:normal;color:inherit;background:none;-webkit-text-fill-color:currentColor}
+.hero p{color:var(--ink2);max-width:min(520px,92%);margin:.9rem auto 0;font-size:.95rem}
+
+.content{margin-top:0!important;max-width:1000px}
+
+/* grade 5+5 */
+.cat-grid{grid-template-columns:repeat(5,1fr)!important;gap:.7rem!important;margin-bottom:1.6rem!important}
+.cat-card{
+  display:flex;flex-direction:column;align-items:flex-start;gap:.75rem;
+  font-family:'Poppins',sans-serif;color:inherit;text-align:left;width:100%;
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:1rem .9rem;box-shadow:none;
+  transition:transform .22s cubic-bezier(.2,.8,.3,1),border-color .22s,background .22s;
+}
+.cat-card:hover{transform:translateY(-4px);border-color:rgba(142,68,237,.55);background:var(--surface3)}
+.cat-card.selected{border-color:#8E44ED;background:rgba(142,68,237,.16)}
+.cat-icon{
+  width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(140deg,rgba(142,68,237,.3),rgba(102,19,208,.14));
+  border:1px solid rgba(226,208,250,.13);color:var(--lav);margin:0!important;
+}
+.cat-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.cat-card.selected .cat-icon{background:linear-gradient(140deg,#7215E9,#5B11BA);color:#fff;border-color:transparent}
+.cat-name{font-size:.79rem;font-weight:600;line-height:1.25;color:#fff;text-align:left}
+.cat-req{display:inline-flex;align-items:center;gap:4px;margin-top:.25rem;
+  font-size:.62rem;font-weight:500;color:rgba(254,143,28,.85)}
+
+/* cartões e campos */
+.form-card{box-shadow:none!important;backdrop-filter:blur(12px)}
+.meus-chamados-btn{background:var(--surface)!important;color:var(--ink2)!important;box-shadow:none!important}
+.meus-chamados-btn:hover{color:#fff!important;border-color:rgba(142,68,237,.55)!important}
+input,select,textarea{background:rgba(255,255,255,.045)!important;color:#fff!important;
+  border-color:var(--border)!important}
+input::placeholder,textarea::placeholder{color:rgba(226,208,250,.28)!important}
+input:focus,select:focus,textarea:focus{border-color:#8E44ED!important;background:rgba(255,255,255,.07)!important}
+select option{background:#1a0a3a;color:#fff}
+input:disabled,select:disabled{opacity:.55}
+
+/* blocos com fundo lavanda no tema claro */
+.brinde-section,.endereco-section,.attach-box,.fb-chamado-banner{
+  background:rgba(142,68,237,.08)!important;border-color:rgba(142,68,237,.22)!important}
+.chip-label,.priority-opt,.transp-opt,.entrega-opt,.tipo-envio-btn,.ftype-label{
+  background:var(--surface)!important;border-color:var(--border)!important;color:var(--ink2)!important}
+.chip-input:checked+.chip-label,.tipo-envio-btn.active{
+  background:rgba(142,68,237,.2)!important;border-color:#8E44ED!important;color:#fff!important}
+.itens-grid>*{background:var(--surface)!important;border-color:var(--border)!important}
+.mc-list,.mc-empty{color:var(--ink2)}
+.success-screen,.feedback-shell{background:var(--surface)!important;border-color:var(--border)!important}
+.ticket-number{color:var(--lav)!important}
+.fs-title,.priority-label,.transp-label,.entrega-label,.brinde-section-title{color:var(--lav)!important}
+
+/* acessibilidade */
+:focus-visible{outline:2px solid #8E44ED;outline-offset:3px;border-radius:8px}
+
+@media(max-width:1080px){ .cat-grid{grid-template-columns:repeat(3,1fr)!important} }
+@media(max-width:620px){
+  .cat-grid{grid-template-columns:repeat(2,1fr)!important;gap:.5rem!important}
+  .hero{padding:2.2rem 1.2rem 1.2rem!important}
+}
+@media(prefers-reduced-motion:reduce){ .cat-card{transition:none} }
+</style>
+
 <!-- ══════════ TELA DE LOGIN ══════════ -->
 <style>
 #login-screen{--lgv-lav:#E2D0FA;--lgv-txt2:rgba(226,208,250,.64);--lgv-txt3:rgba(226,208,250,.4);
@@ -735,14 +832,11 @@
   </header>
 
   <div class="hero">
-    <div class="hero-eyebrow"><span class="eyebrow-dot"></span> Central de Chamados</div>
-    <h1>Como podemos<br><em>te ajudar hoje?</em></h1>
-    <p>Selecione uma categoria e nossa equipe de facilities entra em ação.</p>
+    <h1>Como podemos te ajudar?</h1>
+    <p>Escolha uma categoria. O time de Facilities recebe na hora e você acompanha por aqui.</p>
   </div>
 
   <div class="content" id="main-content">
-    <div class="section-label" id="cat-label">Selecione a categoria</div>
-
     <button class="meus-chamados-btn" id="btn-meus-chamados" onclick="toggleMeusChamados()">
       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       Ver meus chamados
@@ -758,17 +852,17 @@
       </div>
     </div>
 
-    <div class="cat-grid" id="category-grid">
-      <div class="cat-card" data-cat="manutencao" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="cat-name">Manutenção</span></div>
-      <div class="cat-card" data-cat="reforma" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="6" height="18"/><path d="M22 12H8"/><path d="M22 7l-5 5 5 5"/></svg></span><span class="cat-name">Reforma &amp; Melhoria</span></div>
-      <div class="cat-card" data-cat="infraestrutura" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M6 20v-6"/><path d="M18 20v-6"/><path d="M2 14h20"/><path d="M4 14V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/></svg></span><span class="cat-name">Infraestrutura</span><span class="cat-attach-dot">📎</span></div>
-      <div class="cat-card" data-cat="limpeza" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M8.5 8.5 3 21l12.5-5.5"/><path d="M21 3l-5 5"/></svg></span><span class="cat-name">Limpeza</span></div>
-      <div class="cat-card" data-cat="seguranca" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><span class="cat-name">Segurança e Acesso</span><span class="cat-attach-dot">📎</span></div>
-      <div class="cat-card" data-cat="brindes" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span><span class="cat-name">Brindes</span><span class="cat-attach-dot">📎</span></div>
-      <div class="cat-card" data-cat="suprimentos" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></span><span class="cat-name">Suprimentos</span></div>
-      <div class="cat-card" data-cat="plataformas" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span><span class="cat-name">Acesso Plataformas</span><span class="cat-attach-dot">📎</span></div>
-      <div class="cat-card" data-cat="gestao" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg></span><span class="cat-name">Gestão e Melhoria</span></div>
-      <div class="cat-card" data-cat="logistica" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span><span class="cat-name">Logística &amp;<br>Envios</span><span class="cat-attach-dot">📎</span></div>
+    <div class="cat-grid" id="category-grid" role="group" aria-label="Categorias de chamado">
+      <button type="button" class="cat-card" data-cat="manutencao" aria-pressed="false" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="cat-name">Manutenção</span></button>
+      <button type="button" class="cat-card" data-cat="suprimentos" aria-pressed="false" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></span><span class="cat-name">Suprimentos</span></button>
+      <button type="button" class="cat-card" data-cat="limpeza" aria-pressed="false" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M8.5 8.5 3 21l12.5-5.5"/><path d="M21 3l-5 5"/></svg></span><span class="cat-name">Limpeza</span></button>
+      <button type="button" class="cat-card" data-cat="logistica" aria-pressed="false" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span><span class="cat-name">Logística e envios</span></button>
+      <button type="button" class="cat-card" data-cat="brindes" aria-pressed="false" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span><span class="cat-name">Brindes</span></button>
+      <button type="button" class="cat-card" data-cat="infraestrutura" aria-pressed="false" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M6 20v-6"/><path d="M18 20v-6"/><path d="M2 14h20"/><path d="M4 14V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/></svg></span><span class="cat-name">Infraestrutura</span><span class="cat-req"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>anexo</span></button>
+      <button type="button" class="cat-card" data-cat="seguranca" aria-pressed="false" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><span class="cat-name">Segurança e acesso</span></button>
+      <button type="button" class="cat-card" data-cat="plataformas" aria-pressed="false" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span><span class="cat-name">Acesso a plataformas</span></button>
+      <button type="button" class="cat-card" data-cat="reforma" aria-pressed="false" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="6" height="18"/><path d="M22 12H8"/><path d="M22 7l-5 5 5 5"/></svg></span><span class="cat-name">Reforma e melhoria</span></button>
+      <button type="button" class="cat-card" data-cat="gestao" aria-pressed="false" onclick="selectCat(this)"><span class="cat-icon"><svg viewBox="0 0 24 24"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg></span><span class="cat-name">Gestão e melhoria</span></button>
     </div>
 
     <div class="form-card" id="form-wrapper">
