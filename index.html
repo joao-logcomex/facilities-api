@@ -418,6 +418,11 @@
   --success:#5FD9A0;
   --error:#FF8FAC;
   --lav:#E2D0FA;
+  /* nunca foram definidas no arquivo: por isso Média/Alta/Urgente
+     nao tinham cor nenhuma, nem no tema claro */
+  --success-bg:rgba(18,183,106,.14);
+  --warning:#FFD166;  --warning-bg:rgba(255,209,102,.14);
+  --danger:#FF8FAC;   --danger-bg:rgba(240,81,125,.14);
 }
 body{
   background:
@@ -475,7 +480,7 @@ input:disabled,select:disabled{opacity:.55}
 /* blocos com fundo lavanda no tema claro */
 .brinde-section,.endereco-section,.attach-box,.fb-chamado-banner{
   background:rgba(142,68,237,.08)!important;border-color:rgba(142,68,237,.22)!important}
-.chip-label,.priority-opt,.transp-opt,.entrega-opt,.tipo-envio-btn,.ftype-label{
+.chip-label,.priority-label,.transp-opt,.entrega-opt,.tipo-envio-btn,.ftype-label{
   background:var(--surface)!important;border-color:var(--border)!important;color:var(--ink2)!important}
 .chip-input:checked+.chip-label,.tipo-envio-btn.active{
   background:rgba(142,68,237,.2)!important;border-color:#8E44ED!important;color:#fff!important}
@@ -483,7 +488,7 @@ input:disabled,select:disabled{opacity:.55}
 .mc-list,.mc-empty{color:var(--ink2)}
 .success-screen,.feedback-shell{background:var(--surface)!important;border-color:var(--border)!important}
 .ticket-number{color:var(--lav)!important}
-.fs-title,.priority-label,.transp-label,.entrega-label,.brinde-section-title{color:var(--lav)!important}
+.fs-title,.transp-label,.entrega-label,.brinde-section-title{color:var(--lav)!important}
 
 /* acessibilidade */
 :focus-visible{outline:2px solid #8E44ED;outline-offset:3px;border-radius:8px}
@@ -500,6 +505,13 @@ input:disabled,select:disabled{opacity:.55}
 .mc-title,.success-icon{color:#fff!important}
 .btn-voltar{background:var(--surface)!important;border-color:var(--border)!important;color:var(--ink2)!important}
 label,.field label{color:var(--ink2)!important}
+
+/* prioridade: os 4 estados selecionados, cada um com sua cor */
+#prio-baixa:checked + .priority-label{background:var(--success-bg)!important;color:var(--success)!important;border-color:var(--success)!important}
+#prio-media:checked + .priority-label{background:var(--warning-bg)!important;color:var(--warning)!important;border-color:var(--warning)!important}
+#prio-alta:checked + .priority-label{background:rgba(254,143,28,.16)!important;color:#FFB864!important;border-color:#FE8F1C!important}
+#prio-urgente:checked + .priority-label{background:var(--danger-bg)!important;color:var(--danger)!important;border-color:var(--danger)!important}
+.priority-label:hover{border-color:rgba(142,68,237,.5)!important;color:#fff!important}
 
 /* ─── fundo: cargueiros, aviões e o símbolo da marca ─── */
 #bgart{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
