@@ -303,6 +303,25 @@ const ADMINS_EMAILS = [
   'daniel.alle@logcomex.com',
 ];
 
+// Qualquer colaborador @logcomex.com com token válido.
+// Usada na criação de feedback, que não é ação de admin.
+async function exigirColaborador(req) {
+  const h = req.headers.authorization || '';
+  const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+  if (!token) { const e = new Error('token ausente'); e.status = 401; throw e; }
+  let decoded;
+  try {
+    decoded = await admin.auth().verifyIdToken(token);
+  } catch {
+    const e = new Error('token inválido'); e.status = 401; throw e;
+  }
+  const email = (decoded.email || '').toLowerCase();
+  if (!email.endsWith('@logcomex.com')) {
+    const e = new Error('acesso restrito a @logcomex.com'); e.status = 403; throw e;
+  }
+  return { email, uid: decoded.uid };
+}
+
 async function exigirAdmin(req) {
   const h = req.headers.authorization || '';
   const token = h.startsWith('Bearer ') ? h.slice(7) : null;
@@ -897,6 +916,64 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true, tabela, total });
     } catch (e) {
       return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Feedbacks: listar (admin) ──
+  if (req.query && req.query.feedbacks === '1') {
+    try {
+      await exigirAdmin(req);
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/feedbacks?select=*&order=data.desc`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+      });
+      if (!r.ok) throw new Error(`Supabase respondeu ${r.status}`);
+      return res.status(200).json({ ok: true, feedbacks: await r.json(), fonte: 'supabase' });
+    } catch (e) {
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Feedback: criar (qualquer colaborador; aceita anônimo) ──
+  if (req.method === 'POST' && req.query && req.query.criar_feedback === '1') {
+    try {
+      const quem = await exigirColaborador(req);
+      const b = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+      const texto = (b.texto || '').trim();
+      if (!texto) return res.status(400).json({ ok: false, error: 'texto obrigatório' });
+      const anon = b.anon === true;
+      const nota = Number.isFinite(Number(b.nota)) ? Math.min(5, Math.max(1, Math.round(Number(b.nota)))) : null;
+      // Identidade vem do token, nunca do corpo: anônimo é anônimo de verdade
+      const linha = {
+        tipo: b.tipo || 'Geral',
+        assunto: b.assunto || null,
+        texto,
+        anon,
+        nome: anon ? 'Anônimo' : quem.email,
+        user_id: anon ? null : quem.uid,
+        chamado_ref: b.chamado_ref || null,
+        nota,
+        origem: b.origem || 'formulario',
+      };
+      const rows = await supabaseWrite('POST', 'feedbacks', linha);
+      return res.status(200).json({ ok: true, feedback: rows && rows[0] });
+    } catch (e) {
+      console.error('criar_feedback erro:', e);
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Feedback: excluir (admin) ──
+  if (req.method === 'POST' && req.query && req.query.excluir_feedback === '1') {
+    try {
+      await exigirAdmin(req);
+      const id = req.query.id;
+      if (!id) return res.status(400).json({ ok: false, error: 'id obrigatório' });
+      await supabaseWrite('DELETE', `feedbacks?id=eq.${encodeURIComponent(id)}`, undefined, 'return=minimal');
+      return res.status(200).json({ ok: true });
+    } catch (e) {
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
     }
   }
 
