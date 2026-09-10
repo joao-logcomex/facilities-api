@@ -891,35 +891,38 @@ setInterval(loadHelpdeskProjetos, HD_REFRESH_MS);
 tickClock();
 </script>
 
-<!-- Projetos (%) — ao vivo, direto do Firestore (sem precisar de intervalo/polling) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<!-- Projetos (%) — Supabase, via /api/relatorio-imobiliario?projetos=1 -->
+<script>
+  // Antes vinha do Firestore com onSnapshot (tempo real). Migrado para o
+  // Supabase: o Gantt muda raramente e a TV já recarrega sozinha, então um
+  // polling de 5 min entrega o mesmo resultado sem depender do Firebase.
+  (function () {
+    const PROJETOS_REFRESH_MS = 300000; // 5 min
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCczKnSawfHiAPuMjY2L80ww_wtBMJJY30",
-    authDomain: "facilities-logcomex.firebaseapp.com",
-    projectId: "facilities-logcomex",
-    storageBucket: "facilities-logcomex.firebasestorage.app",
-    messagingSenderId: "957812645576",
-    appId: "1:957812645576:web:80c88475cc904106d20ffd"
-  };
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    async function loadProjetos() {
+      try {
+        const r = await fetch('/api/relatorio-imobiliario?projetos=1');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        if (!d || d.ok !== true || !Array.isArray(d.projetos)) {
+          throw new Error(d && d.error ? d.error : 'resposta inválida');
+        }
+        if (window.renderFacilitiesProjetos) window.renderFacilitiesProjetos(d.projetos);
+      } catch (e) {
+        // Silencioso de propósito: mantém o último Gantt bom em vez de
+        // limpar a tela numa falha passageira de rede.
+        console.error('[tv] projetos:', e.message);
+      }
+    }
 
-  function iniciar(){
-    onSnapshot(query(collection(db, 'projetos_ia'), orderBy('ordem', 'asc')), snap => {
-      const projetos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (window.renderFacilitiesProjetos) window.renderFacilitiesProjetos(projetos);
-    }, () => {
-      onSnapshot(collection(db, 'projetos_ia'), snap => {
-        const projetos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        if (window.renderFacilitiesProjetos) window.renderFacilitiesProjetos(projetos);
-      });
-    });
-  }
-  if (window.renderFacilitiesProjetos) iniciar();
-  else window.addEventListener('DOMContentLoaded', iniciar);
+    function iniciar() {
+      loadProjetos();
+      setInterval(loadProjetos, PROJETOS_REFRESH_MS);
+    }
+
+    if (window.renderFacilitiesProjetos) iniciar();
+    else window.addEventListener('DOMContentLoaded', iniciar);
+  })();
 </script>
 </body>
 </html>
