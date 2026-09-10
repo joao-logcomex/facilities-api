@@ -1686,7 +1686,17 @@ const isAdminOrViewer = (email) => {
         }
       }
 
-      await updateDoc(doc(db, 'tickets', currentDocId), updates);
+      // O Firestore está sem cota: este await falha silenciosamente e mata a
+      // função, então o espelho no Supabase abaixo nunca rodava e o card
+      // parecia ter mudado de coluna sem nada ter sido gravado. Enquanto a
+      // escrita não for invertida (Supabase primeiro), pelo menos avisa.
+      try {
+        await updateDoc(doc(db, 'tickets', currentDocId), updates);
+      } catch (err) {
+        console.error('[updS] falha ao gravar status no Firestore:', err);
+        alert(`Não foi possível salvar o status.\n\nO chamado #${t.id} continua como "${statusAnterior}".\n\nDetalhe: ${err?.message || err}`);
+        return;
+      }
       // Espelha no Supabase (fase de transição) — nunca bloqueia a UI
       fetch('/api/supabase-sync', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
