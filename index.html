@@ -488,6 +488,43 @@ input:disabled,select:disabled{opacity:.55}
 /* acessibilidade */
 :focus-visible{outline:2px solid #8E44ED;outline-offset:3px;border-radius:8px}
 
+/* ─── correções de contraste que o tema por variáveis não pegou ─── */
+.form-card-header{background:rgba(255,255,255,.055)!important}
+.fch-icon{background:linear-gradient(140deg,#7215E9,#5B11BA)!important;color:#fff!important}
+.fch-title{color:#fff!important}
+.fch-sub{color:var(--ink2)!important}
+.cat-card.selected .cat-name{color:#fff!important}
+.cat-card.selected{box-shadow:none!important}
+#default-state{color:var(--ink3)!important}
+.section-label{color:var(--lav)!important}
+.mc-title,.success-icon{color:#fff!important}
+.btn-voltar{background:var(--surface)!important;border-color:var(--border)!important;color:var(--ink2)!important}
+label,.field label{color:var(--ink2)!important}
+
+/* ─── fundo: cargueiros, aviões e o símbolo da marca ─── */
+#bgart{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#bgart svg{position:absolute;vector-effect:non-scaling-stroke}
+#bgart .ln{fill:none;stroke:var(--lav);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+#bgart .mk{fill:var(--lav)}
+#bgart .ship1{width:min(460px,38vw);bottom:3%;left:-3%;opacity:.11;animation:bgSail 54s ease-in-out infinite}
+#bgart .plane1{width:min(430px,34vw);top:16%;right:-4%;opacity:.10;animation:bgFly 46s ease-in-out infinite}
+#bgart .ship2{width:min(240px,19vw);top:52%;right:26%;opacity:.055;animation:bgSail 62s ease-in-out infinite reverse}
+#bgart .mark1{width:150px;top:9%;left:6%;opacity:.05;animation:bgSpin 70s linear infinite}
+#bgart .mark2{width:96px;top:64%;left:11%;opacity:.04;animation:bgSpin 90s linear infinite reverse}
+#bgart .mark3{width:120px;top:30%;left:47%;opacity:.035;animation:bgSpin 80s linear infinite}
+@keyframes bgSail{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(24px,-9px) rotate(.7deg)}}
+@keyframes bgFly{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-28px,15px) rotate(-1deg)}}
+@keyframes bgSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+/* conteúdo sempre acima da arte */
+header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:1}
+@media(max-width:900px){
+  #bgart .ship2,#bgart .mark2,#bgart .mark3{display:none}
+  #bgart .ship1{width:280px;opacity:.07}
+  #bgart .plane1{width:260px;opacity:.065}
+  #bgart .mark1{width:100px;opacity:.035}
+}
+@media(prefers-reduced-motion:reduce){ #bgart svg{animation:none!important} }
+
 @media(max-width:1080px){ .cat-grid{grid-template-columns:repeat(3,1fr)!important} }
 @media(max-width:620px){
   .cat-grid{grid-template-columns:repeat(2,1fr)!important;gap:.5rem!important}
@@ -830,6 +867,15 @@ input:disabled,select:disabled{opacity:.55}
       <button class="header-btn" onclick="doLogout()">Sair</button>
     </div>
   </header>
+
+<div id="bgart" aria-hidden="true">
+  <svg class="ship1" viewBox="0 0 300 130"><path class="ln" d="M14 82 L258 82 L286 92 L272 112 L46 112 C30 112 20 100 14 82 Z"/><path class="ln" d="M14 82 L272 82"/><path class="ln" d="M22 82 V52 H70 V82"/><path class="ln" d="M22 64 H70 M30 52 V42 H50 V52"/><path class="ln" d="M28 58 h8 M42 58 h8 M56 58 h8"/><path class="ln" d="M36 42 V26 H52 V42"/><path class="ln" d="M84 82 V58 H130 V82 M84 70 H130 M99 58 V82 M114 58 V82"/><path class="ln" d="M138 82 V50 H184 V82 M138 66 H184 M153 50 V82 M168 50 V82"/><path class="ln" d="M192 82 V58 H238 V82 M192 70 H238 M207 58 V82 M222 58 V82"/><path class="ln" d="M146 50 V38 H176 V50 M161 38 V50"/><path class="ln" d="M252 82 V60 M244 62 h16"/></svg>
+  <svg class="plane1" viewBox="0 0 220 108"><path class="ln" d="M116 40 L96 14 L110 13 L140 36" opacity=".5"/><path class="ln" d="M28 52 C28 43 40 37 60 36 L150 32 C172 31 190 36 202 45 C206 48 206 52 202 54 L92 62 C56 64 30 60 28 52 Z"/><path class="ln" d="M186 38 C193 40 199 43 203 47 L187 48 Z"/><path class="ln" d="M62 45 h7 M77 44 h7 M92 43 h7 M107 42 h7 M122 41 h7 M137 40 h7"/><path class="ln" d="M32 46 L14 8 L30 7 L58 42"/><path class="ln" d="M20 20 L41 18"/><path class="ln" d="M30 56 L12 70 L30 71 L50 59"/><path class="ln" d="M118 58 L92 92 L113 94 L152 62 Z"/><path class="ln" d="M110 70 C102 70 98 74 98 78 C98 82 102 85 110 85 L128 82 C134 81 137 78 137 75 C137 72 134 70 128 69 Z"/><path class="ln" d="M98 77 h39"/></svg>
+  <svg class="ship2" viewBox="0 0 300 130"><path class="ln" d="M14 82 L258 82 L286 92 L272 112 L46 112 C30 112 20 100 14 82 Z"/><path class="ln" d="M14 82 L272 82"/><path class="ln" d="M22 82 V52 H70 V82"/><path class="ln" d="M22 64 H70 M30 52 V42 H50 V52"/><path class="ln" d="M28 58 h8 M42 58 h8 M56 58 h8"/><path class="ln" d="M36 42 V26 H52 V42"/><path class="ln" d="M84 82 V58 H130 V82 M84 70 H130 M99 58 V82 M114 58 V82"/><path class="ln" d="M138 82 V50 H184 V82 M138 66 H184 M153 50 V82 M168 50 V82"/><path class="ln" d="M192 82 V58 H238 V82 M192 70 H238 M207 58 V82 M222 58 V82"/><path class="ln" d="M146 50 V38 H176 V50 M161 38 V50"/><path class="ln" d="M252 82 V60 M244 62 h16"/></svg>
+  <svg class="mark1" viewBox="0 0.9 22.35 22.3"><path class="mk" d="M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z"/><path class="mk" d="M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z"/><path class="mk" d="M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z"/></svg>
+  <svg class="mark2" viewBox="0 0.9 22.35 22.3"><path class="mk" d="M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z"/><path class="mk" d="M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z"/><path class="mk" d="M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z"/></svg>
+  <svg class="mark3" viewBox="0 0.9 22.35 22.3"><path class="mk" d="M22.3405 18.0675H17.2352V23.1429H22.3405V18.0675Z"/><path class="mk" d="M5.10529 6.64643L0 11.7254V18.0891C0 20.8816 2.27851 23.1467 5.08749 23.1467H11.4887L16.594 18.0714H5.10529V6.64643Z"/><path class="mk" d="M17.2311 6.01289V17.4343L22.3364 12.3589V0.9375H10.8513L5.746 6.01289H17.2311Z"/></svg>
+</div>
 
   <div class="hero">
     <h1>Como podemos te ajudar?</h1>
