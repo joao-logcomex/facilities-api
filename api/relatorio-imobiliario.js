@@ -1073,6 +1073,104 @@ module.exports = async (req, res) => {
     }
   }
 
+  // ── Módulo imobiliário: leitura das 6 tabelas de uma vez ──
+  if (req.query && req.query.imob === '1') {
+    try {
+      await exigirAdmin(req);
+      const U = process.env.SUPABASE_URL;
+      const K = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const h = { apikey: K, Authorization: `Bearer ${K}` };
+      const q = (t, ord) => fetch(`${U}/rest/v1/${t}?select=*&order=${ord}`, { headers: h });
+      const [pat, cat, loc, sub, esp, con] = await Promise.all([
+        q('imob_patrimonio', 'nome.asc'),
+        q('imob_categorias', 'nome.asc'),
+        q('imob_localizacoes', 'nome.asc'),
+        q('imob_sublocalizacoes', 'parente.asc,nome.asc'),
+        q('imob_espacos', 'nome.asc'),
+        q('imob_contratos', 'nome.asc'),
+      ]);
+      for (const r of [pat, cat, loc, sub, esp, con]) {
+        if (!r.ok) throw new Error(`Supabase respondeu ${r.status}`);
+      }
+      return res.status(200).json({
+        ok: true,
+        patrimonio: await pat.json(),
+        categorias: await cat.json(),
+        localizacoes: await loc.json(),
+        sublocalizacoes: await sub.json(),
+        espacos: await esp.json(),
+        contratos: await con.json(),
+        fonte: 'supabase',
+      });
+    } catch (e) {
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Módulo imobiliário: salvar / excluir (genérico, com lista branca) ──
+  if (req.method === 'POST' && req.query &&
+      (req.query.salvar_imob === '1' || req.query.excluir_imob === '1')) {
+    const TABELAS = {
+      patrimonio: 'imob_patrimonio',
+      categorias: 'imob_categorias',
+      localizacoes: 'imob_localizacoes',
+      sublocalizacoes: 'imob_sublocalizacoes',
+      espacos: 'imob_espacos',
+      contratos: 'imob_contratos',
+    };
+    // Só estas colunas são aceitas por tabela: campo estranho no corpo é
+    // descartado em vez de fazer o Supabase devolver 400.
+    const COLUNAS = {
+      imob_patrimonio: ['nome','num_patrimonio','categoria','localizacao','localizacao_completa','sublocalizacao','valor','status','referencia'],
+      imob_categorias: ['nome','emoji','descricao'],
+      imob_localizacoes: ['nome','emoji','descricao'],
+      imob_sublocalizacoes: ['nome','emoji','parente'],
+      imob_espacos: ['nome','tipo','andar','capacidade','status','responsavel','observacoes'],
+      imob_contratos: ['nome','imovel','endereco','status','valor','data_inicio','data_vencimento','locador','contato_locador','observacoes'],
+    };
+    try {
+      const quem = await exigirAdmin(req);
+      const b = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+      const tabela = TABELAS[b.tabela];
+      if (!tabela) return res.status(400).json({ ok: false, error: 'tabela inválida' });
+
+      if (req.query.excluir_imob === '1') {
+        const id = b.id || req.query.id;
+        if (!id) return res.status(400).json({ ok: false, error: 'id obrigatório' });
+        await supabaseWrite('DELETE', `${tabela}?id=eq.${encodeURIComponent(id)}`, undefined, 'return=minimal');
+        return res.status(200).json({ ok: true });
+      }
+
+      const dados = b.dados || {};
+      const linha = {};
+      for (const c of COLUNAS[tabela]) {
+        if (dados[c] !== undefined) {
+          // string vazia vira null: o formulário manda '' em campo não preenchido
+          linha[c] = dados[c] === '' ? null : dados[c];
+        }
+      }
+      if (!linha.nome) return res.status(400).json({ ok: false, error: 'nome obrigatório' });
+      // capacidade é o único numérico dos formulários
+      if (linha.capacidade !== undefined && linha.capacidade !== null) {
+        const n = parseInt(linha.capacidade);
+        linha.capacidade = Number.isFinite(n) ? n : null;
+      }
+      linha.criado_por = quem;
+
+      let rows;
+      if (b.id) {
+        linha.id = String(b.id);
+        rows = await supabaseWrite('POST', tabela, linha, 'resolution=merge-duplicates,return=representation');
+      } else {
+        rows = await supabaseWrite('POST', tabela, linha);
+      }
+      return res.status(200).json({ ok: true, item: rows && rows[0] });
+    } catch (e) {
+      console.error('imob salvar/excluir erro:', e);
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
+    }
+  }
+
   // ── Cron diário: alerta de SLA (chamados perto de vencer ou já vencidos) ──
   // Chamado pelo Vercel Cron (vercel.json), seg-sex 8h30 Curitiba. Protegido
   // pelo CRON_SECRET que o próprio Vercel injeta como Bearer automaticamente.
