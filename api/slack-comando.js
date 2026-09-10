@@ -1660,15 +1660,18 @@ async function processarMensagemDM(evt) {
       const motivo = /^(pular|não|nao|n)$/i.test(texto) ? '' : texto;
       try {
         const solicitante = await getUserInfo(userId);
-        await db.collection('feedbacks').add({
+        // Migrado do Firestore (sem cota) para o Supabase. As colunas nota e
+        // origem foram adicionadas na tabela para caber esta avaliação.
+        await supabasePost('feedbacks', {
           tipo: 'Avaliação',
           assunto: `Avaliação do chamado ${estadoAvaliacao.ticketId || ''}`.trim(),
           nota: estadoAvaliacao.nota,
           texto: motivo || '(sem comentário)',
           chamado_ref: estadoAvaliacao.ticketId || null,
           nome: solicitante?.nome || solicitante?.email || userId,
+          anon: false,
           origem: 'slack',
-          data: new Date(),
+          data: new Date().toISOString(),
         });
       } catch (e) { console.warn('Erro salvando avaliação:', e.message); }
       await limparEstado(userId);
