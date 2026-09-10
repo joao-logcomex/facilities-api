@@ -977,6 +977,102 @@ module.exports = async (req, res) => {
     }
   }
 
+  // ── Estoques de TI / Onboarding / Saídas: listar (admin) ──
+  if (req.query && req.query.estoques === '1') {
+    try {
+      await exigirAdmin(req);
+      const U = process.env.SUPABASE_URL;
+      const K = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const h = { apikey: K, Authorization: `Bearer ${K}` };
+      const [ti, onb, sai] = await Promise.all([
+        fetch(`${U}/rest/v1/estoque_ti?select=*&order=nome.asc`, { headers: h }),
+        fetch(`${U}/rest/v1/estoque_onboarding?select=*&order=nome.asc`, { headers: h }),
+        fetch(`${U}/rest/v1/estoque_saidas?select=*&order=data.desc&limit=500`, { headers: h }),
+      ]);
+      for (const r of [ti, onb, sai]) {
+        if (!r.ok) throw new Error(`Supabase respondeu ${r.status}`);
+      }
+      return res.status(200).json({
+        ok: true,
+        ti: await ti.json(),
+        onboarding: await onb.json(),
+        saidas: await sai.json(),
+        fonte: 'supabase',
+      });
+    } catch (e) {
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Ajustar quantidade de estoque (TI ou Onboarding) + registrar saída ──
+  // Recebe o DELTA, não o valor final: a soma acontece no banco, então dois
+  // ajustes simultâneos não se sobrescrevem.
+  if (req.method === 'POST' && req.query && req.query.ajustar_estoque === '1') {
+    try {
+      const quem = await exigirAdmin(req);
+      const b = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+      const alvo = b.alvo === 'onboarding' ? 'onboarding' : 'ti';
+      if (!b.id) return res.status(400).json({ ok: false, error: 'id obrigatório' });
+      const delta = Math.round(Number(b.delta));
+      if (!Number.isFinite(delta) || delta === 0) {
+        return res.status(400).json({ ok: false, error: 'delta inválido' });
+      }
+      const fn = alvo === 'onboarding' ? 'ajustar_estoque_onboarding' : 'ajustar_estoque_ti';
+      const linha = await supabaseRpc(fn, { p_id: String(b.id), p_delta: delta });
+
+      // Saída só é registrada quando o ajuste é negativo
+      if (delta < 0) {
+        await supabaseWrite('POST', 'estoque_saidas', {
+          tipo: b.tipo || (alvo === 'onboarding' ? 'saida_onboarding' : 'saida_ti'),
+          item: b.item || (linha && linha.nome) || null,
+          quantidade: Math.abs(delta),
+          observacao: b.observacao || null,
+          destinatario: b.destinatario || null,
+          usuario: quem,
+        }, 'return=minimal');
+      }
+      return res.status(200).json({ ok: true, item: linha });
+    } catch (e) {
+      console.error('ajustar_estoque erro:', e);
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── Entrega de kit de onboarding: baixa vários itens de uma vez ──
+  if (req.method === 'POST' && req.query && req.query.entregar_kit === '1') {
+    try {
+      const quem = await exigirAdmin(req);
+      const b = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+      const ids = Array.isArray(b.ids) ? b.ids.filter(Boolean).map(String) : [];
+      if (!ids.length) return res.status(400).json({ ok: false, error: 'ids obrigatórios' });
+      if (!b.colaborador) return res.status(400).json({ ok: false, error: 'colaborador obrigatório' });
+
+      // Uma RPC por item: cada baixa é atômica no banco
+      const resultados = [];
+      for (const id of ids) {
+        try {
+          resultados.push(await supabaseRpc('ajustar_estoque_onboarding', { p_id: id, p_delta: -1 }));
+        } catch (err) {
+          console.error(`kit: falha no item ${id}:`, err.message);
+        }
+      }
+      await supabaseWrite('POST', 'estoque_saidas', {
+        tipo: 'kit_onboarding',
+        item: 'Kit de onboarding',
+        quantidade: ids.length,
+        destinatario: b.colaborador,
+        tamanho_camiseta: b.tamanho_camiseta || null,
+        itens: Array.isArray(b.itens) ? b.itens : null,
+        usuario: quem,
+      }, 'return=minimal');
+
+      return res.status(200).json({ ok: true, baixados: resultados.length, pedidos: ids.length });
+    } catch (e) {
+      console.error('entregar_kit erro:', e);
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
+    }
+  }
+
   // ── Cron diário: alerta de SLA (chamados perto de vencer ou já vencidos) ──
   // Chamado pelo Vercel Cron (vercel.json), seg-sex 8h30 Curitiba. Protegido
   // pelo CRON_SECRET que o próprio Vercel injeta como Bearer automaticamente.
