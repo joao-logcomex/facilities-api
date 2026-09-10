@@ -1873,9 +1873,16 @@ window._estoqueBrindes = null;
 async function carregarEstoqueBrindes() {
   if (window._estoqueBrindes) return window._estoqueBrindes;
   try {
-    const { collection, getDocs, query, where } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const snap = await getDocs(query(collection(db, 'estoque_brindes'), where('ativo', '==', true)));
-    window._estoqueBrindes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Lê do Supabase via endpoint (cache de borda 30s). Antes vinha do
+    // Firestore, que está sem cota. Os campos são os mesmos: estoque_sede,
+    // estoque_storage, estoque_total (calculado no banco) e minimo_alerta.
+    const r = await fetch('/api/relatorio-imobiliario?brindes_estoque=1');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    if (!d || d.ok !== true || !Array.isArray(d.itens)) {
+      throw new Error(d && d.error ? d.error : 'resposta inválida');
+    }
+    window._estoqueBrindes = d.itens;
     return window._estoqueBrindes;
   } catch(e) {
     console.error('Erro ao carregar estoque:', e);
