@@ -1237,18 +1237,13 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
   async function gerarIdSequencial() {
     // Tenta Supabase primeiro (não depende do Firestore)
     try {
-      const r = await fetch('https://sadzwdwjoaslkcxqyonf.supabase.co/rest/v1/rpc/next_ticket_id', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhZHp3ZHdqb2FzbGtjeHF5b25mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyNjAyNTQsImV4cCI6MjEwMDgzNjI1NH0.dU-NeQgM9_i1X5EfWcf87GamYaxbKnHnWZD5MBO42-I',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhZHp3ZHdqb2FzbGtjeHF5b25mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyNjAyNTQsImV4cCI6MjEwMDgzNjI1NH0.dU-NeQgM9_i1X5EfWcf87GamYaxbKnHnWZD5MBO42-I',
-        },
-        body: JSON.stringify({}),
+      const tk = await auth.currentUser.getIdToken();
+      const r = await fetch('/api/relatorio-imobiliario?novo_id=1', {
+        headers: { 'Authorization': `Bearer ${tk}` },
       });
       if (r.ok) {
-        const seq = await r.json();
-        return 'LC-' + String(seq).padStart(5, '0');
+        const j = await r.json();
+        if (j && j.id) return j.id;
       }
     } catch(e) { console.warn('gerarId Supabase falhou:', e.message); }
     // Fallback Firestore com timeout
