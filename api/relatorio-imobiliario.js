@@ -489,6 +489,21 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
+  // ── Gera o próximo ID de chamado (usado pelo index.html) ──
+  // Existe para que a chave do Supabase NÃO precise ficar no HTML público.
+  // A service_role fica só aqui no servidor; o navegador manda o token do
+  // Firebase e recebe de volta apenas o número.
+  if (req.method === 'GET' && req.query && req.query.novo_id === '1') {
+    try {
+      await exigirColaborador(req);
+      const id = await gerarIdQR();
+      if (!id) return res.status(503).json({ ok: false, error: 'não foi possível gerar id' });
+      return res.status(200).json({ ok: true, id });
+    } catch (e) {
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
+    }
+  }
+
   // ── QR Code: abertura de chamado via página /qr.html (público, sem autenticação) ──
   // POST com { local, localNome, descricao, email, nome }
   if (req.method === 'POST' && req.query && req.query.qr === '1') {
