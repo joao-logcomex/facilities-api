@@ -1209,7 +1209,7 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc, setDoc, query, where, orderBy, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc, getDocs, setDoc, query, where, orderBy, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCczKnSawfHiAPuMjY2L80ww_wtBMJJY30",
@@ -1482,7 +1482,10 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
         body: JSON.stringify({ table: 'tickets_historico', rows: [{ ticket_id: ticketId, acao: 'Chamado cancelado pelo solicitante', usuario: user.email, data: new Date().toISOString() }] })
       }).catch(() => {});
       loadMeusChamados(); // recarrega a lista pra refletir o cancelamento na hora
-    } catch(e) { alert('Erro ao cancelar chamado.'); }
+    } catch(e) {
+      console.error('[cancelarMeuChamado]', e);
+      alert(`Não foi possível cancelar o chamado #${ticketId}.\n\nDetalhe: ${e?.message || e}`);
+    }
   };
 
   function loadMeusChamados() {
