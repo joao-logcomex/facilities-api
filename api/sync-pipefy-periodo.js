@@ -20,7 +20,44 @@ async function pipefyQuery(query, token) {
   return r.json();
 }
 
+
+// Escreve no Firestore e estava aberta a qualquer POST da internet.
+// Nenhum arquivo do projeto chama esta rota hoje.
+import { getAuth } from 'firebase-admin/auth';
+
+const ADMINS_EMAILS = [
+  'joao.faria@logcomex.com',
+  'christian.bertolino@logcomex.com',
+  'henrique.silva@logcomex.com',
+  'adriano.martins@logcomex.com',
+  'daniel.alle@logcomex.com',
+];
+
+async function exigirAdmin(req) {
+  const h = req.headers.authorization || '';
+  const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+  if (!token) { const e = new Error('token ausente'); e.status = 401; throw e; }
+  let decoded;
+  try {
+    decoded = await getAuth().verifyIdToken(token);
+  } catch {
+    const e = new Error('token inválido'); e.status = 401; throw e;
+  }
+  const email = (decoded.email || '').toLowerCase();
+  if (!ADMINS_EMAILS.includes(email)) {
+    const e = new Error('sem permissão'); e.status = 403; throw e;
+  }
+  return email;
+}
+
 export default async function handler(req, res) {
+  getDB();  // garante o app inicializado antes de validar o token
+  try {
+    await exigirAdmin(req);
+  } catch (e) {
+    return res.status(e.status || 401).json({ ok: false, error: e.message });
+  }
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
