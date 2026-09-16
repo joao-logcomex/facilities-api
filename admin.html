@@ -1435,6 +1435,23 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   window._auth = auth;
+
+  // Headers para /api/supabase-sync. O endpoint passou a exigir token do
+  // Firebase; o token fica em cache para estas chamadas continuarem
+  // "dispara e esquece", sem await e sem mudar o fluxo de quem chama.
+  let _sbTk = '';
+  function _sbHeaders() {
+    return _sbTk
+      ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _sbTk }
+      : { 'Content-Type': 'application/json' };
+  }
+  function _sbAtualizaToken() {
+    const u = (window._auth || window.auth)?.currentUser;
+    if (!u) { _sbTk = ''; return; }
+    u.getIdToken().then(t => { _sbTk = t; }).catch(() => { _sbTk = ''; });
+  }
+  setInterval(_sbAtualizaToken, 30 * 60 * 1000);
+
   const db = getFirestore(app);
   window.db = db;
   window.diasUteisPassados = function(dataInicio) {
@@ -1508,6 +1525,7 @@ const isAdminOrViewer = (email) => {
   // ─────────────────────────────────────────────────────────────────────────
 
   onAuthStateChanged(auth, async (user) => {
+    _sbAtualizaToken();   // token para /api/supabase-sync
     document.getElementById('loading-screen').style.display = 'none';
     const userEmail = (user?.email || '').toLowerCase().trim();
     if (!user || !isAdminOrViewer(userEmail)) {
@@ -1702,7 +1720,7 @@ const isAdminOrViewer = (email) => {
       }
       // Espelha no Supabase (fase de transição) — nunca bloqueia a UI
       fetch('/api/supabase-sync', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets', conflict: 'id', rows: [{
           id: t.id, status: updates.status,
           dentro_sla: updates.dentroSLA ?? null,
@@ -1710,7 +1728,7 @@ const isAdminOrViewer = (email) => {
         }] })
       }).catch(() => {});
       fetch('/api/supabase-sync', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets_historico', rows: [{
           ticket_id: t.id, acao: histAcao, usuario: user.email, data: new Date().toISOString(),
         }] })
@@ -1763,7 +1781,7 @@ const isAdminOrViewer = (email) => {
       await updateDoc(doc(db, 'tickets', currentDocId), { historico: hist });
       // Espelha o comentário no Supabase (fase de transição) — nunca bloqueia a UI
       fetch('/api/supabase-sync', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets_historico', rows: [{
           ticket_id: t?.id, acao: '💬 ' + txt, usuario: user.email, data: new Date().toISOString(),
         }] })
@@ -1808,7 +1826,7 @@ const isAdminOrViewer = (email) => {
       try {
         await deleteDoc(doc(db, 'tickets', currentDocId));
         fetch('/api/supabase-sync', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: _sbHeaders(),
           body: JSON.stringify({ table: 'tickets', action: 'delete', id: t?.id })
         }).catch(() => {});
         closeMd(); showToast('Chamado excluído!');
@@ -2408,7 +2426,7 @@ function updateBadge() {
         historico: [...(t.historico||[]), { acao: 'Codigo de rastreio adicionado: ' + codigo, data: new Date().toISOString(), usuario: 'Admin' }]
       });
       fetch('/api/supabase-sync', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets_historico', rows: [{
           ticket_id: t.id, acao: 'Codigo de rastreio adicionado: ' + codigo, usuario: 'Admin', data: new Date().toISOString(),
         }] })
@@ -2459,11 +2477,11 @@ function updateBadge() {
         }]
       });
       fetch('/api/supabase-sync', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets', conflict: 'id', rows: [{ id: t.id, status: 'Em andamento' }] })
       }).catch(() => {});
       fetch('/api/supabase-sync', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets_historico', rows: [{
           ticket_id: t.id, acao: 'Brinde aprovado pelo gestor — encaminhado para Facilities',
           usuario: auth.currentUser?.email || 'Admin', data: new Date().toISOString(),
@@ -2523,11 +2541,11 @@ function updateBadge() {
         }]
       });
       fetch('/api/supabase-sync', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets', conflict: 'id', rows: [{ id: t.id, status: 'Cancelado' }] })
       }).catch(() => {});
       fetch('/api/supabase-sync', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets_historico', rows: [{
           ticket_id: t.id, acao: `Brinde recusado pelo gestor${motivo ? ': ' + motivo : ''}`,
           usuario: auth.currentUser?.email || 'Admin', data: new Date().toISOString(),
