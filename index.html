@@ -1208,7 +1208,7 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, onIdTokenChanged, sendPasswordResetEmail, updatePassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc, getDocs, setDoc, query, where, orderBy, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -1240,7 +1240,13 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
     if (!u) { _sbTk = ''; return; }
     u.getIdToken().then(t => { _sbTk = t; }).catch(() => { _sbTk = ''; });
   }
-  setInterval(_sbAtualizaToken, 30 * 60 * 1000);
+  // O Firebase renova o ID token sozinho (validade de 1h). onIdTokenChanged
+  // dispara a cada renovação, então o cache nunca fica velho — o setInterval
+  // de 30min sozinho deixava janela para o token expirar com a aba aberta.
+  onIdTokenChanged(auth, (u) => {
+    if (!u) { _sbTk = ''; return; }
+    u.getIdToken().then(t => { _sbTk = t; }).catch(() => { _sbTk = ''; });
+  });
 
   window._addDoc = addDoc;
   window._collection = collection;
