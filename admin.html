@@ -1420,7 +1420,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getAuth, signOut, onAuthStateChanged, onIdTokenChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, collection, doc, updateDoc, deleteDoc, addDoc, orderBy, query, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -1450,7 +1450,13 @@
     if (!u) { _sbTk = ''; return; }
     u.getIdToken().then(t => { _sbTk = t; }).catch(() => { _sbTk = ''; });
   }
-  setInterval(_sbAtualizaToken, 30 * 60 * 1000);
+  // O Firebase renova o ID token sozinho (validade de 1h). onIdTokenChanged
+  // dispara a cada renovação, então o cache nunca fica velho — o setInterval
+  // de 30min sozinho deixava janela para o token expirar com a aba aberta.
+  onIdTokenChanged(auth, (u) => {
+    if (!u) { _sbTk = ''; return; }
+    u.getIdToken().then(t => { _sbTk = t; }).catch(() => { _sbTk = ''; });
+  });
 
   const db = getFirestore(app);
   window.db = db;
