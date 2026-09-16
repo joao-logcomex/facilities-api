@@ -2818,7 +2818,7 @@ async function gerarRelatorio() {
   loading.style.display = 'block'; output.style.display = 'none'; stats.style.display = 'none'; exportBtn.style.display = 'none';
   try {
     const res = await fetch('https://facilities-api.vercel.app/api/relatorio', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: _sbHeaders(),
       body: JSON.stringify({ tickets: filtered, mes, ano })
     });
     const data = await res.json();
@@ -3854,7 +3854,7 @@ window.renderHistorico = renderHistorico;
     try {
       const r = await fetch('/api/classificar-patrimonio', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: _sbHeaders(),
         body: JSON.stringify({ tipo: 'categoria', nome }),
       });
       const data = await r.json();
@@ -3888,7 +3888,7 @@ window.renderHistorico = renderHistorico;
       try {
         const r = await fetch('/api/classificar-patrimonio', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: _sbHeaders(),
           body: JSON.stringify({ tipo: 'categoria', nome }),
         });
         const data = await r.json();
@@ -4202,7 +4202,7 @@ window.renderHistorico = renderHistorico;
     try {
       const r = await fetch('/api/classificar-patrimonio', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: _sbHeaders(),
         body: JSON.stringify({ tipo: 'categoria', nome: 'Localização: ' + nome }),
       });
       const data = await r.json();
@@ -4234,7 +4234,7 @@ window.renderHistorico = renderHistorico;
       try {
         const r = await fetch('/api/classificar-patrimonio', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: _sbHeaders(),
           body: JSON.stringify({ tipo: 'categoria', nome: 'Localização: ' + nome }),
         });
         const data = await r.json();
@@ -4437,7 +4437,7 @@ window.renderHistorico = renderHistorico;
       const categoriasDisp = imobData.categorias.map(c => c.nome);
       const r = await fetch('/api/classificar-patrimonio', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: _sbHeaders(),
         body: JSON.stringify({ tipo: 'item', nome, categorias_disponiveis: categoriasDisp }),
       });
       const data = await r.json();
@@ -4762,7 +4762,7 @@ window.renderHistorico = renderHistorico;
           try {
             const r = await fetch('/api/classificar-patrimonio', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: _sbHeaders(),
               body: JSON.stringify({ tipo: 'item', nome: item.nome, categorias_disponiveis: categoriasDisp }),
             });
             const data = await r.json();
