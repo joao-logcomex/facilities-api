@@ -1582,7 +1582,10 @@ const isAdminOrViewer = (email) => {
       window.allTickets = allTickets;
       updateMetrics(); renderTable(); renderKanban(); updateBadge(); if(typeof initPeriodo==='function'){initPeriodo();}else{updateCharts();}
       // Mesclar encomendas do Supabase na coluna do Kanban
-      fetch('/api/relatorio-imobiliario?encomendas_lista=1')
+      window._auth.currentUser.getIdToken()
+        .then(tk => fetch('/api/relatorio-imobiliario?encomendas_lista=1', {
+          headers: { 'Authorization': `Bearer ${tk}` },
+        }))
         .then(r=>r.json()).then(data=>{
           if(data.ok && data.tickets && data.tickets.length){
             const enc = data.tickets.filter(t=>t.status==='Aguardando retirada'||t.status==='Verificação');
@@ -5561,7 +5564,10 @@ window.renderHistorico = renderHistorico;
   // ── ENCOMENDAS ──
   async function carregarEncomendas() {
     try {
-      const r = await fetch('/api/relatorio-imobiliario?encomendas_lista=1');
+      const tkEnc = await window._auth.currentUser.getIdToken();
+      const r = await fetch('/api/relatorio-imobiliario?encomendas_lista=1', {
+        headers: { 'Authorization': `Bearer ${tkEnc}` },
+      });
       const data = await r.json();
       if (!data.ok) throw new Error(data.error);
       renderEncKanban(data.tickets || []);
