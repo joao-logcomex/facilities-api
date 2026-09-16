@@ -1445,6 +1445,11 @@
       ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _sbTk }
       : { 'Content-Type': 'application/json' };
   }
+  // Exposto no window: as chamadas de classificar-patrimonio e relatorio
+  // ficam no OUTRO bloco <script> (clássico) e não enxergam o escopo do
+  // módulo. Sem isto, dá "_sbHeaders is not defined".
+  window._sbHeaders = _sbHeaders;
+
   function _sbAtualizaToken() {
     const u = (window._auth || window.auth)?.currentUser;
     if (!u) { _sbTk = ''; return; }
