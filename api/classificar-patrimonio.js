@@ -26,7 +26,43 @@ function fallbackEmoji(nome) {
   return '📦';
 }
 
+
+// Esta rota consome créditos da Anthropic a cada chamada e estava aberta:
+// qualquer POST da internet podia queimar a cota da API.
+const admin = require('firebase-admin');
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+const ADMINS_EMAILS = [
+  'joao.faria@logcomex.com',
+  'christian.bertolino@logcomex.com',
+  'henrique.silva@logcomex.com',
+  'adriano.martins@logcomex.com',
+  'daniel.alle@logcomex.com',
+];
+
+async function exigirAdmin(req) {
+  const h = req.headers.authorization || '';
+  const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+  if (!token) { const e = new Error('token ausente'); e.status = 401; throw e; }
+  let decoded;
+  try { decoded = await admin.auth().verifyIdToken(token); }
+  catch { const e = new Error('token inválido'); e.status = 401; throw e; }
+  const email = (decoded.email || '').toLowerCase();
+  if (!ADMINS_EMAILS.includes(email)) { const e = new Error('sem permissão'); e.status = 403; throw e; }
+  return email;
+}
+
 module.exports = async (req, res) => {
+  try { await exigirAdmin(req); }
+  catch (e) { return res.status(e.status || 401).json({ ok: false, error: e.message }); }
+
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'Use POST' });
