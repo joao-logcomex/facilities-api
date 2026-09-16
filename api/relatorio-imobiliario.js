@@ -485,9 +485,55 @@ async function notificarSlackQR(slackId, texto, blocos) {
   });
 }
 
+
+// ── Rate limiting por IP ───────────────────────────────────────────────
+// Map em memória. O Vercel Hobby usa instância única, então o Map é
+// compartilhado entre as requisições. Se um dia migrar para Pro/Enterprise
+// (várias instâncias), isto perde efetividade e precisa de Redis/Vercel KV.
+const RL_JANELA_MS = 60 * 1000;
+// 600 e não 120: o escritório inteiro da Logcomex sai por um IP só (NAT),
+// e o index.html faz polling de 20s em "Meus chamados" — 3 req/min por aba
+// aberta. Com 30 pessoas seriam 90/min sem ninguém clicar em nada. 600 dá
+// folga de ~5x sobre o uso real e ainda barra flood automatizado.
+const RL_MAX = 600;              // requisições por minuto por IP
+const _rlMapa = new Map();
+
+function ipDaRequisicao(req) {
+  const xff = req.headers['x-forwarded-for'];
+  if (xff) return String(xff).split(',')[0].trim();
+  return req.headers['x-real-ip'] || req.socket?.remoteAddress || 'desconhecido';
+}
+
+// Retorna true quando a requisição deve ser bloqueada.
+function estourouLimite(req) {
+  const agora = Date.now();
+
+  // Limpeza: sem isto o Map cresce sem parar e vaza memória.
+  if (_rlMapa.size > 5000) {
+    for (const [k, v] of _rlMapa) if (agora - v.inicio > RL_JANELA_MS) _rlMapa.delete(k);
+  }
+
+  const ip = ipDaRequisicao(req);
+  const reg = _rlMapa.get(ip);
+  if (!reg || agora - reg.inicio > RL_JANELA_MS) {
+    _rlMapa.set(ip, { inicio: agora, contagem: 1 });
+    return false;
+  }
+  reg.contagem++;
+  return reg.contagem > RL_MAX;
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // O cron do Vercel passa direto: ele se autentica com CRON_SECRET e não
+  // deve ser barrado por limite de IP.
+  const ehCron = (req.headers.authorization || '') === `Bearer ${process.env.CRON_SECRET}`;
+  if (!ehCron && estourouLimite(req)) {
+    res.setHeader('Retry-After', '60');
+    return res.status(429).json({ ok: false, error: 'muitas requisições, tente em 1 minuto' });
+  }
 
   // ── Gera o próximo ID de chamado (usado pelo index.html) ──
   // Existe para que a chave do Supabase NÃO precise ficar no HTML público.
