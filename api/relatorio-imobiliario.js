@@ -777,6 +777,8 @@ module.exports = async (req, res) => {
   // ── Encomendas: listar ──
   if (req.query && req.query.encomendas_lista === '1') {
     try {
+      // Só admin: a lista traz nome do destinatário e rastreamento.
+      await exigirAdmin(req);
       const SUPABASE_URL = process.env.SUPABASE_URL;
       const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
       const r = await fetch(
@@ -786,7 +788,7 @@ module.exports = async (req, res) => {
       const data = await r.json();
       return res.status(200).json({ ok: true, tickets: data });
     } catch (e) {
-      return res.status(500).json({ ok: false, error: e.message });
+      return res.status(e.status || 500).json({ ok: false, error: e.message });
     }
   }
 
@@ -1209,9 +1211,13 @@ module.exports = async (req, res) => {
   // Só devolve os campos que a tela usa, nunca dados de outras pessoas
   // (o e-mail vem do usuário logado no Firebase Auth, no próprio front).
   if (req.query && req.query.meus_chamados === '1') {
-    const email = (req.query.email || '').trim().toLowerCase();
-    if (!email) return res.status(400).json({ ok: false, error: 'email obrigatório' });
     try {
+      // A identidade vem SEMPRE do token, nunca do parâmetro. Antes qualquer
+      // um podia pedir os chamados de qualquer pessoa só trocando o e-mail na
+      // URL — e a descrição do chamado carrega CPF, telefone e endereço.
+      const quem = await exigirColaborador(req);
+      const email = (quem.email || '').trim().toLowerCase();
+      if (!email) return res.status(401).json({ ok: false, error: 'sem e-mail no token' });
       const SUPABASE_URL = process.env.SUPABASE_URL;
       const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
       const rTickets = await fetch(
@@ -1240,6 +1246,7 @@ module.exports = async (req, res) => {
       }));
       return res.status(200).json({ ok: true, tickets: resultado });
     } catch (e) {
+      if (e.status) return res.status(e.status).json({ ok: false, error: e.message });
       console.error('meus_chamados erro:', e);
       return res.status(200).json({ ok: false, error: e.message });
     }
