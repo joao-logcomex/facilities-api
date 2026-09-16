@@ -1556,7 +1556,10 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
     let pollTimer = null;
     async function carregarDoSupabase() {
       try {
-        const r = await fetch(`/api/relatorio-imobiliario?meus_chamados=1&email=${encodeURIComponent(userEmail)}`);
+        const tk = await auth.currentUser.getIdToken();
+        const r = await fetch('/api/relatorio-imobiliario?meus_chamados=1', {
+          headers: { 'Authorization': `Bearer ${tk}` },
+        });
         const data = await r.json();
         if (!data.ok) { list.innerHTML = '<div class="mc-empty"><div>📭</div><p>Você ainda não abriu nenhum chamado.</p></div>'; return; }
         render(data.tickets || []);
