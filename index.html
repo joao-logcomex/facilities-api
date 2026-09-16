@@ -1235,6 +1235,11 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
       ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _sbTk }
       : { 'Content-Type': 'application/json' };
   }
+  // Exposto no window: há chamada de supabase-sync em OUTRO bloco <script>,
+  // que não enxerga o escopo deste. Sem isto, "_sbHeaders is not defined"
+  // quebra a abertura de chamado.
+  window._sbHeaders = _sbHeaders;
+
   function _sbAtualizaToken() {
     const u = (window._auth || window.auth || auth)?.currentUser;
     if (!u) { _sbTk = ''; return; }
