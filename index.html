@@ -1225,6 +1225,23 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
   const db = getFirestore(app);
   window.db = db;
   window.auth = auth;
+
+  // Headers para /api/supabase-sync. O endpoint passou a exigir token do
+  // Firebase; o token fica em cache para estas chamadas serem síncronas e
+  // continuarem "dispara e esquece", sem mudar o fluxo de quem chama.
+  let _sbTk = '';
+  function _sbHeaders() {
+    return _sbTk
+      ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _sbTk }
+      : { 'Content-Type': 'application/json' };
+  }
+  function _sbAtualizaToken() {
+    const u = (window._auth || window.auth || auth)?.currentUser;
+    if (!u) { _sbTk = ''; return; }
+    u.getIdToken().then(t => { _sbTk = t; }).catch(() => { _sbTk = ''; });
+  }
+  setInterval(_sbAtualizaToken, 30 * 60 * 1000);
+
   window._addDoc = addDoc;
   window._collection = collection;
   window._serverTimestamp = serverTimestamp;
@@ -1269,6 +1286,7 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
   const DEFAULT_PASS = 'Logcomex@2024';
 
   onAuthStateChanged(auth, async (user) => {
+    _sbAtualizaToken();   // token para /api/supabase-sync
     document.getElementById('loading-screen').style.display = 'none';
     if (user) {
       const isAdmin = ADMINS.includes(user.email);
@@ -1469,11 +1487,11 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
       await setDoc(doc(db, 'tickets', docSnap.id), { status: 'Cancelado', historico: hist }, { merge: true });
       // Espelha no Supabase também
       fetch('/api/supabase-sync', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets', conflict: 'id', rows: [{ id: ticketId, status: 'Cancelado' }] })
       }).catch(() => {});
       fetch('/api/supabase-sync', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets_historico', rows: [{ ticket_id: ticketId, acao: 'Chamado cancelado pelo solicitante', usuario: user.email, data: new Date().toISOString() }] })
       }).catch(() => {});
       loadMeusChamados(); // recarrega a lista pra refletir o cancelamento na hora
@@ -1667,7 +1685,7 @@ header,.hero,.content,.success-screen,.feedback-shell{position:relative;z-index:
       // Espelha no Supabase (fase de transição) — nunca bloqueia a tela de sucesso
       fetch('/api/supabase-sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: _sbHeaders(),
         body: JSON.stringify({
           table: 'tickets',
           conflict: 'id',
@@ -2237,7 +2255,7 @@ window.submitLogistica = async () => {
     } : { nome: dest, cpf_tel: '', cep: '', rua: end, numero: '', complemento: '', bairro: '', cidade: '', estado: '' };
     fetch('/api/supabase-sync', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: _sbHeaders(),
       body: JSON.stringify({
         table: 'tickets',
         conflict: 'id',
