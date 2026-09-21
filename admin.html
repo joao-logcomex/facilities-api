@@ -1525,6 +1525,11 @@ const isAdminOrViewer = (email) => {
     }
     document.getElementById('sidebar').style.display = 'flex';
     document.getElementById('main-content').style.display = 'block';
+    // Os estoques são carregados aqui, e não na carga do script: o bloco
+    // clássico roda ANTES deste módulo, então window.auth ainda não existe
+    // lá e carregarEstoques() saía em "if (!u) return", deixando Onboarding
+    // e Saídas vazios até o setInterval de 60s.
+    window.carregarEstoques?.(true);
     // Modo viewer — Leandro só vê brindes
     if (isViewer(userEmail)) {
       document.documentElement.classList.add('viewer-mode');
@@ -2641,9 +2646,12 @@ function nav(page, el) {
   const pageEl = document.getElementById('page-'+page);
   if (!pageEl) return; // página inválida
   pageEl.classList.add('active');
-  if (page === 'controle-ti' || page === 'controle-onboarding') {
-    if (!window._estoqueTI) { carregarImob(); }
-    else { if (page === 'controle-ti') renderEstoqueTI(); else renderOnboarding(); }
+  if (page === 'controle-onboarding' || page === 'controle-saidas') {
+    // Antes testava _estoqueTI e chamava carregarImob(), que é o carregador
+    // do imobiliário — nunca buscava os estoques.
+    if (!window._estoqueOnboarding) { window.carregarEstoques?.(true); }
+    else if (page === 'controle-onboarding') renderOnboarding();
+    else renderSaidas();
   }
   document.querySelectorAll('.nav-item, .nav-sub-item').forEach(i=>i.classList.remove('active'));
   if(el) el.classList.add('active');
