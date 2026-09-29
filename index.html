@@ -1936,7 +1936,18 @@ async function updateItensBrinde(dept) {
   grid.style.display = 'block';
   semItens.style.display = 'none';
 
-  const estoque = await carregarEstoqueBrindes();
+  const estoqueTodos = await carregarEstoqueBrindes();
+
+  // Filtro por área. Até então esta função recebia `dept` e não usava:
+  // todo mundo via todos os itens, independente do centro de custo.
+  // CS vê os itens de CS; Comercial e as demais áreas veem os de Comercial.
+  const CS_CENTROS_BRINDE = ['CS GERAL GROWTH','CS GROWTH','CS INTERNACIONAL PPMF',
+    'CS OPS & INSIGHTS GROWTH','CS PPMF','PROFESSIONAL SERVICES GROWTH',
+    'QUALIDADE GERAL GROWTH','QUALIDADE GROWTH','QUALIDADE PPMF',
+    'SUPORTE GROWTH','SUPORTE PPMF'];
+  const areaDaPessoa = CS_CENTROS_BRINDE.includes((dept || '').trim()) ? 'CS' : 'COMERCIAL';
+  // Item sem `area` definida cai em CS, que era o comportamento anterior.
+  const estoque = estoqueTodos.filter(it => (it.area || 'CS') === areaDaPessoa);
 
   if (!estoque.length) {
     grid.innerHTML = '';
