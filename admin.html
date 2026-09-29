@@ -3361,19 +3361,67 @@ window.renderHistorico = renderHistorico;
         if (!cats.length) return '<div style="padding:1rem;text-align:center;color:var(--ink3);font-size:0.83rem;">Nenhum item</div>';
         const total = lista.length;
         const valTot = lista.reduce((s,p)=>s+parseV(p.valor),0);
+
+        // A barra representa VALOR por padrão. Antes representava quantidade,
+        // o que invertia a leitura: Cadeira aparecia com 62% (113 itens,
+        // R$ 103 mil) e TV com 15% (28 itens, R$ 163 mil).
+        const modo = (document.getElementById('patrim-modo-dist')?.value) || 'valor';
+        const porValor = modo === 'valor' && mostrarValor && valTot > 0;
+        const base = porValor ? valTot : total;
+        const ordenado = porValor
+          ? cats.slice().sort((a,b) => b[1].valor - a[1].valor)
+          : cats.slice().sort((a,b) => b[1].qtd - a[1].qtd);
+
+        const TOPO = 5;
+        const aberto = (document.getElementById('patrim-cat-aberto')?.value) === '1';
         const thVal = mostrarValor ? '<th style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;text-align:right;padding:8px 10px;border-bottom:1px solid var(--border)">Valor total</th>' : '';
-        const rows = cats.map(([cat,d]) => {
-          const pct = total > 0 ? Math.round((d.qtd/total)*100) : 0;
+
+        const rows = ordenado.map(([cat,d], i) => {
+          const medida = porValor ? d.valor : d.qtd;
+          const pctNum = base > 0 ? (medida/base)*100 : 0;
+          const pct = pctNum > 0 && pctNum < 1 ? '<1' : Math.round(pctNum);
+          const oculta = (i >= TOPO && !aberto) ? 'display:none;' : '';
           const tdVal = mostrarValor ? '<td style="padding:9px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:500">' + (d.valor > 0 ? fmt(d.valor) : '—') + '</td>' : '';
-          return '<tr><td style="padding:9px 10px;border-bottom:1px solid var(--border)"><span style="background:' + cor + '18;color:' + cor + ';padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500">' + cat + '</span></td><td style="padding:9px 10px;border-bottom:1px solid var(--border);font-weight:600">' + d.qtd + '</td><td style="padding:9px 10px;border-bottom:1px solid var(--border);width:160px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:' + cor + ';border-radius:3px"></div></div><span style="font-size:11px;color:var(--ink3)">' + pct + '%</span></div></td>' + tdVal + '</tr>';
+          return '<tr style="' + oculta + '"><td style="padding:9px 10px;border-bottom:1px solid var(--border)"><span style="background:' + cor + '18;color:' + cor + ';padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500">' + cat + '</span></td><td style="padding:9px 10px;border-bottom:1px solid var(--border);font-weight:600">' + d.qtd + '</td><td style="padding:9px 10px;border-bottom:1px solid var(--border);width:170px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="width:' + Math.max(pctNum,0.8) + '%;height:100%;background:' + cor + ';border-radius:3px"></div></div><span style="font-size:11px;color:var(--ink3);min-width:26px;text-align:right">' + pct + '%</span></div></td>' + tdVal + '</tr>';
         }).join('');
+
         const tdValTot = mostrarValor ? '<td style="padding:9px 10px;text-align:right;font-weight:600">' + (valTot > 0 ? fmt(valTot) : '—') + '</td>' : '';
         const totRow = '<tr style="background:var(--surface2)"><td style="padding:9px 10px;font-weight:600">Total</td><td style="padding:9px 10px;font-weight:600">' + total + '</td><td style="padding:9px 10px"></td>' + tdValTot + '</tr>';
-        return '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr><th style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)">Categoria</th><th style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)">Qtd</th><th style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);width:160px">Distribuição</th>' + thVal + '</tr></thead><tbody>' + rows + totRow + '</tbody></table>';
+
+        const sobra = ordenado.length - TOPO;
+        const verMais = sobra > 0
+          ? '<div onclick="alternarCatsPatrim()" style="padding:9px 10px;font-size:12px;color:' + cor + ';cursor:pointer;font-weight:500;border-top:1px solid var(--border)">' + (aberto ? 'Recolher' : 'Mostrar as outras ' + sobra + ' categorias') + '</div>'
+          : '';
+
+        // Alternador valor / quantidade (só onde há valor para comparar)
+        const alt = mostrarValor && valTot > 0
+          ? '<div style="display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-left:auto">'
+            + ['valor','qtd'].map(m => '<button onclick="modoDistPatrim(\'' + m + '\')" style="border:none;font-family:\'Poppins\',sans-serif;font-size:11px;padding:4px 11px;cursor:pointer;background:' + (modo===m?cor:'var(--surface)') + ';color:' + (modo===m?'#fff':'var(--ink3)') + ';font-weight:' + (modo===m?'600':'500') + '">' + (m==='valor'?'Por valor':'Por quantidade') + '</button>').join('')
+            + '</div>'
+          : '';
+
+        return '<div style="display:flex;align-items:center;margin-bottom:10px"><span style="font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">Por categoria</span>' + alt + '</div>'
+          + '<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden">'
+          + '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr><th style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)">Categoria</th><th style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)">Qtd</th><th style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);width:170px">Distribuição</th>' + thVal + '</tr></thead><tbody>' + rows + totRow + '</tbody></table>' + verMais + '</div>';
       }
+
+      // Qual categoria concentra o valor. Substitui o antigo "Sem responsável",
+      // que marcava 182 de 182 — sempre o total, portanto sem informação.
+      function concentracao(lista, cor) {
+        const cats = porCat(lista);
+        const valTot = lista.reduce((s,p)=>s+parseV(p.valor),0);
+        if (!cats.length || valTot <= 0) return {l:'Concentração', v:'—', c:cor, sub:'sem valores cadastrados'};
+        const top = cats.slice().sort((a,b)=>b[1].valor - a[1].valor)[0];
+        return {l:'Concentração', v: Math.round((top[1].valor/valTot)*100) + '%', c:cor, sub:'do valor em ' + top[0]};
+      }
+
       function painel(lista, cor, s1, s2, s3, s4, mostrarValor) {
-        const cards = [s1,s2,s3,s4].map(s => '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem"><div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">' + s.l + '</div><div style="font-size:' + (s.big?'17px':'22px') + ';font-weight:700;font-family:\'Funnel Display\',sans-serif;color:' + (s.c||'var(--ink)') + ';line-height:1">' + s.v + '</div><div style="font-size:11px;color:var(--ink3);margin-top:4px">' + s.sub + '</div></div>').join('');
-        return '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem">' + cards + '</div><div style="font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Por categoria</div>' + tabela(lista, cor, mostrarValor);
+        // s2 é sempre o valor — ganha destaque e ocupa o dobro de largura.
+        // Antes os quatro cards tinham o mesmo peso e o número que importa
+        // numa conversa com a diretoria ficava igual a "Categorias: 13".
+        const destaque = '<div style="grid-column:span 2;background:linear-gradient(135deg,#2D085D,' + cor + ');border-radius:14px;padding:1.15rem 1.25rem;color:#fff"><div style="font-size:10px;font-weight:600;color:rgba(226,208,250,.85);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">' + s2.l + '</div><div style="font-size:30px;font-weight:700;font-family:\'Funnel Display\',sans-serif;line-height:1;letter-spacing:-0.02em">' + s2.v + '</div><div style="font-size:11px;color:rgba(226,208,250,.75);margin-top:7px">' + s2.sub + '</div></div>';
+        const menores = [s1,s3,s4].map(s => '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem"><div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">' + s.l + '</div><div style="font-size:22px;font-weight:700;font-family:\'Funnel Display\',sans-serif;color:' + (s.c||'var(--ink)') + ';line-height:1">' + s.v + '</div><div style="font-size:11px;color:var(--ink3);margin-top:4px">' + s.sub + '</div></div>').join('');
+        return '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.25rem">' + destaque + menores + '</div>' + tabela(lista, cor, mostrarValor);
       }
       const tabAtiva = document.getElementById('patrim-tab-ativa') ? document.getElementById('patrim-tab-ativa').value : 'emuso';
       const paineis = {
@@ -3381,32 +3429,54 @@ window.renderHistorico = renderHistorico;
           {l:'Total em uso', v:emUso.length, c:'#6613D0', sub:'equipamentos ativos'},
           {l:'Valor total', v:fmt(emUso.reduce((s,p)=>s+parseV(p.valor),0)), sub:'patrimônio em uso', big:true},
           {l:'Categorias', v:new Set(emUso.map(p=>p.categoria)).size, c:'#6613D0', sub:'tipos diferentes'},
-          {l:'Sem responsável', v:emUso.filter(p=>!p.responsavel).length, c:'#D97706', sub:'precisam atenção'}, true),
+          concentracao(emUso, '#6613D0'), true),
         disponivel: painel(disponivel, '#16A34A',
           {l:'Em estoque', v:disponivel.length, c:'#16A34A', sub:'disponíveis'},
           {l:'Valor em estoque', v:fmt(disponivel.reduce((s,p)=>s+parseV(p.valor),0)), sub:'aguardando alocação', big:true},
           {l:'Categorias', v:new Set(disponivel.map(p=>p.categoria)).size, c:'#16A34A', sub:'tipos disponíveis'},
-          {l:'Sem responsável', v:disponivel.filter(p=>!p.responsavel).length, c:'#D97706', sub:'itens livres'}, true),
+          concentracao(disponivel, '#16A34A'), true),
         manutencao: painel(manutencao, '#D97706',
           {l:'Em manutenção', v:manutencao.length, c:'#D97706', sub:'indisponíveis'},
           {l:'Valor parado', v:fmt(manutencao.reduce((s,p)=>s+parseV(p.valor),0)), sub:'em manutenção', big:true},
           {l:'Categorias', v:new Set(manutencao.map(p=>p.categoria)).size, c:'#D97706', sub:'afetadas'},
-          {l:'Sem responsável', v:manutencao.filter(p=>!p.responsavel).length, c:'#DC2626', sub:'precisam atenção'}, true),
+          concentracao(manutencao, '#D97706'), true),
         descartado: painel(descartado, '#6B7280',
           {l:'Descartados', v:descartado.length, c:'#DC2626', sub:'baixados'},
           {l:'Valor histórico', v:fmt(descartado.reduce((s,p)=>s+parseV(p.valor),0)), sub:'não soma ao patrimônio', big:true, c:'#9CA3AF'},
           {l:'Este ano', v:descartado.filter(p=>{ try { const d=p.data_abertura?.toDate?p.data_abertura.toDate():new Date(p.data_abertura||0); return d.getFullYear()===new Date().getFullYear(); } catch(e){return false;} }).length, c:'#DC2626', sub:'descartados em 2026'},
           {l:'Categorias', v:new Set(descartado.map(p=>p.categoria)).size, c:'#6B7280', sub:'diferentes tipos'}, false),
       };
-      const tabs = [
+      const tabsTodas = [
         {id:'emuso', l:'Em uso', n:emUso.length},
         {id:'disponivel', l:'Disponível', n:disponivel.length},
         {id:'manutencao', l:'Em manutenção', n:manutencao.length},
         {id:'descartado', l:'Descartado', n:descartado.length},
       ];
+      // Abas sem nenhum item viram uma nota discreta. Botões que não levam
+      // a lugar nenhum ocupam espaço e confundem. Se um item for marcado
+      // com aquele status depois, a aba volta sozinha.
+      const tabs = tabsTodas.filter(t => t.n > 0 || t.id === tabAtiva);
+      const vazias = tabsTodas.filter(t => t.n === 0 && t.id !== tabAtiva).map(t => t.l);
+      const notaVazias = vazias.length
+        ? '<div style="font-size:11px;color:var(--ink3);padding:6px 10px 0;text-align:right">Nenhum item em ' + vazias.join(' nem ') + '</div>'
+        : '';
       const tabBtns = tabs.map(t => '<button onclick="ativarTabPatrim(\'' + t.id + '\')" id="patrim-tab-btn-' + t.id + '" style="flex:1;padding:8px 10px;font-size:11.5px;font-weight:500;cursor:pointer;border:none;background:' + (tabAtiva===t.id?'var(--surface)':'none') + ';color:' + (tabAtiva===t.id?'var(--purple)':'var(--ink3)') + ';border-radius:8px;box-shadow:' + (tabAtiva===t.id?'0 1px 4px rgba(102,19,208,0.12)':'none') + ';font-family:\'Poppins\',sans-serif;transition:all .15s">' + t.l + ' (' + t.n + ')</button>').join('');
-      stats.innerHTML = '<input type="hidden" id="patrim-tab-ativa" value="' + tabAtiva + '"><div style="display:flex;gap:0;margin-bottom:1.25rem;background:var(--surface2);border-radius:10px;padding:4px">' + tabBtns + '</div><div id="patrim-painel-content">' + paineis[tabAtiva] + '</div>';
+      const modoAtualDist = (document.getElementById('patrim-modo-dist')?.value) || 'valor';
+      const catAberto = (document.getElementById('patrim-cat-aberto')?.value) || '0';
+      stats.innerHTML = '<input type="hidden" id="patrim-tab-ativa" value="' + tabAtiva + '"><input type="hidden" id="patrim-modo-dist" value="' + modoAtualDist + '"><input type="hidden" id="patrim-cat-aberto" value="' + catAberto + '"><div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:4px">' + tabBtns + '</div>' + notaVazias + '<div style="margin-top:1.25rem" id="patrim-painel-content">' + paineis[tabAtiva] + '</div>';
     }
+    // Alterna a distribuição entre valor e quantidade.
+    window.modoDistPatrim = function(m) {
+      const el = document.getElementById('patrim-modo-dist');
+      if (el) el.value = m;
+      renderStatsPatrimonio();
+    };
+    // Abre ou recolhe as categorias além das 5 maiores.
+    window.alternarCatsPatrim = function() {
+      const el = document.getElementById('patrim-cat-aberto');
+      if (el) el.value = el.value === '1' ? '0' : '1';
+      renderStatsPatrimonio();
+    };
     window.ativarTabPatrim = function(id) {
       const input = document.getElementById('patrim-tab-ativa');
       if (input) input.value = id;
