@@ -1733,10 +1733,19 @@ const isAdminOrViewer = (email) => {
 
       // Supabase é o primário. Se falhar, nada é gravado e o usuário sabe.
       try {
+        // As três datas de fase vão junto. Elas alimentam o contador "X dias
+        // nesta fase" no card, o cálculo do SLA (que conta a partir de
+        // data_em_andamento) e a devolução automática ao estoque. Até aqui
+        // existiam só no Firestore — sem elas o Kanban não pode migrar.
         await sbGravar({ table: 'tickets', conflict: 'id', rows: [{
           id: t.id, status: updates.status,
           dentro_sla: updates.dentroSLA ?? null,
           data_conclusao: updates.data_conclusao ? updates.data_conclusao.toISOString() : undefined,
+          data_fase_atual: updates.data_fase_atual.toISOString(),
+          data_em_andamento: updates.data_em_andamento ? updates.data_em_andamento.toISOString() : undefined,
+          data_pronto_retirada: updates.data_pronto_retirada ? updates.data_pronto_retirada.toISOString() : undefined,
+          motivo_recusa: updates.motivo_cancelamento ?? undefined,
+          observacoes: updates.ultima_observacao ?? undefined,
         }] });
       } catch (err) {
         console.error('[updS] falha ao gravar status no Supabase:', err);
@@ -2487,7 +2496,11 @@ function updateBadge() {
     const btn = document.querySelector('.btn-aprovar');
     btn.textContent = 'Aprovando...'; btn.disabled = true;
     try {
-      await sbGravar({ table: 'tickets', conflict: 'id', rows: [{ id: t.id, status: 'Em andamento' }] });
+      await sbGravar({ table: 'tickets', conflict: 'id', rows: [{
+        id: t.id, status: 'Em andamento',
+        data_em_andamento: new Date().toISOString(),
+        data_fase_atual: new Date().toISOString(),
+      }] });
       fsEspelho(updateDoc(doc(db, 'tickets', currentDocId), {
         status: 'Em andamento',
         updatedAt: new Date(),
@@ -2547,7 +2560,11 @@ function updateBadge() {
     const t = allTickets.find(x => x._docId === currentDocId);
     if (!t) return;
     try {
-      await sbGravar({ table: 'tickets', conflict: 'id', rows: [{ id: t.id, status: 'Cancelado' }] });
+      await sbGravar({ table: 'tickets', conflict: 'id', rows: [{
+        id: t.id, status: 'Cancelado',
+        motivo_recusa: motivo || undefined,
+        data_fase_atual: new Date().toISOString(),
+      }] });
       fsEspelho(updateDoc(doc(db, 'tickets', currentDocId), {
         status: 'Cancelado',
         motivo_recusa: motivo,
