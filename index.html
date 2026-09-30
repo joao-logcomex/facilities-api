@@ -2295,7 +2295,14 @@ window.submitLogistica = async () => {
           centro_custo: document.getElementById('departamento').value,
           departamento: document.getElementById('departamento').value,
           transportadora: transp,
-          tipo_entrega: 'Envio via ' + transp,
+                       // Estes 6 iam só para o Firestore. Sem eles, o Supabase recebia o
+             // chamado de logística sem destinatário, item nem data de envio.
+             tipo_envio: document.getElementById('log-tipo-envio').value || null,
+             destinatario: dest || null,
+             email_destinatario: emailDest || null,
+             item_enviado: item || null,
+             data_envio_desejada: dataEnvio || null,
+             observacoes: document.getElementById('log-obs')?.value || null, tipo_entrega: 'Envio via ' + transp,
           endereco_envio: enderecoParaSupabase,
         }],
       }),
