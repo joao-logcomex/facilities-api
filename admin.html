@@ -937,6 +937,9 @@
         <div class="imob-stats" id="estoque-stats"></div>
 
         <!-- Grid de cards -->
+        <!-- Filtro por área (CS / Comercial) -->
+        <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;" id="estoque-filtro-area"></div>
+
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:1.5rem;" id="estoque-grid">
           <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--ink3);">Carregando...</div>
         </div>
@@ -5028,7 +5031,12 @@ window.renderHistorico = renderHistorico;
     const statsEl = document.getElementById('estoque-stats');
     if (!grid) return;
 
-    const ativos = estoqueData.filter(x => x.ativo !== false);
+    // Filtro por área. O catálogo tem itens de CS e de Comercial misturados
+    // (Caneta e Caneta Preta são produtos diferentes, de áreas diferentes).
+    const areaSel = (document.getElementById('filtro-brinde-area')?.value) || '';
+    const ativos = estoqueData
+      .filter(x => x.ativo !== false)
+      .filter(x => !areaSel || (x.area || 'CS') === areaSel);
     const baixos = ativos.filter(x => x.estoque_total <= x.minimo_alerta && x.estoque_total > 0);
     const esgotados = ativos.filter(x => x.estoque_total <= 0);
     const total_itens = ativos.reduce((a, x) => a + (x.estoque_total || 0), 0);
@@ -5099,6 +5107,21 @@ window.renderHistorico = renderHistorico;
       }
     }
 
+    // Botões de área
+    const todosAtivos = estoqueData.filter(x => x.ativo !== false);
+    const nCS = todosAtivos.filter(x => (x.area || 'CS') === 'CS').length;
+    const nCom = todosAtivos.filter(x => x.area === 'COMERCIAL').length;
+    const filtroEl = document.getElementById('estoque-filtro-area');
+    if (filtroEl) {
+      const opcoes = [
+        { v:'',          l:'Todos',     n: todosAtivos.length },
+        { v:'CS',        l:'CS',        n: nCS },
+        { v:'COMERCIAL', l:'Comercial', n: nCom },
+      ];
+      filtroEl.innerHTML = '<input type="hidden" id="filtro-brinde-area" value="' + areaSel + '">'
+        + opcoes.map(o => '<button onclick="filtrarBrindeArea(\'' + o.v + '\')" style="padding:7px 16px;font-size:0.8rem;font-weight:' + (areaSel===o.v?'700':'500') + ';cursor:pointer;border:1px solid ' + (areaSel===o.v?'var(--purple)':'var(--border)') + ';background:' + (areaSel===o.v?'var(--purple)':'var(--surface)') + ';color:' + (areaSel===o.v?'#fff':'var(--ink2)') + ';border-radius:999px;font-family:\'Poppins\',sans-serif;transition:all .15s;">' + o.l + ' (' + o.n + ')</button>').join('');
+    }
+
     // Cards
     grid.innerHTML = ativos.map(item => {
       const pct = Math.min(100, Math.round((item.estoque_total || 0) / ((item.estoque_storage || 100) + (item.estoque_sede || 0)) * 100));
@@ -5110,7 +5133,10 @@ window.renderHistorico = renderHistorico;
         onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='var(--border)'">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
           <div style="font-size:2rem;">${item.emoji}</div>
-          <span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:99px;background:${item.estoque_total<=0?'rgba(220,38,38,0.1)':item.estoque_total<=item.minimo_alerta?'rgba(234,179,8,0.1)':'rgba(22,163,74,0.1)'};color:${cor};">${statusTxt}</span>
+          <div style="display:flex;gap:5px;align-items:center;">
+            <span style="font-size:0.66rem;font-weight:600;padding:3px 8px;border-radius:99px;background:rgba(102,19,208,0.09);color:var(--purple);">${(item.area || 'CS') === 'COMERCIAL' ? 'Comercial' : 'CS'}</span>
+            <span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:99px;background:${item.estoque_total<=0?'rgba(220,38,38,0.1)':item.estoque_total<=item.minimo_alerta?'rgba(234,179,8,0.1)':'rgba(22,163,74,0.1)'};color:${cor};">${statusTxt}</span>
+          </div>
         </div>
         <div style="font-size:0.95rem;font-weight:700;color:var(--ink);margin-bottom:12px;">${item.nome}</div>
         <!-- Barra de estoque -->
@@ -5126,6 +5152,12 @@ window.renderHistorico = renderHistorico;
       </div>`;
     }).join('');
   }
+
+  window.filtrarBrindeArea = function(area) {
+    const el = document.getElementById('filtro-brinde-area');
+    if (el) el.value = area;
+    renderEstoque();
+  };
 
   window.abrirEstoqueModal = (id) => {
     const item = estoqueData.find(x => x._id === id);
