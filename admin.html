@@ -1433,6 +1433,31 @@
   // módulo. Sem isto, dá "_sbHeaders is not defined".
   window._sbHeaders = _sbHeaders;
 
+  // ── Gravação de ticket: Supabase primeiro ──────────────────────────────
+  // Até aqui era o contrário: `await updateDoc` no Firestore e só depois o
+  // espelho no Supabase. Com a cota do Firestore esgotada o await falhava,
+  // a função morria ali e o Supabase nunca recebia nada — o card mudava de
+  // coluna na tela sem que nada fosse gravado em lugar nenhum.
+  // Agora o Supabase é o primário: se ele falhar, a função para e avisa.
+  // O Firestore virou espelho em segundo plano (ainda é a fonte do Kanban).
+  async function sbGravar(body) {
+    const r = await fetch('/api/supabase-sync', {
+      method: 'POST', headers: _sbHeaders(), body: JSON.stringify(body),
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      throw new Error(d.error || ('supabase-sync respondeu ' + r.status));
+    }
+    return r;
+  }
+  // Espelho no Firestore: nunca bloqueia e nunca derruba a operação.
+  function fsEspelho(promessa, ondeFalhou) {
+    Promise.resolve(promessa).catch(err =>
+      console.error('[espelho Firestore] ' + ondeFalhou + ':', err));
+  }
+
+
+
   function _sbAtualizaToken() {
     const u = (window._auth || window.auth)?.currentUser;
     if (!u) { _sbTk = ''; return; }
@@ -1706,26 +1731,20 @@ const isAdminOrViewer = (email) => {
         }
       }
 
-      // O Firestore está sem cota: este await falha silenciosamente e mata a
-      // função, então o espelho no Supabase abaixo nunca rodava e o card
-      // parecia ter mudado de coluna sem nada ter sido gravado. Enquanto a
-      // escrita não for invertida (Supabase primeiro), pelo menos avisa.
+      // Supabase é o primário. Se falhar, nada é gravado e o usuário sabe.
       try {
-        await updateDoc(doc(db, 'tickets', currentDocId), updates);
-      } catch (err) {
-        console.error('[updS] falha ao gravar status no Firestore:', err);
-        alert(`Não foi possível salvar o status.\n\nO chamado #${t.id} continua como "${statusAnterior}".\n\nDetalhe: ${err?.message || err}`);
-        return;
-      }
-      // Espelha no Supabase (fase de transição) — nunca bloqueia a UI
-      fetch('/api/supabase-sync', {
-        method: 'POST', headers: _sbHeaders(),
-        body: JSON.stringify({ table: 'tickets', conflict: 'id', rows: [{
+        await sbGravar({ table: 'tickets', conflict: 'id', rows: [{
           id: t.id, status: updates.status,
           dentro_sla: updates.dentroSLA ?? null,
           data_conclusao: updates.data_conclusao ? updates.data_conclusao.toISOString() : undefined,
-        }] })
-      }).catch(() => {});
+        }] });
+      } catch (err) {
+        console.error('[updS] falha ao gravar status no Supabase:', err);
+        alert(`Não foi possível salvar o status.\n\nO chamado #${t.id} continua como "${statusAnterior}".\n\nDetalhe: ${err?.message || err}`);
+        return;
+      }
+      // Espelho no Firestore — é o que o Kanban ainda lê, mas não bloqueia.
+      fsEspelho(updateDoc(doc(db, 'tickets', currentDocId), updates), 'status ' + t.id);
       fetch('/api/supabase-sync', {
         method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets_historico', rows: [{
@@ -1777,14 +1796,16 @@ const isAdminOrViewer = (email) => {
       const t = allTickets.find(x => x._docId === currentDocId);
       const hist = [...(t?.historico || [])];
       hist.push({ acao: '💬 ' + txt, data: new Date().toISOString(), usuario: user.email });
-      await updateDoc(doc(db, 'tickets', currentDocId), { historico: hist });
-      // Espelha o comentário no Supabase (fase de transição) — nunca bloqueia a UI
-      fetch('/api/supabase-sync', {
-        method: 'POST', headers: _sbHeaders(),
-        body: JSON.stringify({ table: 'tickets_historico', rows: [{
+      try {
+        await sbGravar({ table: 'tickets_historico', rows: [{
           ticket_id: t?.id, acao: '💬 ' + txt, usuario: user.email, data: new Date().toISOString(),
-        }] })
-      }).catch(() => {});
+        }] });
+      } catch (err) {
+        console.error('[saveCmt] falha ao gravar comentário no Supabase:', err);
+        alert(`Não foi possível salvar o comentário.\n\nDetalhe: ${err?.message || err}`);
+        return;
+      }
+      fsEspelho(updateDoc(doc(db, 'tickets', currentDocId), { historico: hist }), 'comentário ' + t?.id);
 
       // Verifica se admin marcou pra notificar colaborador
       const notifChk = document.getElementById('cmt-notify');
@@ -1823,14 +1844,14 @@ const isAdminOrViewer = (email) => {
       const t = allTickets.find(x => x._docId === currentDocId);
       if (!confirm(`Tem certeza que deseja EXCLUIR permanentemente o chamado #${t?.id}?\n\nEsta ação não pode ser desfeita.`)) return;
       try {
-        await deleteDoc(doc(db, 'tickets', currentDocId));
-        fetch('/api/supabase-sync', {
-          method: 'POST', headers: _sbHeaders(),
-          body: JSON.stringify({ table: 'tickets', action: 'delete', id: t?.id })
-        }).catch(() => {});
+        await sbGravar({ table: 'tickets', action: 'delete', id: t?.id });
+        fsEspelho(deleteDoc(doc(db, 'tickets', currentDocId)), 'exclusão ' + t?.id);
         closeMd(); showToast('Chamado excluído!');
       }
-      catch(e) { showToast('Erro ao excluir chamado.'); }
+      catch(e) {
+        console.error('[excluirChamado]', e);
+        alert(`Não foi possível excluir o chamado.\n\nDetalhe: ${e?.message || e}`);
+      }
     };
 
     window.excluirFeedback = async (docId) => {
@@ -2418,18 +2439,18 @@ function updateBadge() {
     const t = allTickets.find(x => x._docId === currentDocId);
     if (!t) return;
     try {
-      // Salvar no Firebase
-      await updateDoc(doc(db, 'tickets', currentDocId), {
+      // Supabase primeiro. Grava o código na tabela tickets (coluna
+      // `rastreamento`) e o registro no histórico. Antes só o histórico era
+      // espelhado — o código em si ficava apenas no Firestore.
+      await sbGravar({ table: 'tickets', conflict: 'id', rows: [{ id: t.id, rastreamento: codigo }] });
+      await sbGravar({ table: 'tickets_historico', rows: [{
+        ticket_id: t.id, acao: 'Codigo de rastreio adicionado: ' + codigo, usuario: 'Admin', data: new Date().toISOString(),
+      }] });
+      fsEspelho(updateDoc(doc(db, 'tickets', currentDocId), {
         rastreio: codigo,
         updatedAt: new Date(),
         historico: [...(t.historico||[]), { acao: 'Codigo de rastreio adicionado: ' + codigo, data: new Date().toISOString(), usuario: 'Admin' }]
-      });
-      fetch('/api/supabase-sync', {
-        method: 'POST', headers: _sbHeaders(),
-        body: JSON.stringify({ table: 'tickets_historico', rows: [{
-          ticket_id: t.id, acao: 'Codigo de rastreio adicionado: ' + codigo, usuario: 'Admin', data: new Date().toISOString(),
-        }] })
-      }).catch(() => {});
+      }), 'rastreio ' + t.id);
       // Atualiza objeto local pra refletir o novo código se admin concluir em seguida
       t.rastreio = codigo;
 
@@ -2466,7 +2487,8 @@ function updateBadge() {
     const btn = document.querySelector('.btn-aprovar');
     btn.textContent = 'Aprovando...'; btn.disabled = true;
     try {
-      await updateDoc(doc(db, 'tickets', currentDocId), {
+      await sbGravar({ table: 'tickets', conflict: 'id', rows: [{ id: t.id, status: 'Em andamento' }] });
+      fsEspelho(updateDoc(doc(db, 'tickets', currentDocId), {
         status: 'Em andamento',
         updatedAt: new Date(),
         historico: [...(t.historico||[]), {
@@ -2474,11 +2496,7 @@ function updateBadge() {
           data: new Date().toISOString(),
           usuario: auth.currentUser?.email || 'Admin'
         }]
-      });
-      fetch('/api/supabase-sync', {
-        method: 'POST', headers: _sbHeaders(),
-        body: JSON.stringify({ table: 'tickets', conflict: 'id', rows: [{ id: t.id, status: 'Em andamento' }] })
-      }).catch(() => {});
+      }), 'aprovação ' + t.id);
       fetch('/api/supabase-sync', {
         method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets_historico', rows: [{
@@ -2529,7 +2547,8 @@ function updateBadge() {
     const t = allTickets.find(x => x._docId === currentDocId);
     if (!t) return;
     try {
-      await updateDoc(doc(db, 'tickets', currentDocId), {
+      await sbGravar({ table: 'tickets', conflict: 'id', rows: [{ id: t.id, status: 'Cancelado' }] });
+      fsEspelho(updateDoc(doc(db, 'tickets', currentDocId), {
         status: 'Cancelado',
         motivo_recusa: motivo,
         updatedAt: new Date(),
@@ -2538,11 +2557,7 @@ function updateBadge() {
           data: new Date().toISOString(),
           usuario: auth.currentUser?.email || 'Admin'
         }]
-      });
-      fetch('/api/supabase-sync', {
-        method: 'POST', headers: _sbHeaders(),
-        body: JSON.stringify({ table: 'tickets', conflict: 'id', rows: [{ id: t.id, status: 'Cancelado' }] })
-      }).catch(() => {});
+      }), 'recusa ' + t.id);
       fetch('/api/supabase-sync', {
         method: 'POST', headers: _sbHeaders(),
         body: JSON.stringify({ table: 'tickets_historico', rows: [{
